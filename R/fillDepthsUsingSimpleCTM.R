@@ -1,24 +1,24 @@
-#' Title
+#' Fill depth increments using simple Cohort Theory Model.
 #' 
-#' This function fill 1 cm depth increments down to a maximum depth interval 
-#' using a simple verion of Cohort Theory Model. It takes several biotic and 
+#' This function fills 1 cm depth increments down to a maximum depth interval 
+#' using a simple version of Cohort Theory Model. It takes several biotic and 
 #' abiotic inputs, and fills cells assuming steady state conditions.
 #' It outputs a table of depth increments with root mass, refractory 
 #' and labile organic matter, inorganic matter, and age-depth relationships.
-#' There are optionalities to create derrivative statistics used to simulating
-#' measurements, and to graph the outputs.
+#' There are optionalities to create derivative statistics used to simulate
+#' measurements and to graph the outputs.
 
 #' @param totalDepth 
-#' @param rootDepthMax 
-#' @param totalRootBmass 
-#' @param refractoryFrac 
-#' @param bgTurnover 
-#' @param ssc 
-#' @param depthBelowMHW 
-#' @param omDecayRate 
-#' @param coreYear 
-#' @param rootShape 
-#' @param k1 
+#' @param rootDepthMax Depth of the root zone in cm below surface.
+#' @param totalRootBmass Total Root Biomass, g/m2.
+#' @param refractoryFrac Refractory Portion of organic production, g/g.
+#' @param bgTurnover  Below Ground Turnover Rate, 1/yr.
+#' @param ssc Suspended Sediment Concentration, mg per liter.
+#' @param depthBelowMHW Depth of Marsh Surface Below Mean High Water.
+#' @param omDecayRate Labile organic matter decay rate, 1/yr.
+#' @param coreYear Core Collection Year CE.
+#' @param rootShape Could be linear, exponential, or custom.
+#' @param k1 Organic and Inorganic Self Packing Densities: k1 and k2.
 #' @param k2 
 #' @param extraStatsOn 
 #' @param graphingOn 
