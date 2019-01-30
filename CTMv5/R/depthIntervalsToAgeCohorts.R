@@ -20,8 +20,8 @@ depthIntervalsToAgeCohorts <- function(inputDF = tableToMessWith,
   targetAttributes <- tempDf %>%
     select(names(tempDf)[! names(tempDf) %in% c(depthsAndAges)])
   
-  # Second determine how many cohorts you need. Round up.
-  nCohorts <- round(max(inputDF[ageColumn])+0.5,0)
+  # Next, determine how many cohorts you need. Round up.
+  nCohorts <- ceiling(max(inputDF[ageColumn]))
   
   # Then start stepping one age cohort at a time
   for (cohortN in 1:nCohorts) {
@@ -31,19 +31,20 @@ depthIntervalsToAgeCohorts <- function(inputDF = tableToMessWith,
     cohortEndYear <- cohortN
     
     # Apply the above return_overlap funtion to the temporary data frame
-    #   to get a series of weight's indicating how much overlap there is between
-    #   the chort we're iterating through and the age of the depth intervals in the 
+    #   to get a series of weights indicating how much overlap there is between
+    #   the cohort we're iterating through and the age of the depth intervals in the 
     #   table. These should add up to one. Most should be 0.
     depthWeights <- mapply(return_overlap,
                            x1=cohortStartYear, x2=cohortEndYear, 
                            y1=tempDf$ageMin, y2=tempDf$ageMax)
     
-    # For each target attribute mutiply the depth series by the weights, by transforming
+    # For each target attribute multiply the depth series by the weights, by transforming
     # it to a matrix, getting the colmun sums and then converting back to a dataframe.
     weightedAttributesMatrix <- colSums(as.matrix(targetAttributes * depthWeights))
     weightedAttributesDf <- as.data.frame(t(weightedAttributesMatrix))
     
-    # Create an output data frame or add temporary data to output using a row bind.
+    # If first cohort, create an output data frame; else add temporary data to 
+    # output using a row bind.
     if (cohortN == 1) {
       outputDF <- weightedAttributesDf
       cohort_depth_max <-c(weightedAttributesDf$accretionRate) 
@@ -53,7 +54,7 @@ depthIntervalsToAgeCohorts <- function(inputDF = tableToMessWith,
                            cohort_depth_max[cohortN-1] + weightedAttributesDf$accretionRate) 
     }
   }
-  # Clean up output table and make sure all nedded columns are present and in order.
+  # Clean up output table and make sure all needed columns are present and in order.
   outputDF <- outputDF %>%
     mutate(cohort = 1:nCohorts,
            depthMax = cohort_depth_max,
