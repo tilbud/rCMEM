@@ -5,11 +5,11 @@ _A quick overview of the contents of this repository and how to contribute._
 
 ## Repository File Structure
 
-### `R` Folder
+### `R/` Folder
 
 This is where functions are placed in order to be documented (i.e. have documentation pop up when a user uses ?name_of_function) and to be installed as part of the package.
 
-### `man` Folder
+### `man/` Folder
 
 This is an auto-generated folder that contains (also auto-generated) documentation for functions and other objects. Discouraged to manually edit these files; instead, do so via the ROxygen methods detailed below.
 
@@ -29,12 +29,12 @@ _work needed:_ R developers improving and expanding current code, further docume
 
 ## Documentation
 
-Descriptions of functions, function parameters, etc. stored in /man directory.
+Descriptions of functions, function parameters, etc. stored in `man/` directory.
 
 
 Make sure that (if you’re using Studio) under Build > Configure Build Tools, “Generate documentation with ROxygen is checked.
 
-*Resources*
+*Resources*:  
 [Hadley Wickham, R packages objection documentation](http://r-pkgs.had.co.nz/man.html)
 
 
