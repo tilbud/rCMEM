@@ -21,8 +21,8 @@ ageCohortsToDepthIntervals <- function(inputDF = startingConditionChohorts,
     targetMin <- depthMin.y[targetDepth]
     targetMax <- depthMax.y[targetDepth]
     
-    # apply the above return_overlap funtion tot he temporary data frame
-    #   to get a series of weight's indicating how much overlap there is between
+    # Apply the above return_overlap funtion to the temporary data frame
+    #   to get a series of weights indicating how much overlap there is between
     #   the chort we're iterating through and the age of the depth intervals in the 
     #   table. These should add up to one. Most should be 0.
     depthWeights <- mapply(return_overlap,
@@ -32,8 +32,8 @@ ageCohortsToDepthIntervals <- function(inputDF = startingConditionChohorts,
                            y2=tempDf$depthMax)
     depthWeights <- depthWeights / sum(depthWeights) # make weights sum to 1
     
-    # For each target attribute mutiply the depth series by the weights
-    #   and we can 
+    # For each target attribute multiply the depth series by the weights, by transforming
+    # it to a matrix, getting the colmun sums and then converting back to a dataframe.
     weightedAttributesMatrix <- colSums(as.matrix(targetAttributes * depthWeights))
     weightedAttributesDf <- as.data.frame(t(weightedAttributesMatrix))
     
