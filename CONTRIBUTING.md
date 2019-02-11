@@ -18,13 +18,13 @@ This is an auto-generated folder that contains (also auto-generated) documentati
 
 Version 6.0 of the Cohort Theory Model. Currently built in Excel VBA (visual basic for applications)
 
-_work needed_: VBA developers translating into R
+_work needed_: VBA developers translating into R. Currently [in progress by JH](https://github.com/tilbud/MEMs/tree/master/CTMv6/R)
 
 ### CTMv5
 
 Version 5.0 of the Cohort Theory Model. Translated into R, still under development.
 
-_work needed:_ R developers improving and expanding current code, further documentation
+_work needed:_ R developers [improving and expanding current code](https://github.com/tilbud/MEMs/tree/master/CTMv5/R), further documentation needed
 
 
 ## Documentation
