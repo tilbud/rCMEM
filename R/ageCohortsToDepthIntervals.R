@@ -1,12 +1,12 @@
 ageCohortsToDepthIntervals <- function(inputDF = startingConditionChohorts,
-                                       depthMin.x = "depthMin", 
-                                       depthMax.x = "depthMax",
+                                       depthMin.name = "depthMin", 
+                                       depthMax.name = "depthMax",
                                        depthMin.y = 0:99, 
                                        depthMax.y = 1:100) {
   
   tempDf <- inputDF %>%
-    rename(depthMin = depthMin.x,
-           depthMax = depthMax.x)
+    rename(depthMin = depthMin.name,
+           depthMax = depthMax.name)
   
   # First define your cohort depths and age column names
   depthsAndAges <-c("depthMin", "depthMax")
