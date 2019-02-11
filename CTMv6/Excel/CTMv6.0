@@ -1,0 +1,386 @@
+Private Sub CommandButton1_Click()
+Dim R(10000), Rvol(10000), mineral(10000), LabileOM(10000), 
+refracOM(10000), yrs(10000), cumage(10000), wtage(10000)
+Dim carbagewt(10000), LOI(10000), yrsold(10000), decay(10000)
+Dim Labprod(10000), labsec(10000), Pb210(10000)
+Dim totvol(10000), Minvol(10000), Rootvol(10000), Slowvol(10000), 
+Fastvol(10000), cumvol(10000)
+Set instance = WorksheetFunction
+Dim returnValue As Double
+outputs.Cells.Range("A3:o1500").Clear
+cumvol(1) = 0
+DT = 0.1
+Dm = Cells(3, 3)
+RT = Cells(4, 3)
+kr = Cells(5, 3)
+m = Cells(6, 3) * 0.000001
+d = Cells(9, 3)
+BGTR = Cells(8, 3)
+k1 = Cells(11, 3)
+k2 = Cells(12, 3)
+If BGTR * kr * 0.0001 * RT / k1 + d * m * 704 / k2 > 1 Then DT = 0.01
+' these rate constants are multiplied by DT (DT is 1/10 of a year)
+BGTR = Cells(8, 3) * DT
+' m is technically not a rate constant, but it is used in the formulat 
+for rate of mineral deposition
+m = m * DT
+' multiply the decay rate by DT
+OMDR = Cells(7, 3) * DT
+CY = Cells(10, 3)
+' 1963 is the year of the Cs peak, its position or age in the simulation 
+depends on the starting year CY
+Csyr = CY - 1963
+perm = "False"
+
+'If CheckBox1 Then exproot = "True"
+' ******************************************** end fill 
+********************************
+Accrate = (kr * BGTR * RT * 0.0001) / k1 + 704 * d * m / k2
+' ******************************begin the interation over 10000 years 
+***************
+' add the refracOM from surface cohorts
+' compute the decay fraction of labile OM in cohort i
+' = sum of (1-omdr) + (1-omdr)^2 + (1-omdr)^n where n is the cohort number
+' cycle through y2 to find y2=y1
+'*********************************************
+For I = 1 To 10000
+' the mineral volume is constant over time
+Minvol(I) = 704 * m * d / k2
+mineral(I) = Minvol(I) * k2
+Next I
+
+' ************************ THIS SECTION IS FOR THE EXPONENTIAL ROOT 
+MODEL ***********************
+If exproot Then
+    kd = Log(0.05) / Dm
+    Rm = -0.95 * RT * 0.0001 * kd / (1 - Exp(kd * Dm))
+    d2 = Exp(kd * Minvol(1))  ' d2 is the greater depth
+Rvol(1) = (Rm / kd) * (d2 - 1) / k1    ' live roots in first mineral section
+Fastvol(1) = Rvol(1) * BGTR * (1 - kr) * (1 - OMDR) ' labile OM volume
+Slowvol(1) = Rvol(1) * BGTR * kr  ' refractory OM volume
+totvol(1) = Minvol(1) + Rvol(1) + Fastvol(1) + Slowvol(1)
+cumvol(1) = totvol(1)
+' This section converges on a solution
+For k = 1 To 20
+     'between 0 and Dm = (Ro/c)[exp(cDm) - exp(c0)]
+     d2 = Exp(kd * cumvol(1)) ' d2 is the greater depth
+     Rvol(1) = (Rm / kd) * (d2 - 1) / k1    ' live root vol in first 
+mineral section
+Slowvol(1) = Rvol(1) * BGTR * kr
+Fastvol(1) = Rvol(1) * BGTR * (1 - kr) * (1 - OMDR)
+totvol(1) = Minvol(1) + Rvol(1) + Fastvol(1) + Slowvol(1)
+cumvol(1) = totvol(1)
+   d2new = Exp(kd * cumvol(1))
+If Abs(d2 - d2new) < 0.0000001 Then Exit For
+J = k
+Next k
+'**********************************************
+For I = 2 To 5999
+     d1 = Exp(kd * (cumvol(I - 1))) ' the top of the section, closer to 
+the surface
+     d2 = Exp(kd * (cumvol(I - 1) + totvol(I - 1))) ' d2 is a greater depth
+     Rvol(I) = (Rm / kd) * (d2 - d1) / k1    ' live roots in first 
+mineral section first guess
+Fastvol(I) = (Rvol(I) * BGTR * (1 - kr) + Fastvol(I - 1)) * (1 - OMDR)
+Slowvol(I) = (Rvol(I) * BGTR * kr + Slowvol(I - 1))
+totvol(I) = Minvol(I) + Rvol(I) + Fastvol(I) + Slowvol(I)
+cumvol(I) = cumvol(I - 1) + totvol(I)
+'**********************************************
+For k = 1 To 20
+'between 0 and Dm = (Ro/c)[exp(cDm) - exp(c0)]
+     d2 = Exp(kd * (cumvol(I - 1) + totvol(I)))  ' adjust volume to 
+accomdate roots
+     Rvol(I) = (Rm / kd) * (d2 - d1) / k1    ' live roots in first 
+mineral section
+Slowvol(I) = Rvol(I) * BGTR * kr + Slowvol(I - 1)
+Fastvol(I) = (Rvol(I) * BGTR * (1 - kr) + Fastvol(I - 1)) * (1 - OMDR)
+totvol(I) = Minvol(I) + Rvol(I) + Fastvol(I) + Slowvol(I)
+   d2new = Exp(kd * (cumvol(I - 1) + totvol(I)))
+If Abs(d2 - d2new) < 0.0000001 Then Exit For
+Next k
+'**********************************************
+cumvol(I) = cumvol(I - 1) + totvol(I)
+Next I
+
+' ************************ THIS SECTION IS FOR THE LINEAR ROOT MODEL 
+***********************
+   Else:
+     d2 = Minvol(1)
+     Rm = 0.0001 * RT / (0.5 * Dm)
+     kd = RT * 0.0001 / (0.5 * Dm ^ 2)
+     Rvol(1) = (Rm * d2 - (kd / 2) * (d2 ^ 2)) / k1
+Fastvol(1) = Rvol(1) * BGTR * (1 - kr) * (1 - OMDR) ' labile OM volume
+Slowvol(1) = Rvol(1) * BGTR * kr  ' refractory OM volume
+totvol(1) = Minvol(1) + Rvol(1) + Fastvol(1) + Slowvol(1)
+cumvol(1) = totvol(1)
+' This section converges on a solution
+For k = 1 To 20
+     d2 = cumvol(1)
+     Rvol(1) = (Rm * d2 - (kd / 2) * (d2 ^ 2)) / k1
+Slowvol(1) = Rvol(1) * BGTR * kr
+Fastvol(1) = Rvol(1) * BGTR * (1 - kr) * (1 - OMDR)
+totvol(1) = Minvol(1) + R(1) + Fastvol(1) + Slowvol(1)
+cumvol(1) = totvol(1)
+  d2new = cumvol(1)
+If Abs(d2 - d2new) < 0.0000001 Then Exit For
+J = k
+Next k
+
+refracOM(1) = Slowvol(1) * k1
+sumrootprod = Rvol(1) * BGTR
+decay(1) = (Rvol(1) * BGTR * (1 - kr)) * OMDR    'annual decay
+sumanndecay = sumanndecay + decay(1)
+LabileOM(1) = Fastvol(1) * k1
+Pb210(1) = Pb210surf * Exp(-DT * 0.0311)
+volcheck = volcheck + (refracOM(1) + R(1) + LabileOM(1)) / k1 + 
+mineral(1) / k2
+LOI(1) = 90 * (refracOM(1) + LabileOM(1) + R(1)) / (refracOM(1) + 
+LabileOM(1) + R(1) + mineral(1))
+'**********************************************
+
+For I = 2 To 5999
+     d1 = cumvol(I - 1)
+     d2 = d1 + totvol(I - 1) ' to initialize, use the last total volume
+     test = d2 - d1
+     Rvol(I) = WorksheetFunction.Max(0, (Rm * d2 - (kd / 2) * (d2 ^ 2) - 
+((Rm * d1 - (kd / 2) * (d1 ^ 2)))) / k1)
+Fastvol(I) = (Rvol(I) * BGTR * (1 - kr) + Fastvol(I - 1)) * (1 - OMDR)
+Slowvol(I) = (Rvol(I) * BGTR * kr + Slowvol(I - 1))
+totvol(I) = Minvol(I) + Rvol(I) + Fastvol(I) + Slowvol(I)
+cumvol(I) = cumvol(I - 1) + totvol(I)
+'**********************************************
+For k = 1 To 20
+'between 0 and Dm = (Ro/c)[exp(cDm) - exp(c0)]
+     d2 = cumvol(I - 1) + totvol(I)
+     Rvol(I) = WorksheetFunction.Max(0, (Rm * d2 - (kd / 2) * (d2 ^ 2) - 
+((Rm * d1 - (kd / 2) * (d1 ^ 2)))) / k1)
+Slowvol(I) = Rvol(I) * BGTR * kr + Slowvol(I - 1)
+Fastvol(I) = (Rvol(I) * BGTR * (1 - kr) + Fastvol(I - 1)) * (1 - OMDR)
+totvol(I) = Minvol(I) + Rvol(I) + Fastvol(I) + Slowvol(I)
+d2new = cumvol(I - 1) + totvol(I)
+If Abs(d2 - d2new) < 0.0000001 Then Exit For
+Next k
+'**********************************************
+cumvol(I) = cumvol(I - 1) + totvol(I)
+Next I
+End If
+
+'******************************** SUMMARIZE PROFILES 
+*******************************
+'W.J.M. van der Linden, ?S.A.P.L. Cloetingh, ?J.P.H. Kaasschieter - 2013 
+- ?Science
+'The average amount of Pb210 transferred from thewater onto the 
+suspended sediment in the Waddensea was found to be
+'0.001397 dpm/cm2/day (mean input fromthe atmosphere being 0.0014 
+dpm/cm2 /day = .51 dpm/cm2/yr)
+Pb210surf = 0.51  ' dpm cm^-2 yr^-1 with 22.3 yr halflife
+sumrootprod = 0  ' annual root production
+refracprod = 0 ' annual refractor production
+sumanndecay = 0
+totroot = 0
+minsum = 0
+labsum = 0
+refsum = 0
+rootsum = 0
+refracprod = 0
+decaysum = 0
+Pbsum = 0
+totroot = 0
+volcheck = 0
+Line = 3
+iend = 0
+section = 1
+
+For I = 1 To 5999
+R(I) = Rvol(I) * k1 ' total root biomass in annual section
+refracOM(I) = Slowvol(I) * k1 ' total refraction production in section
+Labprod(I) = Fastvol(I) * k1 ' annual production of labile in section
+LabileOM(I) = Fastvol(I) * k1
+mineral(I) = Minvol(I) * k2 ' g/cm2
+volcheck = volcheck + (refracOM(I) + R(I) + LabileOM(I)) / k1 + 
+mineral(I) / k2
+cumage(I) = I
+'analytical decay = (1 - kr) * BGTR * RT
+decay(I) = (R(I) * BGTR * (1 - kr) + LabileOM(I - 1)) * (OMDR) 'annual decay
+LOI(I) = 90 * (refracOM(I) + LabileOM(I) + R(I)) / (refracOM(I) + 
+LabileOM(I) + R(I) + mineral(I))
+Total = refracOM(I) + LabileOM(I)
+Pb210(I) = Pb210surf * Exp(-DT * 0.0311 * I)
+' analytical root prod is RT*kr*BGTR
+totroot = totroot + R(I)
+sumrootprod = sumrootprod + R(I) * BGTR   ' annual root production
+refracprod = refracprod + kr * BGTR * R(I) ' annual refractor production
+sumanndecay = sumanndecay + decay(I)  ' annual decay
+Pbsum = Pbsum + Pb210(I) 'total counts (dpm) per cm slice
+minsum = minsum + mineral(I)
+labsum = labsum + LabileOM(I)
+refsum = refsum + refracOM(I)
+rootsum = rootsum + R(I)
+decaysum = decaysum + decay(I)
+
+If I * DT = Csyr Then
+     secCsyr = I * DT
+     Csdepth = cumvol(I)
+    acrCsyr = cumvol(I) / secCsyr
+    End If
+'End If  ' from test of section 1 volume
+'IIIIIIIIIIIIIIIIIII A section is 1 cm IIIIIIIIIIIIIIIIIIIIIIIIIIIII
+If cumvol(I) >= section Then
+
+yrs(section) = (I - iend) * DT ' calc the number of years in a section
+
+If iend = 0 Then yrszero = yrs(section)
+
+outputs.Cells(Line, 1) = cumvol(I)
+outputs.Cells(Line, 2) = yrs(section)
+'outputs.Cells(section+2, 7) = 10000 * sum(refracOM(iend+1 to i)
+'RT * (Rm / kd) * (e1 - e2)
+If exproot Then
+   If iend > 0 Then Rbiom = 10000 * (Rm / kd) * (Exp(kd * cumvol(I)) - 
+Exp(kd * cumvol(iend))) ' root biomass
+   If iend = 0 Then Rbiom = 10000 * (Rm / kd) * (Exp(kd * cumvol(I)) - 
+1) ' root biomass
+Else:
+  If iend > 0 Then Rbiom = 10000 * WorksheetFunction.Max(0, (Rm * 
+cumvol(I) - (kd / 2) * (cumvol(I) ^ 2) - (Rm * cumvol(iend) - (kd / 2) * 
+(cumvol(iend) ^ 2)))) ' root production per year
+  If iend = 0 Then Rbiom = 10000 * WorksheetFunction.Max(0, (Rm - Rm * 
+(cumvol(I) ^ 2) / (2 * Dm)))  ' root production per year
+  End If
+outputs.Cells(Line, 10) = BGTR * Rbiom     ' root production per year
+outputs.Cells(Line, 10) = BGTR * Rbiom  ' root production per year
+
+outputs.Cells(Line, 5) = Rbiom ' root biomass
+outputs.Cells(Line, 6) = 10000 * labsum
+outputs.Cells(Line, 7) = 10000 * refsum
+outputs.Cells(Line, 8) = 10000 * minsum ' mineral
+drywt = 0.0001 * Rbiom + labsum + refsum + minsum
+LossOnIgnition = 100 * (0.0001 * Rbiom + labsum + refsum) / drywt
+outputs.Cells(Line, 12) = LossOnIgnition ' LOI
+
+outputs.Cells(Line, 13) = 10 * (cumvol(I) - cumvol(iend)) / yrs(section) 
+' vertical accretion per section mm/yr
+'outputs.Cells(line, 13) = 10 * outputs.Cells(line, 1) / 
+outputs.Cells(line, 2) ' accretion per section
+outputs.Cells(Line, 3) = volcheck
+outputs.Cells(Line, 4) = I * DT 'cumage(i)
+outputs.Cells(Line, 9) = 10000 * decaysum / yrs(section)
+
+'Pb210(i) = Pb210surf * Exp(-i * DT * 0.69315) / minsum
+
+Pb210(section) = Pb210surf * yrszero * Exp(-DT * I * 0.5 * 0.69315) / minsum
+
+
+outputs.Cells(Line, 11) = 1 / (0.01 * LossOnIgnition / k1 + (1 - 0.01 * 
+LossOnIgnition) / k2) ' bulk density
+'outputs.Cells(line, 11) = 1 / (0.01 * LOI(section) / k1 + (1 - 0.01 * 
+LOI(section)) / k2)
+outputs.Cells(Line, 15) = Pbsum / minsum
+outputs.Cells(Line, 14) = Log(Pbsum / minsum)
+
+'outputs.Cells(line, 14) = yrs(section) * Log(Pb210(section))
+'outputs.Cells(line, 15) = yrs(section) * (Pb210(section))
+Line = Line + 1
+section = cumvol(I) + 1
+iend = I
+minsum = 0
+labsum = 0
+refsum = 0
+rootsum = 0
+labsum = 0
+decaysum = 0
+volcheck = 0
+Pbsum = 0
+volcheck = volcheck + (refracOM(1) + R(1) + LabileOM(1)) / k1 + 
+mineral(1) / k2
+LOI(1) = 90 * (refracOM(1) + LabileOM(1) + R(1)) / (refracOM(1) + 
+LabileOM(1) + R(1) + mineral(1))
+'**********************************************
+End If
+
+Next I
+
+'The first model, known as CF:CS (the Constant Flux Constant
+'Sedimentation Rate model), assumes that there is a constant flux of 210Pb
+'and that the rate of sediment deposition is constant as well. With this 
+model
+'the sedimentation rate can be calculated using the slope of the line 
+derived
+'from the linear regression of ln210Pbex and the depth layer according 
+to the
+'following equations (Bierman et al. 1998):
+'Ax = A0exp(-bx) , v =lamda/b, where Ax – excess 210Pb activity at depth 
+x [Bq kg-1 d.m.], A0 is activity at
+'the surface layer [Bq kg-1 d.m.], b is the slope defined by regression 
+through
+'the data, x is depth [cm], v is sedimentation rate – LAR [cm year-1] 
+and lamda is
+'the 210Pb radioactive decay constant (0.03114 year-1).
+' ln(Ax)=ln(Ao)-bx
+' The CRS model was initiated by Appleby and
+'Oldfield (1978) and Oldfield and Appleby (1984) assumes a constant 
+210Pb flux at water-sediment interface
+'and requires both the integrated activity and the differential activity 
+to yield a variable sedimentation rate
+'(Shukla 2002). The CRS model is used when the supply of 210Pbex is 
+constant and the sediment deposition
+'rate is variable (Appleby and Oldfield 1978; Robbins 1978). The CIC 
+model has been applied by Robbins
+'and Edgington (1975), Durham and Joshi (1980)  among others assumes 
+both a constant mass flux and a
+'constant  activity  flux  at  the  water-sediment  interface; and  
+requires  only  differential  activity  to  yield  a
+'constant sedimentation rate (Shukla 2002). It also appropriate when 
+initial activity of 210Pbex is constant and
+'there  is  no  mixing  of  surface  sediments  (Robbins  and Edgington  
+1975).  This  implies  deposition  of
+'sedimentary  material characterized by  constant 210Pbex activity  such 
+that either both
+'210Pbex  activity  and mass of deposited material to the sediment 
+surface are constant or both vary at the same
+'rate (Zaborska et al. 2007).
+'Pb210(1) = Pb210surf * Exp(-1 * 0.69315 / 22.3) / mineral(1)
+
+'Arg1 = outputs.Cells.Range("d3:d82")
+
+'Arg2 = outputs.Cells.Range("o3:o82")
+Pbslope = instance.Slope(outputs.Cells.Range("n3:n46"), 
+outputs.Cells.Range("a3:a46"))
+Dhalf = -0.69315 / Pbslope
+'=-0.03114/((LN(G30/G2))/(B30-B2))*10  Craft formula
+PBAR = Dhalf / 22.3
+'*************************************** end of loop 
+******************************************
+surfacr = totvol(1) / DT ' cm
+Cells(3, 12) = "Steady St Accretion"
+Cells(3, 13) = 10 * (kr * BGTR * RT * 0.0001 / k1 + 704 * d * m / k2) / 
+DT ' mm per year accretion
+Cells(3, 14) = "mm/yr"
+Cells(4, 12) = "Surface Accretion"
+Cells(5, 12) = "Accretion to Cs pk"
+Cells(7, 12) = "Weighted C Age"
+Cells(8, 12) = "Cesium Horizon Age"
+Cells(8, 14) = "  @ " & Round(Csdepth, 1) & " cm"
+Cells(4, 13) = surfacr * 10
+Cells(5, 13) = acrCsyr * 10
+Cells(6, 13) = PBAR * 10
+Cells(7, 14) = "yr"
+' numerical calculations
+Cells(4, 7) = sumanndecay * 10000 / DT ' annual production
+Cells(4, 8) = sumrootprod * 10000 / DT ' annual production
+Cells(4, 9) = Cells(4, 8) * kr ' annual production of refractory 
+material (g/m2/yr)
+' analytical calculations
+Cells(5, 7) = (1 - kr) * BGTR * RT / DT ' annual decay rate (g/m2/yr)
+Cells(5, 8) = BGTR * RT / DT ' annual production
+Cells(5, 9) = kr * BGTR * RT / DT
+
+' The organic carbon at the depth of the Cs peak is a variety of ages.
+' This section computes the weighted age of carbon at the peak Cs horizon.
+For I = 1 To secCsyr
+yrsold(I) = 0
+' yrs(j) is the number of years of inputs in each 1 cm section
+For J = I To secCsyr
+yrsold(I) = yrsold(I) + yrs(J)
+Next J
+Next I
