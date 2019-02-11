@@ -1,0 +1,104 @@
+---
+title: "Work up cohort model"
+author: "K Todd-Brown (ktoddbrown@gmail.com)"
+date: "12/9/2018"
+output: html_document
+---
+
+```{r setUp}
+library(tidyverse)
+```
+
+```{r functions}
+
+initalRoots <- function(layerTop, layerBottom, shape='linear',
+                      totalRootBiomass, organicPacking, rootDepthMax){
+  if(shape == 'linear'){
+    #root slope is totalRootBiomass/rootDepthMax
+    return(totalRootBiomass/rootDepthMax*(layerBottom - layerTop)/2)
+  }else{
+    stop('Unknown shape specified')
+  }
+}
+
+newRoots <- function(rootMass,
+                     growthRate = 0.5, #generation of new roots as [g-C g-C-1 yr-1]
+                     timeStep = 1, #time step in yr
+                      ){
+  return(rootMass*growthRate*timeStep)
+}
+
+deadRoots <- function(rootMass,
+                      deathRate = 0.7,#turnover rate for roots as [g-C g-C-1 yr-1]
+                      timeStep = 1, #time step in yr
+){
+  return(rootMass*deathRate*timeStep)
+}
+
+organicCarbonChange <- function(pools, decayRates, inputs){
+  #Assume an independent pool structure
+  ans <- inputs-pools*decayRates
+  return(ans)
+}
+
+calculateLayers <- function(organic_mass, mineral_mass,
+                            organicPacking = 0.085 ,  # Organic Self Packing Densities: k1 g-C/cm3
+                            mineralPacking = 1.99    # Inorganic Self Packing Densities  k2 g-C/cm3
+){
+  ans <- data.frame(layerThickness=organic_mass/organicPacking+mineral_mass/mineralPacking)
+  ans$layerBottom <- cumsum(ans$layerThickness)
+  ans$layerTop <- c(0, ans$layerBottom[1:nrow(ans)])
+  return(ans)
+}
+
+#each cohort has a 1) current_year, 2) origin_year 3) fast_organic_mass 4) slow_organic_mass 5) mineral_mass 6) root_mass
+```
+
+```{r params}
+rootDepthMax <- 30 # Depth of the root zone in cm below surface
+totalRootBmass <- 0.3 # Total Root Biomass, g/cm2
+
+refractoryFrac <- 0.2 # Refractory Portion of organic production, g/g
+bgTurnover <- 0.5  # Below Ground Turnover Rate, 1/yr
+ssc <- 20 # Suspended Sediment Concentration, mg per liter
+depthBelowMHW <- 10 # Depth of Marsh Surface Below Mean High Water
+omDecayRate <- 0.8 # Labile organic matter decay rate, 1/yr
+coreYear <- 2015 # Core Collection Year CE
+rootShape <- "linear" # Could be linear, exponential, or custom
+
+organicPacking <- 0.085   # Organic Self Packing Densities: k1 g-C/cm3
+mineralPacking <- 1.99    # Inorganic Self Packing Densities  k2 g-C/cm3
+
+# Conversions and constants
+nTidesPerYear <- 704
+meanTidalHeight <- depthBelowMHW
+ssc_gPerCm2 <- ssc * 0.000001 # convert mg/l to grams/cm^2
+cumAnnWaterVol <- nTidesPerYear * meanTidalHeight # Cumulative water volume
+annSediment <- ssc_gPerCm2 * cumAnnWaterVol
+
+maxRootDensity <- totalRootBmass/organicPacking/rootDepthMax*2 # rootArea halve it, and then calculate density per cm slot g-C cm-2
+ 
+```
+
+```{r}
+
+rootDensity <- function(depth, maxRootDensity, maxRDepth){
+                   return(maxRootDensity * (1 - depth/maxRDepth))
+}
+  
+#rootDensity(depth=seq(0, 30, by=5),  maxRootDensity = maxRootDensity, maxRDepth=rootDepthMax)                        
+pools <-  list(fast=0, slow=0, mineral=annSediment)
+for(ii in 1:300){
+pools <- cohorts_per_year(y = pools,
+                 mineralInput = annSediment, 
+                 rootDepth = rootDepthMax, 
+                 rootMaxCoverage = maxRootDensity,
+                 rootDeath = bgTurnover, rootFast = 1 - refractoryFrac,
+                 fastDecay = omDecayRate, 
+                 OM_density = organicPacking, Mineral_density=mineralPacking,
+                 rootDensity = function(depth, maxRootDensity, maxRDepth){
+                   return(maxRootDensity * (1 - depth/maxRDepth))
+                 })
+}
+
+```
