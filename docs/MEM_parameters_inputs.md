@@ -25,6 +25,7 @@ Accretion rate | if available can calibrate to
 
 
 **Biological Inputs** | **Units**
+------------- | -------------
 max growth limit (rel MSL)| cm
 min growth limit (rel MSL) | cm
 opt growth elev. (rel MSL) | cm
@@ -36,5 +37,6 @@ BG turnover rate | year-1
 Max (95%) Root Depth | cm
 
 **Trapping Coef & Settling Velocity** | **Units** |
+------------- | ------------- |  -------------
 kr | g/g | can use if available
 q | 1/ride | can use if available
