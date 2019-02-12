@@ -36,7 +36,7 @@ Root&Rhizome:Shoot Ratio | g/g
 BG turnover rate | year-1
 Max (95%) Root Depth | cm
 
-**Trapping Coef & Settling Velocity** | **Units** |
+**Trapping Coef & Settling Velocity** | **Units** | **Status**
 ------------- | ------------- |  -------------
 kr | g/g | can use if available
 q | 1/ride | can use if available
