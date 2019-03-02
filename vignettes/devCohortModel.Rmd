@@ -7,98 +7,153 @@ output: html_document
 
 ```{r setUp}
 library(tidyverse)
+
+defaultParms <- list(rootDepthMax = 30, # Depth of the root zone in cm below surface
+                     totalRootBiomass = 0.3, # Total Root Biomass, g/cm2
+                     organicPacking = 0.085)   # Organic Self Packing Densities: k1 g-C/cm3
+#mineralPacking <- 1.99    # Inorganic Self Packing Densities  k2 g-C/cm3
 ```
 
 ```{r functions}
 
-initalRoots <- function(layerTop, layerBottom, shape='linear',
-                      totalRootBiomass, organicPacking, rootDepthMax){
+#return the mass of the live roots between two layers
+massLiveRoots <- function(layerBottom, layerTop, shape='linear',
+                      soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
+                      totalBiomassByArea = defaultParms$totalRootBiomass,
+                      rootDepthMax = defaultParms$rootDepthMax){
+  
+  totalRootMass <- soilLength*soilWidth*totalBiomassByArea
+  
+  ##reset the layers that are beyond the root inputs to have 0 depths
+  layerBottom[layerBottom > rootDepthMax] <- rootDepthMax
+  layerTop[layerTop > rootDepthMax] <- rootDepthMax
+  
   if(shape == 'linear'){
-    #root slope is totalRootBiomass/rootDepthMax
-    return(totalRootBiomass/rootDepthMax*(layerBottom - layerTop)/2)
+    #mass_per_depth = slope * depth + intercept
+    #totalRootMass = 1/2 * rootDepthMax * intecept ==> intercept = 2 * totalRootMass / rootDepthMax
+    #slope = - intercept/rootDepthMax
+    #mass = integral(mass_per_depth, depth)
+    rootMass <- 2*totalRootMass*(layerBottom-layerTop)/rootDepthMax - 
+      totalRootMass *(layerBottom ^2-layerTop^2)/rootDepthMax^2
+    return(rootMass)
   }else{
     stop('Unknown shape specified')
   }
 }
 
-newRoots <- function(rootMass,
-                     growthRate = 0.5, #generation of new roots as [g-C g-C-1 yr-1]
-                     timeStep = 1, #time step in yr
-                      ){
-  return(rootMass*growthRate*timeStep)
-}
+##Check liveRoots
+#massLiveRoots(layerBottom = seq(5, 40, by=5), layerTop=seq(0, 35, by=5))
+#plot(massLiveRoots(layerBottom = seq(5, 40, by=5), layerTop=seq(0, 35, by=5)))
+#sum(massLiveRoots(layerBottom = seq(1, 40, by=1), layerTop=seq(0, 39, by=1))) == defaultParms$totalRootBiomass
 
-deadRoots <- function(rootMass,
-                      deathRate = 0.7,#turnover rate for roots as [g-C g-C-1 yr-1]
-                      timeStep = 1, #time step in yr
-){
-  return(rootMass*deathRate*timeStep)
-}
-
-organicCarbonChange <- function(pools, decayRates, inputs){
-  #Assume an independent pool structure
-  ans <- inputs-pools*decayRates
-  return(ans)
-}
-
-calculateLayers <- function(organic_mass, mineral_mass,
-                            organicPacking = 0.085 ,  # Organic Self Packing Densities: k1 g-C/cm3
-                            mineralPacking = 1.99    # Inorganic Self Packing Densities  k2 g-C/cm3
-){
-  ans <- data.frame(layerThickness=organic_mass/organicPacking+mineral_mass/mineralPacking)
-  ans$layerBottom <- cumsum(ans$layerThickness)
-  ans$layerTop <- c(0, ans$layerBottom[1:nrow(ans)])
-  return(ans)
-}
-
-#each cohort has a 1) current_year, 2) origin_year 3) fast_organic_mass 4) slow_organic_mass 5) mineral_mass 6) root_mass
-```
-
-```{r params}
-rootDepthMax <- 30 # Depth of the root zone in cm below surface
-totalRootBmass <- 0.3 # Total Root Biomass, g/cm2
-
-refractoryFrac <- 0.2 # Refractory Portion of organic production, g/g
-bgTurnover <- 0.5  # Below Ground Turnover Rate, 1/yr
-ssc <- 20 # Suspended Sediment Concentration, mg per liter
-depthBelowMHW <- 10 # Depth of Marsh Surface Below Mean High Water
-omDecayRate <- 0.8 # Labile organic matter decay rate, 1/yr
-coreYear <- 2015 # Core Collection Year CE
-rootShape <- "linear" # Could be linear, exponential, or custom
-
-organicPacking <- 0.085   # Organic Self Packing Densities: k1 g-C/cm3
-mineralPacking <- 1.99    # Inorganic Self Packing Densities  k2 g-C/cm3
-
-# Conversions and constants
-nTidesPerYear <- 704
-meanTidalHeight <- depthBelowMHW
-ssc_gPerCm2 <- ssc * 0.000001 # convert mg/l to grams/cm^2
-cumAnnWaterVol <- nTidesPerYear * meanTidalHeight # Cumulative water volume
-annSediment <- ssc_gPerCm2 * cumAnnWaterVol
-
-maxRootDensity <- totalRootBmass/organicPacking/rootDepthMax*2 # rootArea halve it, and then calculate density per cm slot g-C cm-2
+depthOfNotRootVolume <- function(nonRootVolume, shape='linear',
+                                 soilLength=1, soilWidth=1, #assume a 1x1 cm2 area
+                                 totalBiomassByArea = defaultParms$totalRootBiomass, 
+                                 rootDepthMax = defaultParms$rootDepthMax,
+                                 rootDensity = defaultParms$organicPacking){
  
+  totalRootMass <- soilLength*soilWidth*totalBiomassByArea
+  totalRootVolume <- totalRootMass/rootDensity
+  
+  if(totalRootVolume > soilLength*soilWidth*rootDepthMax){
+    stop('Bad root volume')
+  }
+  
+  if(shape == 'linear'){
+    rootWidth <- totalRootVolume*2/(rootDepthMax*soilLength)
+    #base width of nonRootVolume = totalWidth * depth / rootDepthMax
+    #Break into two shapes
+    #nonRootVolume = ((rootWidth/rootDepthMax*depth^2)/2 + depth*(soilWidth-rootWidth))*soilLength
+    #            0 = rootWidth / (2*rootDepthMax) * depth ^2 + 
+    #                   (soilWidth-rootWidth) * depth - nonRootVolume/soilLength ##solve for depth
+    coef1 <- rootWidth / (2*rootDepthMax)
+    coef2 <- soilWidth-rootWidth
+    coef3 <- -nonRootVolume/soilLength
+    ansDepth <- (-coef2 + sqrt(coef2^2-4*coef1*coef3))/(2*coef1)
+    behondRootZone <- nonRootVolume > soilLength*soilWidth*rootDepthMax - totalRootVolume
+    ansDepth[behondRootZone] <- (rootDepthMax +
+                            (nonRootVolume - soilLength*soilWidth*rootDepthMax + totalRootVolume ) /
+                              (soilLength*soilWidth)) [behondRootZone] #treat as a square
+    return(ansDepth)
+  }else{
+    stop('Unknown shape specified')
+  }
+}
+
+##Check depth of non root volue
+#tester <- depthOfNotRootVolume(nonRootVolume = 1:100)
+#plot(tester)
+##plot(tester[1:99] - tester[2:100])
+
+sedimentInputs <- function(times=NA){ #time currently ignored
+  ssc <- 20 # Suspended Sediment Concentration, mg per liter
+  depthBelowMHW <- 10 # Depth of Marsh Surface Below Mean High Water
+  nTidesPerYear <- 704
+  meanTidalHeight <- depthBelowMHW
+  ssc_gPerCm2 <- ssc * 0.000001 # convert mg/l to grams/cm^2
+  cumAnnWaterVol <- nTidesPerYear * meanTidalHeight # Cumulative water volume
+  annSediment <- ssc_gPerCm2 * cumAnnWaterVol #g-sediment per year
+  
+  return(data.frame(mineral_mass = annSediment))
+}
+
+nextCohort <- function(dt_yr=1, 
+                       massPools=data.frame(age=0, fast_OM=0, slow_OM=0, mineral=0,
+                                            layer_top=0, layer_bottom=0),
+                            topInputs_gPerYr = sedimentInputs,
+                            rootProfile_g = massLiveRoots,
+                            packing = list(organic = 0.085 ,  # Organic Self Packing Densities: k1 g-C/cm3
+                                        mineral = 1.99), # Inorganic Self Packing Densities  k2 g-C/cm3
+                            rootTurnover = 0.5,  # Below Ground Turnover Rate of roots, 1/yr
+                            rootOmFrac = list(fast=0.8, slow=0.2), # root allocation to om pools (labile, slow), g/g
+                            omDecayRate = list(fast=0.8, slow=0) # organic matter decay rate (labile, slow), 1/yr
+){
+  if(!all(c('age', 'fast_OM', 'slow_OM', 'mineral') %in% names(massPools))){
+    stop('Badly named massPools')
+  }
+  
+  #decay the OM pools and add dead roots
+  ans <- massPools %>% 
+    dplyr::select(age, fast_OM, slow_OM, mineral, layer_top, layer_bottom) %>%
+    mutate(age = age + dt_yr,
+           root_mass = massLiveRoots(layerTop = layer_top, 
+                                     layerBottom = layer_bottom)) %>%
+    mutate(fast_OM = fast_OM + 
+             root_mass * rootOmFrac$fast * rootTurnover * dt_yr -
+             fast_OM * omDecayRate$fast * dt_yr,
+           slow_OM = slow_OM + 
+             root_mass * rootOmFrac$slow * rootTurnover * dt_yr -
+             slow_OM * omDecayRate$slow * dt_yr,
+           mineral = mineral) %>% 
+    select(-layer_top, -layer_bottom) ##discard last year's layers
+  
+  #add sediments to the top
+  ans <- bind_rows(data.frame(age = 0, fast_OM= 0, slow_OM = 0, 
+                              mineral = (topInputs_gPerYr() * dt_yr)$mineral_mass),
+                   ans) %>%
+    arrange(age) %>% #make sure things are sorted by age
+    #calculate cumulative volumne of each pool
+    mutate(cumCohortVol = cumsum((fast_OM + slow_OM)*packing$organic + mineral*packing$mineral) ) %>%
+  #calculate depth profile
+    mutate(layer_bottom = depthOfNotRootVolume(nonRootVolume = cumCohortVol)) %>%
+    mutate(layer_top = c(0, layer_bottom[-length(layer_bottom)]))
+  
+  return(ans)
+}
+
 ```
 
-```{r}
+```{r runModel}
+cohortProfile <- nextCohort()
+for(ii in 1:200){
+  cohortProfile <- nextCohort(massPools=cohortProfile)
+}
+```
 
-rootDensity <- function(depth, maxRootDensity, maxRDepth){
-                   return(maxRootDensity * (1 - depth/maxRDepth))
-}
-  
-#rootDensity(depth=seq(0, 30, by=5),  maxRootDensity = maxRootDensity, maxRDepth=rootDepthMax)                        
-pools <-  list(fast=0, slow=0, mineral=annSediment)
-for(ii in 1:300){
-pools <- cohorts_per_year(y = pools,
-                 mineralInput = annSediment, 
-                 rootDepth = rootDepthMax, 
-                 rootMaxCoverage = maxRootDensity,
-                 rootDeath = bgTurnover, rootFast = 1 - refractoryFrac,
-                 fastDecay = omDecayRate, 
-                 OM_density = organicPacking, Mineral_density=mineralPacking,
-                 rootDensity = function(depth, maxRootDensity, maxRDepth){
-                   return(maxRootDensity * (1 - depth/maxRDepth))
-                 })
-}
+```{r plots}
+ggplot(cohortProfile %>%
+         gather(key='variable', value='value', -layer_top, -layer_bottom)) +
+  geom_line(aes(x=(layer_top+layer_bottom)/2, y=value)) +
+  facet_wrap(~variable, scales='free')
 
 ```
