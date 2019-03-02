@@ -283,18 +283,47 @@ ggplot(profile_by_depth) +
   geom_line(aes(x=(top+bottom)/2, y=age)) +
   geom_line(data=equProfile, aes(x=(layer_top+layer_bottom)/2, y=age), color='yellow', linetype=3)
 
-ggplot(profile_by_depth) +
-  geom_line(aes(x=(top+bottom)/2, y=SOM))
+ggplot(profile_by_depth %>%
+         gather(key='variable', value='value', SOM, bulk_density, fast_OM, slow_OM, mineral)) +
+  geom_line(aes(x=(top+bottom)/2, y=value)) +
+  facet_wrap(~variable, scales = 'free_y')
+```
 
-ggplot(profile_by_depth) +
-  geom_line(aes(x=(top+bottom)/2, y=bulk_density))
+```{r parameterRuns}
+parametersToRun <- expand.grid(rootDepthMax=c(15, 30, 60), 
+            totalRootBiomass=c(0.15, 0.3, 0.6),
+            rootTurnover=c(0.25, 0.5, 0.9),
+            rootOmFrac_fast=c(0.2, 0.4, 0.8),
+            omDecayRate_fast=c(0.2, 0.4, 0.8),
+            ssc=c(10, 20, 40),
+            depthBelowMHW=c(5, 10, 20)) %>%
+  filter(rootDepthMax*defaultConsts$packing$root/2 >
+           totalRootBiomass) %>% #check that we don't have above a max biomass per area
+  sample_n(size=60) %>%
+  #slice(c(20, 14, 93, 400, 3000, 12000, 10000)) %>% # nrow = 12 600
+  mutate(index = 1:n()) %>%
+  group_by_all() %>%
+  do((function(xx){
+    newParms <- list(rootDepthMax = xx$rootDepthMax, # Depth of the root zone in cm below surface
+                     totalRootBiomass = xx$totalRootBiomass, # Total Root Biomass, g/cm2
+                     rootTurnover = xx$rootTurnover,  # Below Ground Turnover Rate of roots, 1/yr
+                     rootOmFrac = list(fast=xx$rootOmFrac_fast, 
+                                       slow=1-xx$rootOmFrac_fast), # root allocation to om pools (labile, slow), g/g
+                     omDecayRate = list(fast=xx$omDecayRate_fast, slow=0), # organic matter decay rate (labile, slow), 1/yr
+                     ssc = xx$ssc, # Suspended Sediment Concentration, mg per liter
+                     depthBelowMHW = xx$depthBelowMHW)
+    return(runToMEM(parms = newParms, consts = defaultConsts, maxAge=1000))
+  })(.)) %>%
+  mutate('Total OM [g]' = fast_OM + slow_OM,
+         'Soil volume [cm3]' = (fast_OM + slow_OM) / defaultConsts$packing$organic +
+                       mineral/defaultConsts$packing$mineral,
+         'OM [g g-1]' = (fast_OM + slow_OM) / (fast_OM + slow_OM + mineral)) %>%
+  mutate('SOM [g-OM cm-3]' = `Total OM [g]` / `Soil volume [cm3]`)
 
-ggplot(profile_by_depth) +
-  geom_line(aes(x=(top+bottom)/2, y=fast_OM))
 
-ggplot(profile_by_depth) +
-  geom_line(aes(x=(top+bottom)/2, y=slow_OM))
-
-ggplot(profile_by_depth) +
-  geom_line(aes(x=(top+bottom)/2, y=mineral))
+ggplot(parametersToRun %>%
+         gather(key='variable', value='value', age:root_mass, `Total OM [g]`:`SOM [g-OM cm-3]`)) +
+  geom_line(aes(x=(layer_top+layer_bottom)/2, y=value, group=index), alpha=0.3) +
+  scale_y_log10() +
+  facet_wrap(~variable, scales='free')
 ```
