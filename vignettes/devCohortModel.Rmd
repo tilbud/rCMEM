@@ -61,8 +61,7 @@ depthOfNotRootVolume <- function(nonRootVolume, shape='linear',
   
   if(shape == 'linear'){
     rootWidth <- totalRootVolume*2/(rootDepthMax*soilLength)
-    #base width of nonRootVolume = totalWidth * depth / rootDepthMax
-    #Break into two shapes
+
     #nonRootVolume = ((rootWidth/rootDepthMax*depth^2)/2 + depth*(soilWidth-rootWidth))*soilLength
     #            0 = rootWidth / (2*rootDepthMax) * depth ^2 + 
     #                   (soilWidth-rootWidth) * depth - nonRootVolume/soilLength ##solve for depth
@@ -70,6 +69,8 @@ depthOfNotRootVolume <- function(nonRootVolume, shape='linear',
     coef2 <- soilWidth-rootWidth
     coef3 <- -nonRootVolume/soilLength
     ansDepth <- (-coef2 + sqrt(coef2^2-4*coef1*coef3))/(2*coef1)
+    
+    #correct for beyond root zone
     behondRootZone <- nonRootVolume > soilLength*soilWidth*rootDepthMax - totalRootVolume
     ansDepth[behondRootZone] <- (rootDepthMax +
                             (nonRootVolume - soilLength*soilWidth*rootDepthMax + totalRootVolume ) /
