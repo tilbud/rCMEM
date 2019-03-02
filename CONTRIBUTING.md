@@ -35,7 +35,8 @@ Descriptions of functions, function parameters, etc. stored in `man/` directory.
 Make sure that (if you’re using Studio) under Build > Configure Build Tools, “Generate documentation with ROxygen is checked.
 
 *Resources*:  
-[Hadley Wickham, R packages objection documentation](http://r-pkgs.had.co.nz/man.html)
+[Hadley Wickham, R packages objection documentation](http://r-pkgs.had.co.nz/man.html)  
+[Hilary Parker, Writing an R package from scratch](https://hilaryparker.com/2014/04/29/writing-an-r-package-from-scratch/)  
 
 
 ### Rbuildignore
