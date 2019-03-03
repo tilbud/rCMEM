@@ -2,9 +2,12 @@
 title: "Work up cohort model"
 author: "K Todd-Brown (ktoddbrown@gmail.com)"
 date: "12/9/2018"
-output: html_document
+output: 
+  html_document: 
+    toc: yes
 ---
 
+# Set up
 ```{r setUp}
 library(tidyverse)
 
@@ -26,6 +29,7 @@ defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
                       modernAge = NA) #max age in modern soil profile
 ```
 
+## Descript root profile
 ```{r functionRootProfile}
 
 #return the mass of the live roots between two layers
@@ -68,6 +72,8 @@ massLiveRoots <- function(layerBottom, layerTop, parms, consts ){
 #sum(massLiveRoots(layerBottom = seq(1, 40, by=1), layerTop=seq(0, 39, by=1))) == defaultParms$totalRootBiomass
 
 ```
+
+## Function describing depth of given soil volume
 ```{r functionFindVol}
 depthOfNotRootVolume <- function(nonRootVolume, parms, consts){
  
@@ -120,6 +126,8 @@ depthOfNotRootVolume <- function(nonRootVolume, parms, consts){
 #plot(tester)
 ##plot(tester[1:99] - tester[2:100])
 ```
+
+## Sediment input
 ```{r functionSedIn}
 sedimentInputs <- function(yrForward=NA, #time currently ignored
                            marshElevation = NA, #marshElevation
@@ -185,6 +193,8 @@ sedimentInputs <- function(yrForward=NA, #time currently ignored
 # }
 # sedimentInputs(yrForward = 1, marshElevation = 31.74, consts = constRaising, parms = defaultParms)
 ```
+
+## Step soil profile forward
 
 ```{r functionStepCohort}
 nextCohort <- function(massPools=data.frame(age=0, fast_OM=0, slow_OM=0, mineral=0,
@@ -256,6 +266,7 @@ nextCohort <- function(massPools=data.frame(age=0, fast_OM=0, slow_OM=0, mineral
 
 ```
 
+## Run profile forward
 ```{r functionMEM}
 
 runToMEM <- function(cohortStep = nextCohort, parms, consts, 
@@ -281,14 +292,17 @@ runToMEM <- function(cohortStep = nextCohort, parms, consts,
   }
   return(cohortProfile)
 }
+```
+
+# Plot equlibrium profiles
+
+```{r runMEM}
 
 tick <- Sys.time()
 equProfile <- runToMEM(consts = defaultConsts, parms=defaultParms)
 tock <- Sys.time() - tick
 print(tock)
-```
 
-```{r plots}
 ggplot(equProfile %>%
          gather(key='variable', value='value', -layer_top, -layer_bottom)) +
   geom_line(aes(x=(layer_top+layer_bottom)/2, y=value)) +
@@ -299,9 +313,12 @@ ggplot(equProfile) +
 
 ```
 
+## Example converting cohort to uniform depth
+
 ```{r convertToUnifDepth}
 sampleStep<- 5
-profile_by_depth <- data.frame(top = seq(0, floor(max(equProfile$layer_top) - sampleStep), by=sampleStep), 
+profile_by_depth <- data.frame(top = seq(0, floor(max(equProfile$layer_top) - sampleStep),
+                                         by=sampleStep), 
            bottom = seq(sampleStep, floor(max(equProfile$layer_top)), by=sampleStep)) %>%
   group_by(top, bottom) %>%
   mutate(age = weighted.mean(equProfile$age, 
@@ -341,6 +358,8 @@ ggplot(profile_by_depth %>%
   facet_wrap(~variable, scales = 'free_y')
 ```
 
+## Parameter exploration run
+
 ```{r parameterRuns}
 parametersToRun <- expand.grid(rootDepthMax=c(15, 30, 60), 
             totalRootBiomass=c(0.15, 0.3, 0.6),
@@ -374,19 +393,20 @@ parametersToRun <- expand.grid(rootDepthMax=c(15, 30, 60),
 
 
 ggplot(parametersToRun %>%
-         gather(key='variable', value='value', age:root_mass, `Total OM [g]`:`SOM [g-OM cm-3]`)) +
+         gather(key='variable', value='value', age:mineral, root_mass, `Total OM [g]`:`SOM [g-OM cm-3]`)) +
   geom_line(aes(x=(layer_top+layer_bottom)/2, y=value, group=index), alpha=0.3) +
   scale_y_log10() +
   facet_wrap(~variable, scales='free')
 ```
 
+# Run with a constant seal level
 ```{r steadySealevel}
 steadySeaLevel <- equProfile
 
 constSealevel <- defaultConsts
 constSealevel$sedimentInputType <- c('constant', 'relative', 'dynamic')[2]
-constSealevel$modernAge <- max(startingProfile$age)
-constSealevel$meanHighWaterElevation <- max(startingProfile$layer_bottom) + defaultParms$depthBelowMHW
+constSealevel$modernAge <- max(equProfile$age)
+constSealevel$meanHighWaterElevation <- max(equProfile$layer_bottom) + defaultParms$depthBelowMHW
 
 for(ii in 1:100){
   steadySeaLevel <- nextCohort(massPools = steadySeaLevel, 
@@ -409,14 +429,15 @@ ggplot(steadySeaLevel %>%
   facet_wrap(~variable, scales='free')
 ```
 
+# Run with a raising sea level
 ```{r rasingSealevel}
 raisingSeaLevel <- equProfile
 
 constRaising <- defaultConsts
 constRaising$sedimentInputType <- c('constant', 'relative', 'dynamic')[3]
-constRaising$modernAge <- max(startingProfile$age)
+constRaising$modernAge <- max(equProfile$age)
 constRaising$meanHighWaterElevation <- function(year){
-  return(max(startingProfile$layer_bottom) + 0.03*year)
+  return(max(equProfile$layer_bottom) + 0.03*year)
 }
 
 for(ii in 1:100){
