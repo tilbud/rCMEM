@@ -1,4 +1,4 @@
-depthIntervalsToAgeCohorts <- function(inputDF = tableToMessWith,
+depthIntervalsToAgeCohorts <- function(inputDF,
                                        ageColumn = "horizonAge_yrs") {
   # This function takes a table with an age depth model as an attribute,
   # depthMin and depthMax need to be already present.
@@ -56,10 +56,11 @@ depthIntervalsToAgeCohorts <- function(inputDF = tableToMessWith,
   }
   # Clean up output table and make sure all needed columns are present and in order.
   outputDF <- outputDF %>%
-    mutate(cohort = 1:nCohorts,
+    mutate(cohort = nCohorts:1,
+           age_from_surface = 1:nCohorts,
            depthMax = cohort_depth_max,
-           depthMin = ifelse(cohort == 1, 0, lag(depthMax))
+           depthMin = ifelse(age_from_surface == 1, 0, lag(depthMax))
     ) %>%
-    select(cohort, depthMin, depthMax, everything())
+    select(cohort, age_from_surface, depthMin, depthMax, everything())
   return(outputDF)
 }

@@ -420,7 +420,7 @@ fillDepthsUsingSimpleCTM <- function(
         ggtitle("Years of Input per 1 cm section\nor # of cohorts per section")
       
       # Set output pdf location, name, and dimensions.
-      jpeg(paste("temp/", plotName, ".jpg", sep=""), width=11, height=8.5, res=300)
+      jpeg(paste("temp/", plotName, ".jpg", sep=""), width=11, height=8.5, units="in", res=300)
       
       # Arrange all tables and figures into a single plot and print it to pdf.
       outputFullTable <- grid.arrange(nrow = 4, 
