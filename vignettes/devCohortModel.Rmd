@@ -399,7 +399,7 @@ ggplot(parametersToRun %>%
   facet_wrap(~variable, scales='free')
 ```
 
-# Run with a constant seal level
+# Run with a constant sea level
 ```{r steadySealevel}
 steadySeaLevel <- equProfile
 
@@ -412,6 +412,8 @@ for(ii in 1:100){
   steadySeaLevel <- nextCohort(massPools = steadySeaLevel, 
                              parms=defaultParms, consts = constSealevel)  
 }
+
+print(sprintf('Change in marsh elevation %.4f cm',max(steadySeaLevel$layer_bottom) - max(equProfile$layer_bottom)))
 
 ggplot(steadySeaLevel) +
   geom_line(aes(x=(layer_top+layer_bottom)/2, y=age)) +
@@ -444,6 +446,8 @@ for(ii in 1:100){
   raisingSeaLevel <- nextCohort(massPools = raisingSeaLevel, 
                              parms=defaultParms, consts = constRaising)  
 }
+
+print(sprintf('Change in marsh elevation %.4f cm',max(raisingSeaLevel$layer_bottom) - max(equProfile$layer_bottom)))
 
 ggplot(raisingSeaLevel) +
   geom_line(aes(x=(layer_top+layer_bottom)/2, y=age)) +
