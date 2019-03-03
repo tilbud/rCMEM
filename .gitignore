@@ -38,3 +38,6 @@ rsconnect/
 
 #ignore folder files from macs
 .DS_Store
+
+# ignore temp files
+/temp
