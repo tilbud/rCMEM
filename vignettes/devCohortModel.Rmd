@@ -21,10 +21,12 @@ defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
                       packing = list(root = 0.085, #density of roots g-C/cm3
                                      organic = 0.085 ,  # Organic Self Packing Densities: k1 g-C/cm3
                                      mineral = 1.99), # Inorganic Self Packing Densities  k2 g-C/cm3
-                      nTidesPerYear = 704) #number of high tides per year
+                      nTidesPerYear = 704, #number of high tides per year
+                      sedimentInputType = c('constant', 'relative', 'dynamic')[1],
+                      modernAge = NA) #max age in modern soil profile
 ```
 
-```{r functions}
+```{r functionRootProfile}
 
 #return the mass of the live roots between two layers
 massLiveRoots <- function(layerBottom, layerTop, parms, consts ){
@@ -65,6 +67,8 @@ massLiveRoots <- function(layerBottom, layerTop, parms, consts ){
 #plot(massLiveRoots(layerBottom = seq(5, 40, by=5), layerTop=seq(0, 35, by=5)))
 #sum(massLiveRoots(layerBottom = seq(1, 40, by=1), layerTop=seq(0, 39, by=1))) == defaultParms$totalRootBiomass
 
+```
+```{r functionFindVol}
 depthOfNotRootVolume <- function(nonRootVolume, parms, consts){
  
   if(!all(c('soilLength', 'soilWidth', 'shape', 'packing') %in% names(consts))){
@@ -115,27 +119,74 @@ depthOfNotRootVolume <- function(nonRootVolume, parms, consts){
 #tester <- depthOfNotRootVolume(nonRootVolume = 1:100)
 #plot(tester)
 ##plot(tester[1:99] - tester[2:100])
-
-sedimentInputs <- function(times=NA, #time currently ignored
+```
+```{r functionSedIn}
+sedimentInputs <- function(yrForward=NA, #time currently ignored
+                           marshElevation = NA, #marshElevation
                            parms, consts){ 
-  if(!all(c('ssc', 'depthBelowMHW') %in% names(parms))){
+  ##Check constants
+  if(!all(c('nTidesPerYear', 'sedimentInputType') %in% names(consts))){
+    stop('Can not find expected constant names')
+  }
+  inputType <- consts$sedimentInputType # c('constant', 'relative', 'dynamic')[1]
+  
+  if(!all(c('ssc') %in% names(parms))){
     stop('Can not find expected parameter names')
   }
   ssc <- parms$ssc # Suspended Sediment Concentration, mg per liter
-  depthBelowMHW <- parms$depthBelowMHW # Depth of Marsh Surface Below Mean High Water
   
-  if(!all(c('nTidesPerYear') %in% names(consts))){
-    stop('Can not find expected constant names')
+  ##Pull the depth below mean high water
+  depthBelowMHW <- NA
+  if(inputType == 'constant' & ('depthBelowMHW' %in% names(parms))){
+    depthBelowMHW <- parms$depthBelowMHW # Depth of Marsh Surface Below Mean High Water
+  }else{
+    if(!'meanHighWaterElevation' %in% names(consts)){
+      stop('Missing meanHighWaterElevation from consts list')
+    }
   }
+  
+  if(inputType == 'relative'){
+    #print('relative')
+    depthBelowMHW <- max(0, consts$meanHighWaterElevation - marshElevation)
+  }
+  
+  if(inputType == 'dynamic' & all(is.finite(yrForward)) & is.function(consts$meanHighWaterElevation)){
+    #print('dynamic')
+    depthBelowMHW <- max(0, consts$meanHighWaterElevation(yrForward) - marshElevation)
+  }
+  
+  if(is.na(depthBelowMHW)){
+    stop('Bad depth below MHW defined.')
+  }
+ 
+  #print(depthBelowMHW)
   
   meanTidalHeight <- depthBelowMHW
   ssc_gPerCm2 <- ssc * 0.000001 # convert mg/l to grams/cm^2
   cumAnnWaterVol <- consts$nTidesPerYear * meanTidalHeight # Cumulative water volume
   annSediment <- ssc_gPerCm2 * cumAnnWaterVol #g-sediment per year
   
-  return(data.frame(mineral_mass = annSediment))
+  return(annSediment)
 }
 
+#sedimentInputs(consts = defaultConsts, parms = defaultParms)
+
+# constSealevel <- defaultConsts
+# constSealevel$sedimentInputType <- c('constant', 'relative', 'dynamic')[2]
+# constSealevel$modernAge <- 99
+# constSealevel$meanHighWaterElevation <- 31.74 + defaultParms$depthBelowMHW
+# sedimentInputs(marshElevation = 31.74, consts = constSealevel, parms = defaultParms)
+
+# constRaising <- defaultConsts
+# constRaising$sedimentInputType <- c('constant', 'relative', 'dynamic')[3]
+# constRaising$modernAge <- max(startingProfile$age)
+# constRaising$meanHighWaterElevation <- function(year){
+#   return(31.74 + 0.03*year)
+# }
+# sedimentInputs(yrForward = 1, marshElevation = 31.74, consts = constRaising, parms = defaultParms)
+```
+
+```{r functionStepCohort}
 nextCohort <- function(massPools=data.frame(age=0, fast_OM=0, slow_OM=0, mineral=0,
                                             layer_top=0, layer_bottom=0),
                        topInputs_gPerYr = sedimentInputs,
@@ -183,13 +234,14 @@ nextCohort <- function(massPools=data.frame(age=0, fast_OM=0, slow_OM=0, mineral
              fast_OM * omDecayRate$fast * dt_yr,
            slow_OM = slow_OM + 
              root_mass * rootOmFrac$slow * rootTurnover * dt_yr -
-             slow_OM * omDecayRate$slow * dt_yr) %>% 
-    select(-layer_top, -layer_bottom) ##discard last year's layers
+             slow_OM * omDecayRate$slow * dt_yr)
   
   
   ans <- bind_rows(data.frame(age = 0, fast_OM= 0, slow_OM = 0, 
-                              mineral = (topInputs_gPerYr(parms = parms, consts = consts) *
-                                           dt_yr)$mineral_mass),
+                              mineral = topInputs_gPerYr(yrForward = max(massPools$age) - consts$modernAge,
+                                marshElevation = max(massPools$layer_bottom),
+                                                         parms = parms, 
+                                                         consts = consts) * dt_yr),
                    ans) %>% #add sediments to the top
     arrange(age) %>% #make sure things are sorted by age
     #calculate cumulative volumne of each pool
@@ -204,7 +256,7 @@ nextCohort <- function(massPools=data.frame(age=0, fast_OM=0, slow_OM=0, mineral
 
 ```
 
-```{r runModel}
+```{r functionMEM}
 
 runToMEM <- function(cohortStep = nextCohort, parms, consts, 
                      maxAge = 200, relTol = 1e-6, absTol = 1e-8){
@@ -325,5 +377,65 @@ ggplot(parametersToRun %>%
          gather(key='variable', value='value', age:root_mass, `Total OM [g]`:`SOM [g-OM cm-3]`)) +
   geom_line(aes(x=(layer_top+layer_bottom)/2, y=value, group=index), alpha=0.3) +
   scale_y_log10() +
+  facet_wrap(~variable, scales='free')
+```
+
+```{r steadySealevel}
+steadySeaLevel <- equProfile
+
+constSealevel <- defaultConsts
+constSealevel$sedimentInputType <- c('constant', 'relative', 'dynamic')[2]
+constSealevel$modernAge <- max(startingProfile$age)
+constSealevel$meanHighWaterElevation <- max(startingProfile$layer_bottom) + defaultParms$depthBelowMHW
+
+for(ii in 1:100){
+  steadySeaLevel <- nextCohort(massPools = steadySeaLevel, 
+                             parms=defaultParms, consts = constSealevel)  
+}
+
+ggplot(steadySeaLevel) +
+  geom_line(aes(x=(layer_top+layer_bottom)/2, y=age)) +
+  geom_line(data=equProfile, aes(x=(layer_top+layer_bottom)/2, y=age), color='grey')
+
+ggplot(steadySeaLevel %>%
+         gather(key='variable', value='value', fast_OM:mineral, root_mass)) +
+  geom_line(aes(x=(layer_top+layer_bottom)/2,# - 
+                  #max(layer_bottom) + max(startingProfile$layer_bottom),
+                y=value/(layer_bottom-layer_top))) +
+  geom_line( data = equProfile %>%
+               gather(key='variable', value='value', fast_OM:mineral, root_mass),
+         aes(x=(layer_top+layer_bottom)/2,
+                y=value/(layer_bottom-layer_top)), color='grey') +
+  facet_wrap(~variable, scales='free')
+```
+
+```{r rasingSealevel}
+raisingSeaLevel <- equProfile
+
+constRaising <- defaultConsts
+constRaising$sedimentInputType <- c('constant', 'relative', 'dynamic')[3]
+constRaising$modernAge <- max(startingProfile$age)
+constRaising$meanHighWaterElevation <- function(year){
+  return(max(startingProfile$layer_bottom) + 0.03*year)
+}
+
+for(ii in 1:100){
+  raisingSeaLevel <- nextCohort(massPools = raisingSeaLevel, 
+                             parms=defaultParms, consts = constRaising)  
+}
+
+ggplot(raisingSeaLevel) +
+  geom_line(aes(x=(layer_top+layer_bottom)/2, y=age)) +
+  geom_line(data=equProfile, aes(x=(layer_top+layer_bottom)/2, y=age), color='grey')
+
+ggplot(raisingSeaLevel %>%
+         gather(key='variable', value='value', fast_OM:mineral, root_mass)) +
+  geom_line(aes(x=(layer_top+layer_bottom)/2,# - 
+                  #max(layer_bottom) + max(startingProfile$layer_bottom),
+                y=value/(layer_bottom-layer_top))) +
+  geom_line( data = equProfile %>%
+               gather(key='variable', value='value', fast_OM:mineral, root_mass),
+         aes(x=(layer_top+layer_bottom)/2,
+                y=value/(layer_bottom-layer_top)), color='grey') +
   facet_wrap(~variable, scales='free')
 ```
