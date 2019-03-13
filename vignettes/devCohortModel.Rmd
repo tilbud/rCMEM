@@ -12,7 +12,7 @@ output:
 library(tidyverse)
 
 defaultParms <- list(rootDepthMax = 30, # Depth of the root zone in cm below surface
-                     totalRootBiomass = 0.3, # Total Root Biomass, g/cm2
+                     totalRootBiomass = 0.3, # 0.3 Total Root Biomass, g/cm2
                      rootTurnover = 0.5,  # Below Ground Turnover Rate of roots, 1/yr
                      rootOmFrac = list(fast=0.8, slow=0.2), # root allocation to om pools (labile, slow), g/g
                      omDecayRate = list(fast=0.8, slow=0), # organic matter decay rate (labile, slow), 1/yr
@@ -53,6 +53,8 @@ massLiveRoots <- function(layerBottom, layerTop, parms, consts ){
   layerBottom[layerBottom > rootDepthMax] <- rootDepthMax
   layerTop[layerTop > rootDepthMax] <- rootDepthMax
   
+     #TODO add dynamic parabolic inputs to determin totalRootMass
+  
   if(consts$shape == 'linear'){
     #mass_per_depth = slope * depth + intercept
     #totalRootMass = 1/2 * rootDepthMax * intecept ==> intercept = 2 * totalRootMass / rootDepthMax
@@ -62,6 +64,7 @@ massLiveRoots <- function(layerBottom, layerTop, parms, consts ){
       totalRootMass *(layerBottom ^2-layerTop^2)/rootDepthMax^2
     return(rootMass)
   }else{
+ 
     stop('Unknown shape specified')
   }
 }
@@ -442,6 +445,12 @@ constRaising$meanHighWaterElevation <- function(year){
   return(max(equProfile$layer_bottom) + 0.03*year)
 }
 
+parms.df <- defaultParms
+parms.df$totalRootBiomass <- function(meanHighWaterElevation,
+                                      changeInMarshElevation= max(raisingSeaLevel$layer_bottom) -
+                                                                      max(equProfile$layer_bottom)){
+  #something here calculating the root biomass based on parabolic relationships
+                                                                      }
 for(ii in 1:100){
   raisingSeaLevel <- nextCohort(massPools = raisingSeaLevel, 
                              parms=defaultParms, consts = constRaising)  
