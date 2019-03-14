@@ -68,13 +68,13 @@ addCohort <- function(massPools=data.frame(age=0, fast_OM=0, slow_OM=0, mineral=
     dplyr::mutate(layer_bottom = depthOfNotRootVolume(nonRootVolume = cumCohortVol,
                                                       totalRootMass_per_area =totalRootMass_per_area, 
                                                       rootDepthMax = rootDepthMax,
-                                                      parms = parms, consts = consts)) %>%
+                                                      consts = consts)) %>%
     dplyr::mutate(layer_top = c(0, layer_bottom[-length(layer_bottom)])) %>%
     dplyr::mutate(root_mass = massLiveRoots(layerBottom = layer_bottom,
                                             layerTop = layer_top,
                                             totalRootMass_per_area =totalRootMass_per_area, 
                                             rootDepthMax = rootDepthMax,
-                                            parms = parms, consts = consts))
+                                            consts = consts))
   
   return(ans)
 }
