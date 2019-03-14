@@ -20,280 +20,75 @@ defaultParms <- list(rootDepthMax = 30, # Depth of the root zone in cm below sur
                      depthBelowMHW = 10) # Depth of Marsh Surface Below Mean High Water
 
 defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
-                      shape='linear', #root weight distribution
+                      shape='linear', #root mass distribution
                       packing = list(root = 0.085, #density of roots g-C/cm3
                                      organic = 0.085 ,  # Organic Self Packing Densities: k1 g-C/cm3
                                      mineral = 1.99), # Inorganic Self Packing Densities  k2 g-C/cm3
                       nTidesPerYear = 704, #number of high tides per year
                       sedimentInputType = c('constant', 'relative', 'dynamic')[1],
                       modernAge = NA) #max age in modern soil profile
+
+source('../R/massLiveRoots.R')
+source('../R/depthOfNonRootVolume.R')
+source('../R/addCohort.R')
+source('../R/sedimentInputs.R')
+source('../R/addCohort.R')
 ```
 
-## Descript root profile
+## Test root profile
 ```{r functionRootProfile}
-
-#return the mass of the live roots between two layers
-massLiveRoots <- function(layerBottom, layerTop, parms, consts ){
-  
-  if(!all(c('soilLength', 'soilWidth') %in% names(consts))){
-    stop('Can not find all constants.')
-  }
-  soilLength <- consts$soilLength
-  soilWidth <- consts$soilWidth
-  
-  if(!all(c('totalRootBiomass', 'rootDepthMax') %in% names(parms))){
-    stop('Can not find all parameters.')
-  }
-  totalBiomassByArea <- parms$totalRootBiomass
-  rootDepthMax <- parms$rootDepthMax
-  
-  totalRootMass <- soilLength*soilWidth*totalBiomassByArea
-  
-  ##reset the layers that are beyond the root inputs to have 0 depths
-  layerBottom[layerBottom > rootDepthMax] <- rootDepthMax
-  layerTop[layerTop > rootDepthMax] <- rootDepthMax
-  
-     #TODO add dynamic parabolic inputs to determin totalRootMass
-  
-  if(consts$shape == 'linear'){
-    #mass_per_depth = slope * depth + intercept
-    #totalRootMass = 1/2 * rootDepthMax * intecept ==> intercept = 2 * totalRootMass / rootDepthMax
-    #slope = - intercept/rootDepthMax
-    #mass = integral(mass_per_depth, depth)
-    rootMass <- 2*totalRootMass*(layerBottom-layerTop)/rootDepthMax - 
-      totalRootMass *(layerBottom ^2-layerTop^2)/rootDepthMax^2
-    return(rootMass)
-  }else{
- 
-    stop('Unknown shape specified')
-  }
-}
-
 ##Check liveRoots
-#massLiveRoots(layerBottom = seq(5, 40, by=5), layerTop=seq(0, 35, by=5))
-#plot(massLiveRoots(layerBottom = seq(5, 40, by=5), layerTop=seq(0, 35, by=5)))
-#sum(massLiveRoots(layerBottom = seq(1, 40, by=1), layerTop=seq(0, 39, by=1))) == defaultParms$totalRootBiomass
+testRoots <- massLiveRoots(layerBottom = seq(5, 40, by=5), layerTop=seq(0, 35, by=5),
+                    totalRootMass_per_area = defaultParms$totalRootBiomass,
+                    rootDepthMax=defaultParms$rootDepthMax,
+               consts=defaultConsts)
+plot(x=1/2*(seq(5, 40, by=5) + seq(0, 35, by=5)), y=testRoots)
 
+paste('Conservation of mass is: ', sum(testRoots) - defaultParms$totalRootBiomass*defaultConsts$soilLength*defaultConsts$soilWidth < 1e-5)
 ```
 
-## Function describing depth of given soil volume
+## Test depth of given soil volume
 ```{r functionFindVol}
-depthOfNotRootVolume <- function(nonRootVolume, parms, consts){
- 
-  if(!all(c('soilLength', 'soilWidth', 'shape', 'packing') %in% names(consts))){
-    stop('Can not find all constants.')
-  }
-  soilLength <- consts$soilLength
-  soilWidth <- consts$soilWidth
-  rootDensity <- consts$packing$root
-  shape <- consts$shape
-  
-  if(!all(c('rootDepthMax', 'totalRootBiomass') %in% names(parms))){
-    stop('Can not find all expected parameters.')
-  }
-  rootDepthMax <- parms$rootDepthMax
-  totalBiomassByArea <- parms$totalRootBiomass
-  
-  ####
-  totalRootMass <- soilLength*soilWidth*totalBiomassByArea
-  totalRootVolume <- totalRootMass/rootDensity
-  
-  if(totalRootVolume > soilLength*soilWidth*rootDepthMax){
-    stop('Bad root volume')
-  }
-  
-  if(shape == 'linear'){
-    rootWidth <- totalRootVolume*2/(rootDepthMax*soilLength)
-
-    #nonRootVolume = ((rootWidth/rootDepthMax*depth^2)/2 + depth*(soilWidth-rootWidth))*soilLength
-    #            0 = rootWidth / (2*rootDepthMax) * depth ^2 + 
-    #                   (soilWidth-rootWidth) * depth - nonRootVolume/soilLength ##solve for depth
-    coef1 <- rootWidth / (2*rootDepthMax)
-    coef2 <- soilWidth-rootWidth
-    coef3 <- -nonRootVolume/soilLength
-    ansDepth <- (-coef2 + sqrt(coef2^2-4*coef1*coef3))/(2*coef1)
-    
-    #correct for beyond root zone
-    behondRootZone <- nonRootVolume > soilLength*soilWidth*rootDepthMax - totalRootVolume
-    ansDepth[behondRootZone] <- (rootDepthMax +
-                            (nonRootVolume - soilLength*soilWidth*rootDepthMax + totalRootVolume ) /
-                              (soilLength*soilWidth)) [behondRootZone] #treat as a square
-    return(ansDepth)
-  }else{
-    stop('Unknown shape specified')
-  }
-}
-
 ##Check depth of non root volue
-#tester <- depthOfNotRootVolume(nonRootVolume = 1:100)
-#plot(tester)
-##plot(tester[1:99] - tester[2:100])
+testDepth <- depthOfNotRootVolume(nonRootVolume = 1:100,
+                                  totalRootMass_per_area = defaultParms$totalRootBiomass,
+                    rootDepthMax=defaultParms$rootDepthMax, const=defaultConsts)
+plot(testDepth)
+plot(testDepth[1:99] - testDepth[2:100])
 ```
 
 ## Sediment input
 ```{r functionSedIn}
-sedimentInputs <- function(yrForward=NA, #time currently ignored
-                           marshElevation = NA, #marshElevation
-                           parms, consts){ 
-  ##Check constants
-  if(!all(c('nTidesPerYear', 'sedimentInputType') %in% names(consts))){
-    stop('Can not find expected constant names')
-  }
-  inputType <- consts$sedimentInputType # c('constant', 'relative', 'dynamic')[1]
-  
-  if(!all(c('ssc') %in% names(parms))){
-    stop('Can not find expected parameter names')
-  }
-  ssc <- parms$ssc # Suspended Sediment Concentration, mg per liter
-  
-  ##Pull the depth below mean high water
-  depthBelowMHW <- NA
-  if(inputType == 'constant' & ('depthBelowMHW' %in% names(parms))){
-    depthBelowMHW <- parms$depthBelowMHW # Depth of Marsh Surface Below Mean High Water
-  }else{
-    if(!'meanHighWaterElevation' %in% names(consts)){
-      stop('Missing meanHighWaterElevation from consts list')
-    }
-  }
-  
-  if(inputType == 'relative'){
-    #print('relative')
-    depthBelowMHW <- max(0, consts$meanHighWaterElevation - marshElevation)
-  }
-  
-  if(inputType == 'dynamic' & all(is.finite(yrForward)) & is.function(consts$meanHighWaterElevation)){
-    #print('dynamic')
-    depthBelowMHW <- max(0, consts$meanHighWaterElevation(yrForward) - marshElevation)
-  }
-  
-  if(is.na(depthBelowMHW)){
-    stop('Bad depth below MHW defined.')
-  }
- 
-  #print(depthBelowMHW)
-  
-  meanTidalHeight <- depthBelowMHW
-  ssc_gPerCm2 <- ssc * 0.000001 # convert mg/l to grams/cm^2
-  cumAnnWaterVol <- consts$nTidesPerYear * meanTidalHeight # Cumulative water volume
-  annSediment <- ssc_gPerCm2 * cumAnnWaterVol #g-sediment per year
-  
-  return(annSediment)
-}
+#constant input of sediment
+defaultSedIn <- sedimentInputs(ssc = defaultParms$ssc, # Suspended Sediment Concentration, mg per liter
+               meanTidalHeight = defaultParms$depthBelowMHW, #mean tide height above marsh
+               parms=NULL, consts=defaultConsts)
 
-#sedimentInputs(consts = defaultConsts, parms = defaultParms)
+#constant sea level try 31.74 for default marshElevation
+#depthBelowMHW <- max(0, consts$meanHighWaterElevation - marshElevation)
 
-# constSealevel <- defaultConsts
-# constSealevel$sedimentInputType <- c('constant', 'relative', 'dynamic')[2]
-# constSealevel$modernAge <- 99
-# constSealevel$meanHighWaterElevation <- 31.74 + defaultParms$depthBelowMHW
-# sedimentInputs(marshElevation = 31.74, consts = constSealevel, parms = defaultParms)
+#raising sea level
+#depthBelowMHW <- max(0, (31.74 + 0.03 * yrForward) - marshElevation)
 
-# constRaising <- defaultConsts
-# constRaising$sedimentInputType <- c('constant', 'relative', 'dynamic')[3]
-# constRaising$modernAge <- max(startingProfile$age)
-# constRaising$meanHighWaterElevation <- function(year){
-#   return(31.74 + 0.03*year)
-# }
-# sedimentInputs(yrForward = 1, marshElevation = 31.74, consts = constRaising, parms = defaultParms)
+paste('Sediment input rate with default parameters: ', defaultSedIn, ' g yr-1')
 ```
 
 ## Step soil profile forward
 
 ```{r functionStepCohort}
-nextCohort <- function(massPools=data.frame(age=0, fast_OM=0, slow_OM=0, mineral=0,
-                                            layer_top=0, layer_bottom=0),
-                       topInputs_gPerYr = sedimentInputs,
-                       rootProfile_g = massLiveRoots,
-                       parms,
-                       consts, dt_yr=1 ){
-  if(!all(c('age', 'fast_OM', 'slow_OM', 'mineral') %in% names(massPools))){
-    stop('Badly named massPools')
-  }
-  
-  if(!all(c( 'rootTurnover', 'rootOmFrac', 'omDecayRate') %in% names(parms))){
-    stop('Can not find expected parameters.')
-  }
-  rootTurnover <- parms$rootTurnover
-  rootOmFrac <- parms$rootOmFrac
-  omDecayRate <- parms$omDecayRate
-  
-  if(!all(c('packing') %in% names(consts))){
-    stop('Can not find expected constants.')
-  }
-  
-  packing <- consts$packing
-  
-  if(!all(c('organic', 'mineral') %in% names(packing))){
-    stop('Can not find expected packing densities.')
-  }
-  
-  if(!all(c('fast', 'slow') %in% names(rootOmFrac))){
-    stop('Can not find expected root fraction splits.')
-  }
-  
-  if(!all(c('fast', 'slow') %in% names(omDecayRate))){
-    stop('Can not find expected organic matter decay rates.')
-  }
-  
-  #decay the OM pools and add dead roots
-  ans <- massPools %>% 
-    dplyr::select(age, fast_OM, slow_OM, mineral, layer_top, layer_bottom) %>%
-    mutate(age = age + dt_yr,
-           root_mass = rootProfile_g(layerTop = layer_top, layerBottom = layer_bottom,
-                                     parms = parms,
-                                     consts = consts)) %>%
-    mutate(fast_OM = fast_OM + 
-             root_mass * rootOmFrac$fast * rootTurnover * dt_yr -
-             fast_OM * omDecayRate$fast * dt_yr,
-           slow_OM = slow_OM + 
-             root_mass * rootOmFrac$slow * rootTurnover * dt_yr -
-             slow_OM * omDecayRate$slow * dt_yr)
-  
-  
-  ans <- bind_rows(data.frame(age = 0, fast_OM= 0, slow_OM = 0, 
-                              mineral = topInputs_gPerYr(yrForward = max(massPools$age) - consts$modernAge,
-                                marshElevation = max(massPools$layer_bottom),
-                                                         parms = parms, 
-                                                         consts = consts) * dt_yr),
-                   ans) %>% #add sediments to the top
-    arrange(age) %>% #make sure things are sorted by age
-    #calculate cumulative volumne of each pool
-    mutate(cumCohortVol = cumsum( (fast_OM + slow_OM)*packing$organic + mineral*packing$mineral )) %>%
-  #calculate depth profile
-    mutate(layer_bottom = depthOfNotRootVolume(nonRootVolume = cumCohortVol,
-                                               parms = parms, consts = consts)) %>%
-    mutate(layer_top = c(0, layer_bottom[-length(layer_bottom)]))
-  
-  return(ans)
-}
+startingProfile <- data.frame(age=0, fast_OM=0, slow_OM=0, mineral=0, root_mass=0,
+                              layer_top=0, layer_bottom=0)
 
-```
-
-## Run profile forward
-```{r functionMEM}
-
-runToMEM <- function(cohortStep = nextCohort, parms, consts, 
-                     maxAge = 200, relTol = 1e-6, absTol = 1e-8){
-  cohortProfile <- cohortStep(parms = parms, consts = consts)[1,]
-  
-  #record.ls <- list(cohortProfile)
-  for(ii in 2:maxAge){
-    #if(ii %% 10 == 0){
-    #  record.ls[[sprintf('Yr%d', ii)]] <- cohortProfile
-    #}
-    #oldCohort <- cohortProfile
-    cohortProfile <- cohortStep(massPools = cohortProfile,
-                                parms = parms,
-                                consts = consts)
-    
-    ##have the last layer OM pools stabilized?
-    if(abs(diff(cohortProfile$fast_OM[ii-c(0,1)] + cohortProfile$slow_OM[ii-c(0,1)])) < absTol |
-       abs(diff(cohortProfile$fast_OM[ii-c(0,1)] + cohortProfile$slow_OM[ii-c(0,1)] ) /
-           (cohortProfile$fast_OM[ii] + cohortProfile$slow_OM[ii])) < relTol){
-      break
-    }
-  }
-  return(cohortProfile)
+for(ii in 1:100){
+  startingProfile <- addCohort(massPools = startingProfile,
+                               ssc = defaultParms$ssc, 
+                               meanTidalHeight = defaultParms$depthBelowMHW, 
+                               rootTurnover = defaultParms$rootTurnover, 
+                               rootOmFrac = defaultParms$rootOmFrac,
+                               omDecayRate = defaultParms$omDecayRate,
+                               totalRootMass_per_area = defaultParms$totalRootBiomass, 
+                               rootDepthMax = defaultParms$rootDepthMax,
+                               consts = defaultConsts)
 }
 ```
 
@@ -302,7 +97,7 @@ runToMEM <- function(cohortStep = nextCohort, parms, consts,
 ```{r runMEM}
 
 tick <- Sys.time()
-equProfile <- runToMEM(consts = defaultConsts, parms=defaultParms)
+equProfile <- runToEquilibrium(consts = defaultConsts, parms=defaultParms)
 tock <- Sys.time() - tick
 print(tock)
 
@@ -386,7 +181,7 @@ parametersToRun <- expand.grid(rootDepthMax=c(15, 30, 60),
                      omDecayRate = list(fast=xx$omDecayRate_fast, slow=0), # organic matter decay rate (labile, slow), 1/yr
                      ssc = xx$ssc, # Suspended Sediment Concentration, mg per liter
                      depthBelowMHW = xx$depthBelowMHW)
-    return(runToMEM(parms = newParms, consts = defaultConsts, maxAge=1000))
+    return(runToEquilibrium(parms = newParms, consts = defaultConsts, maxAge=1000))
   })(.)) %>%
   mutate('Total OM [g]' = fast_OM + slow_OM,
          'Soil volume [cm3]' = (fast_OM + slow_OM) / defaultConsts$packing$organic +
@@ -412,7 +207,7 @@ constSealevel$modernAge <- max(equProfile$age)
 constSealevel$meanHighWaterElevation <- max(equProfile$layer_bottom) + defaultParms$depthBelowMHW
 
 for(ii in 1:100){
-  steadySeaLevel <- nextCohort(massPools = steadySeaLevel, 
+  steadySeaLevel <- addCohort(massPools = steadySeaLevel, 
                              parms=defaultParms, consts = constSealevel)  
 }
 
@@ -452,7 +247,7 @@ parms.df$totalRootBiomass <- function(meanHighWaterElevation,
   #something here calculating the root biomass based on parabolic relationships
                                                                       }
 for(ii in 1:100){
-  raisingSeaLevel <- nextCohort(massPools = raisingSeaLevel, 
+  raisingSeaLevel <- addCohort(massPools = raisingSeaLevel, 
                              parms=defaultParms, consts = constRaising)  
 }
 
