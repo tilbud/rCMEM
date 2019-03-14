@@ -33,6 +33,7 @@ source('../R/depthOfNonRootVolume.R')
 source('../R/addCohort.R')
 source('../R/sedimentInputs.R')
 source('../R/addCohort.R')
+source('../R/runToEquilibrium.R')
 ```
 
 ## Test root profile
@@ -197,74 +198,68 @@ ggplot(parametersToRun %>%
   facet_wrap(~variable, scales='free')
 ```
 
-# Run with a constant sea level
+# Run marsh forward under steady and raising sea levels
 ```{r steadySealevel}
-steadySeaLevel <- equProfile
+startingProfile <- runToEquilibrium(consts = defaultConsts, parms=defaultParms)
+steadySeaProfile <- startingProfile
+raisingSeaProfile <- startingProfile
 
-constSealevel <- defaultConsts
-constSealevel$sedimentInputType <- c('constant', 'relative', 'dynamic')[2]
-constSealevel$modernAge <- max(equProfile$age)
-constSealevel$meanHighWaterElevation <- max(equProfile$layer_bottom) + defaultParms$depthBelowMHW
+startingElevation <- max(startingProfile$layer_bottom)
+
+profileDepth <- data.frame(year = 0:100,
+                     steadySea=c(startingElevation, rep(NA, 100)),
+                     raisingSea=c(startingElevation, rep(NA, 100)))
 
 for(ii in 1:100){
-  steadySeaLevel <- addCohort(massPools = steadySeaLevel, 
-                             parms=defaultParms, consts = constSealevel)  
+  steadySeaProfile <- addCohort(massPools = steadySeaProfile,
+                               ssc = defaultParms$ssc, 
+                               meanTidalHeight = (startingElevation + defaultParms$depthBelowMHW) -
+                                 max(steadySeaProfile$layer_bottom), 
+                               rootTurnover = defaultParms$rootTurnover, 
+                               rootOmFrac = defaultParms$rootOmFrac,
+                               omDecayRate = defaultParms$omDecayRate,
+                               totalRootMass_per_area = defaultParms$totalRootBiomass, 
+                               rootDepthMax = defaultParms$rootDepthMax,
+                               consts = defaultConsts)
+  
+  raisingSeaProfile <- addCohort(massPools = raisingSeaProfile,
+                               ssc = defaultParms$ssc, 
+                               meanTidalHeight = (startingElevation +
+                                                    defaultParms$depthBelowMHW+0.03*ii) -
+                                 max(raisingSeaProfile$layer_bottom) , 
+                               rootTurnover = defaultParms$rootTurnover, 
+                               rootOmFrac = defaultParms$rootOmFrac,
+                               omDecayRate = defaultParms$omDecayRate,
+                               totalRootMass_per_area = defaultParms$totalRootBiomass, 
+                               rootDepthMax = defaultParms$rootDepthMax,
+                               consts = defaultConsts)
+  profileDepth$steadySea[ii+1] <- max(steadySeaProfile$layer_bottom)
+  profileDepth$raisingSea[ii+1] <- max(raisingSeaProfile$layer_bottom)
 }
 
-print(sprintf('Change in marsh elevation %.4f cm',max(steadySeaLevel$layer_bottom) - max(equProfile$layer_bottom)))
-
-ggplot(steadySeaLevel) +
-  geom_line(aes(x=(layer_top+layer_bottom)/2, y=age)) +
-  geom_line(data=equProfile, aes(x=(layer_top+layer_bottom)/2, y=age), color='grey')
-
-ggplot(steadySeaLevel %>%
-         gather(key='variable', value='value', fast_OM:mineral, root_mass)) +
-  geom_line(aes(x=(layer_top+layer_bottom)/2,# - 
-                  #max(layer_bottom) + max(startingProfile$layer_bottom),
-                y=value/(layer_bottom-layer_top))) +
-  geom_line( data = equProfile %>%
-               gather(key='variable', value='value', fast_OM:mineral, root_mass),
-         aes(x=(layer_top+layer_bottom)/2,
-                y=value/(layer_bottom-layer_top)), color='grey') +
-  facet_wrap(~variable, scales='free')
 ```
 
-# Run with a raising sea level
-```{r rasingSealevel}
-raisingSeaLevel <- equProfile
+```{r}
 
-constRaising <- defaultConsts
-constRaising$sedimentInputType <- c('constant', 'relative', 'dynamic')[3]
-constRaising$modernAge <- max(equProfile$age)
-constRaising$meanHighWaterElevation <- function(year){
-  return(max(equProfile$layer_bottom) + 0.03*year)
-}
+print(sprintf('Change in marsh elevation after 100 years with no change in sea level is %.4f cm, and with a 0.03 cm/yr raise in sea level %.4f cm', max(steadySeaProfile$layer_bottom) - startingElevation, 
+              max(raisingSeaProfile$layer_bottom) - startingElevation))
 
-parms.df <- defaultParms
-parms.df$totalRootBiomass <- function(meanHighWaterElevation,
-                                      changeInMarshElevation= max(raisingSeaLevel$layer_bottom) -
-                                                                      max(equProfile$layer_bottom)){
-  #something here calculating the root biomass based on parabolic relationships
-                                                                      }
-for(ii in 1:100){
-  raisingSeaLevel <- addCohort(massPools = raisingSeaLevel, 
-                             parms=defaultParms, consts = constRaising)  
-}
+ggplot(profileDepth %>% gather(key='type', value='max. profile depth [cm]', steadySea, raisingSea)) +
+         geom_line(aes(x=year, y=`max. profile depth [cm]`, color=type))
 
-print(sprintf('Change in marsh elevation %.4f cm',max(raisingSeaLevel$layer_bottom) - max(equProfile$layer_bottom)))
+ggplot(profileDepth %>%
+         mutate(`changeInElev_steadySea` = c(steadySea[2:length(year)] - steadySea[1:(length(year) - 1)], NA),
+                `changeInElev_raisingSea` = c(raisingSea[2:length(year)] - raisingSea[1:(length(year) - 1)], NA)) %>%
+         gather(key='type', value='change in elevation [cm yr-1]', starts_with('changeInElev'))) +
+         geom_line(aes(x=year, y=`change in elevation [cm yr-1]`, color=type))
 
-ggplot(raisingSeaLevel) +
-  geom_line(aes(x=(layer_top+layer_bottom)/2, y=age)) +
-  geom_line(data=equProfile, aes(x=(layer_top+layer_bottom)/2, y=age), color='grey')
+plot.df <- bind_rows(startingProfile %>% mutate(type='inital'),
+                     steadySeaProfile %>% mutate(type='steady seas'),
+                     raisingSeaProfile %>% mutate(type='raising seas'))
 
-ggplot(raisingSeaLevel %>%
-         gather(key='variable', value='value', fast_OM:mineral, root_mass)) +
-  geom_line(aes(x=(layer_top+layer_bottom)/2,# - 
-                  #max(layer_bottom) + max(startingProfile$layer_bottom),
-                y=value/(layer_bottom-layer_top))) +
-  geom_line( data = equProfile %>%
-               gather(key='variable', value='value', fast_OM:mineral, root_mass),
-         aes(x=(layer_top+layer_bottom)/2,
-                y=value/(layer_bottom-layer_top)), color='grey') +
-  facet_wrap(~variable, scales='free')
+ggplot(plot.df) +
+  geom_line(aes(x=(layer_top+layer_bottom)/2, y=age, color=type)) 
+
+ggplot(plot.df) +
+  geom_line(aes(x=(layer_top+layer_bottom)/2, y=fast_OM+slow_OM, color=type)) 
 ```
