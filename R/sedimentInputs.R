@@ -1,4 +1,4 @@
-#' 
+#' Annual mineral inputs into marsh
 #'
 #' @param sse a numeric representing suspended sediment concentration, generally mg per liter
 #' @param meanTidalVolume a numeric representing the the mean tide volume above the marsh (cm3)
