@@ -1,14 +1,4 @@
----
-title: "Work up cohort model"
-author: "K Todd-Brown (ktoddbrown@gmail.com)"
-date: "12/9/2018"
-output: 
-  html_document: 
-    toc: yes
----
-
-# Set up
-```{r setUp}
+## ----setUp---------------------------------------------------------------
 library(tidyverse)
 
 defaultParms <- list(rootDepthMax = 30, # Depth of the root zone in cm below surface
@@ -27,10 +17,8 @@ defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
                       nTidesPerYear = 704, #number of high tides per year
                       sedimentInputType = c('constant', 'relative', 'dynamic')[1],
                       modernAge = NA) #max age in modern soil profile
-```
 
-## Descript root profile
-```{r functionRootProfile}
+## ----functionRootProfile-------------------------------------------------
 
 #return the mass of the live roots between two layers
 massLiveRoots <- function(layerBottom, layerTop, parms = defaultParms, consts = defaultConsts){
@@ -71,10 +59,8 @@ massLiveRoots <- function(layerBottom, layerTop, parms = defaultParms, consts = 
 #plot(massLiveRoots(layerBottom = seq(5, 40, by=5), layerTop=seq(0, 35, by=5)))
 #sum(massLiveRoots(layerBottom = seq(1, 40, by=1), layerTop=seq(0, 39, by=1))) == defaultParms$totalRootBiomass
 
-```
 
-## Function describing depth of given soil volume
-```{r functionFindVol}
+## ----functionFindVol-----------------------------------------------------
 depthOfNotRootVolume <- function(nonRootVolume, parms = defaultParms, consts = defaultConsts){
  
   if(!all(c('soilLength', 'soilWidth', 'shape', 'packing') %in% names(consts))){
@@ -125,10 +111,8 @@ depthOfNotRootVolume <- function(nonRootVolume, parms = defaultParms, consts = d
 #tester <- depthOfNotRootVolume(nonRootVolume = 1:100)
 #plot(tester)
 ##plot(tester[1:99] - tester[2:100])
-```
 
-## Sediment input
-```{r functionSedIn}
+## ----functionSedIn-------------------------------------------------------
 sedimentInputs <- function(yrForward=NA, #time currently ignored
                            marshElevation = NA, #marshElevation
                            parms, consts){ 
@@ -192,11 +176,8 @@ sedimentInputs <- function(yrForward=NA, #time currently ignored
 #   return(31.74 + 0.03*year)
 # }
 # sedimentInputs(yrForward = 1, marshElevation = 31.74, consts = constRaising, parms = defaultParms)
-```
 
-## Step soil profile forward
-
-```{r functionStepCohort}
+## ----functionStepCohort--------------------------------------------------
 nextCohort <- function(massPools=data.frame(age=0, fast_OM=0, slow_OM=0, mineral=0,
                                             layer_top=0, layer_bottom=0),
                        topInputs_gPerYr = sedimentInputs,
@@ -264,10 +245,8 @@ nextCohort <- function(massPools=data.frame(age=0, fast_OM=0, slow_OM=0, mineral
   return(ans)
 }
 
-```
 
-## Run profile forward
-```{r functionMEM}
+## ----functionMEM---------------------------------------------------------
 
 runToMEM <- function(cohortStep = nextCohort, parms, consts, 
                      maxAge = 200, relTol = 1e-6, absTol = 1e-8){
@@ -292,11 +271,8 @@ runToMEM <- function(cohortStep = nextCohort, parms, consts,
   }
   return(cohortProfile)
 }
-```
 
-# Plot equlibrium profiles
-
-```{r runMEM}
+## ----runMEM--------------------------------------------------------------
 
 tick <- Sys.time()
 equProfile <- runToMEM(consts = defaultConsts, parms=defaultParms)
@@ -311,11 +287,8 @@ ggplot(equProfile %>%
 ggplot(equProfile) +
   geom_line(aes(x=(layer_top+layer_bottom)/2, y=layer_bottom - layer_top))
 
-```
 
-## Example converting cohort to uniform depth
-
-```{r convertToUnifDepth}
+## ----convertToUnifDepth--------------------------------------------------
 sampleStep<- 5
 profile_by_depth <- data.frame(top = seq(0, floor(max(equProfile$layer_top) - sampleStep),
                                          by=sampleStep), 
@@ -356,11 +329,8 @@ ggplot(profile_by_depth %>%
          gather(key='variable', value='value', SOM, bulk_density, fast_OM, slow_OM, mineral)) +
   geom_line(aes(x=(top+bottom)/2, y=value)) +
   facet_wrap(~variable, scales = 'free_y')
-```
 
-## Parameter exploration run
-
-```{r parameterRuns}
+## ----parameterRuns-------------------------------------------------------
 parametersToRun <- expand.grid(rootDepthMax=c(15, 30, 60), 
             totalRootBiomass=c(0.15, 0.3, 0.6),
             rootTurnover=c(0.25, 0.5, 0.9),
@@ -397,10 +367,8 @@ ggplot(parametersToRun %>%
   geom_line(aes(x=(layer_top+layer_bottom)/2, y=value, group=index), alpha=0.3) +
   scale_y_log10() +
   facet_wrap(~variable, scales='free')
-```
 
-# Run with a constant sea level
-```{r steadySealevel}
+## ----steadySealevel------------------------------------------------------
 steadySeaLevel <- equProfile
 
 constSealevel <- defaultConsts
@@ -429,10 +397,8 @@ ggplot(steadySeaLevel %>%
          aes(x=(layer_top+layer_bottom)/2,
                 y=value/(layer_bottom-layer_top)), color='grey') +
   facet_wrap(~variable, scales='free')
-```
 
-# Run with a raising sea level
-```{r rasingSealevel}
+## ----rasingSealevel------------------------------------------------------
 raisingSeaLevel <- equProfile
 
 constRaising <- defaultConsts
@@ -463,4 +429,4 @@ ggplot(raisingSeaLevel %>%
          aes(x=(layer_top+layer_bottom)/2,
                 y=value/(layer_bottom-layer_top)), color='grey') +
   facet_wrap(~variable, scales='free')
-```
+
