@@ -17,6 +17,10 @@ sedimentInputs <- function(ssc, # Suspended Sediment Concentration, mg per liter
     stop('Can not find expected constant names')
   }
   
+  if(meanTidalHeight < 0){
+    return(0) #only add sediment to the marsh if the mean high water is above the marsh elevation
+  }
+  
   ssc_gPerCm3 <- ssc * 1e-6 # convert mg/l to grams/cm^3
   
    # Cumulative water volume
