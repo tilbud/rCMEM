@@ -12,33 +12,34 @@ annapolisTideGaugeTimeSeries <- annapolisTideGauge %>%
   select(Year, MHW, MSL) %>%
   mutate(TidalRange = MHW-MSL)
 
-tideRangeLastDatum <- annapolisTideGaugeTimeSeries %>%
-  filter(Year >= 1983 & Year <= 2001)
+#tideRangeLastDatum <- annapolisTideGaugeTimeSeries %>%
+#  filter(Year >= 1983 & Year <= 2001)
 
-longTermTideRange <- mean(tideRangeLastDatum$TidalRange)
+#longTermTideRange <- mean(tideRangeLastDatum$TidalRange)
 
-fit.lm2 <- lm(TidalRange~sin(2*pi*(Year-1983)/18.61) + cos(2*pi*(Year-1983)/18.61), 
-              data = tideRangeLastDatum)
+#fit.lm2 <- lm(TidalRange~sin(2*pi*(Year-1983)/18.61) + cos(2*pi*(Year-1983)/18.61), 
+#              data = tideRangeLastDatum)
 
-annapolisAmp <- summary(fit.lm2)$coefficients[1]
+#annapolisAmp <- summary(fit.lm2)$coefficients[1]
 
-TargetYear <- 1920:2019
+#TargetYear <- 1920:2019
 
-TidalRangeAtTime <- function(MHW, MSL, lunarNodalAmp, Year) {
-  TidalRange <- (MHW-MSL) + (lunarNodalAmp * (sin(2*pi*(Year-1983)/18.61)))
-  return(TidalRange)
-}
+#TidalRangeAtTime <- function(MHW, MSL, lunarNodalAmp, Year) {
+#  TidalRange <- (MHW-MSL) + (lunarNodalAmp * (sin(2*pi*(Year-1983)/18.61)))
+#  return(TidalRange)
 
-predictionTR <- data.frame(Year = TargetYear, TidalRange = predict_TidalRange)
+#}
 
-ggplot(data=predictionTR, aes(x=Year, y=TidalRange)) +
-  geom_line(color="red")
+#predictionTR <- data.frame(Year = TargetYear, TidalRange = predict_TidalRange)
+
+#ggplot(data=predictionTR, aes(x=Year, y=TidalRange)) +
+#  geom_line(color="red")
   
   
-inEqCoef <- 1
-outOfEqCoef <- 1.5
-rootShoot <- 2
-Bmax <- 2500
+#inEqCoef <- 1
+#outOfEqCoef <- 1.5
+#rootShoot <- 2
+#Bmax <- 2500
 # dGrowingMin <-
 # dGrowingMax <- 
 # tidalRange 

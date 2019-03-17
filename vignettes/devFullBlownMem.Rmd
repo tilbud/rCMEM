@@ -1,0 +1,166 @@
+---
+title: "Getting closer to full blown MEM"
+author: "James R Holmquist"
+date: "3/14/2019"
+output: html_document
+---
+
+``` {r setup annapolis inputs, include = F}
+library(tidyverse)
+library(zoo)
+
+elvNAVD88 <- 0.2
+MHWtoNAVD88 <- 0.25
+MSLtoNAVD88 <- 0.09
+
+bMax <- .1022
+dVegMax <- .6
+dVegMin <- -.1
+zVegMax <- (dVegMax - MHWtoNAVD88) / (MHWtoNAVD88 - MSLtoNAVD88)
+zVegMin <- (dVegMin - MHWtoNAVD88) / (MHWtoNAVD88 - MSLtoNAVD88)
+
+rootToShoot <- 2
+
+predictAgbFromElv <- function(x=0, MHWtoNAVD88=0.25, MSLtoNAVD88=0.09, 
+                              bMax=.1022,
+                              zVegMax=2.1875, zVegMin=-2.1875) {
+  
+  zInputElv <- (x - MHWtoNAVD88) / (MHWtoNAVD88 - MSLtoNAVD88)
+  Dopt<-(zVegMax+zVegMin)/2
+  
+  a <- -((-zVegMin * bMax - zVegMax * bMax) / ((zVegMin - Dopt) * (-zVegMax + Dopt)))
+  b <- -(bMax / ((zVegMin - Dopt) * (-zVegMax + Dopt)))
+  c <- (zVegMin * zVegMax * bMax) / ((zVegMin - Dopt) * (zVegMax - Dopt))
+  
+  agb <- a*zInputElv + b*zInputElv^2 + c
+  
+  agb <- ifelse(agb>0,agb,0)
+  
+  return(agb)
+  }
+
+elvRandomEffect <- 1.1
+elvYear <- 2013
+
+annapolisTideGauge <- read_csv("vignettes/sampleData/annapolisTideGauge.csv")
+
+annapolisTideGaugeTimeSeries <- annapolisTideGauge %>%
+  group_by(Year) %>%
+  summarise(MHW = mean(MHW, na.rm = F), 
+         MSL = mean(MSL, na.rm = F)) %>%
+  select(Year, MHW, MSL) %>%
+  mutate(MSL = na.approx(MSL),
+    TidalRange = MHW-MSL)
+
+annapolisTideGaugeTimeSeriesTall <- annapolisTideGaugeTimeSeries %>%
+  select(Year, MHW, MSL) %>%
+  gather(Datum, WaterLevel, c(MHW, MSL)) %>%
+  arrange(Year, Datum)
+
+initElv <- elvNAVD88 - ((annapolisTideGaugeTimeSeries$MSL[annapolisTideGaugeTimeSeries$Year == elvYear] -
+  annapolisTideGaugeTimeSeries$MSL[1]) * elvRandomEffect)
+
+initDepthBelowMHW <- annapolisTideGaugeTimeSeries$MHW[1] - initElv
+
+initBiomass <- predictAgbFromElv(initElv, MHWtoNAVD88=annapolisTideGaugeTimeSeries$MHW[1],
+                                 MSLtoNAVD88=annapolisTideGaugeTimeSeries$MSL[1])*rootToShoot
+
+```
+
+```{r setup CTM/MEM, include=FALSE}
+
+defaultParms <- list(rootDepthMax = 30, # Depth of the root zone in cm below surface
+                     totalRootBiomass = initBiomass, # 0.3 Total Root Biomass, g/cm2
+                     rootTurnover = 2.5,  # Below Ground Turnover Rate of roots, 1/yr
+                     rootOmFrac = list(fast=0.8, slow=0.2), # root allocation to om pools (labile, slow), g/g
+                     omDecayRate = list(fast=0.8, slow=0), # organic matter decay rate (labile, slow), 1/yr
+                     ssc = 20, # Suspended Sediment Concentration, mg per liter
+                     depthBelowMHW = initDepthBelowMHW*100)  # Depth of Marsh Surface Below Mean High Water
+
+defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
+                      shape='linear', #root mass distribution
+                      packing = list(root = 0.085, #density of roots g-C/cm3
+                                     organic = 0.085 ,  # Organic Self Packing Densities: k1 g-C/cm3
+                                     mineral = 1.99), # Inorganic Self Packing Densities  k2 g-C/cm3
+                      nTidesPerYear = 704, #number of high tides per year
+                      sedimentInputType = c('constant', 'relative', 'dynamic')[1],
+                      modernAge = NA) #max age in modern soil profile
+
+source('R/massLiveRoots.R')
+source('R/depthOfNonRootVolume.R')
+source('R/addCohort.R')
+source('R/sedimentInputs.R')
+source('R/addCohort.R')
+source('R/runToEquilibrium.R')
+
+```
+
+``` {r run sims, include = F}
+
+equProfile <- runToEquilibrium(consts = defaultConsts, parms=defaultParms)
+
+raisingSeaProfile <- equProfile
+datum <- initElv
+profileWidthM <- max(equProfile$layer_bottom)/100
+
+surfaceNavd <- initElv
+baselineNavd <- initElv - profileWidthM
+
+for (i in 1:nrow(annapolisTideGaugeTimeSeries)) {
+  
+  meanTidalHeightAtTime <- annapolisTideGaugeTimeSeries$MHW[i] - surfaceNavd * 100
+  agbAtTime <- predictAgbFromElv(surfaceNavd, annapolisTideGaugeTimeSeries$MHW[i],
+                                 annapolisTideGaugeTimeSeries$MSL[i])*rootToShoot
+  
+  raisingSeaProfile <- addCohort(massPools = raisingSeaProfile,
+                               ssc = defaultParms$ssc, 
+                                meanTidalHeight = meanTidalHeightAtTime, 
+                                rootTurnover = defaultParms$rootTurnover, 
+                                rootOmFrac = defaultParms$rootOmFrac,
+                                omDecayRate = defaultParms$omDecayRate,
+                                totalRootMass_per_area = agbAtTime, 
+                                rootDepthMax = defaultParms$rootDepthMax,
+                                consts = defaultConsts)
+  
+  tempStorage <- raisingSeaProfile %>%
+    mutate(organicMatter = (fast_OM+slow_OM+root_mass)/(fast_OM+slow_OM+root_mass+mineral),
+           Year = annapolisTideGaugeTimeSeries$Year[i],
+           layer_top=surfaceNavd-(layer_top/100),
+           layer_bottom=surfaceNavd-(layer_bottom/100))
+  
+  accretion <- max(raisingSeaProfile$layer_bottom)/100 - profileWidthM
+  profileWidthM <- max(raisingSeaProfile$layer_bottom)/100
+  surfaceNavd <- surfaceNavd + accretion
+    
+  if (i == 1) {
+    storeForAnimation <- tempStorage
+  } else {
+    storeForAnimation <- rbind(tempStorage, storeForAnimation)
+  }
+}
+
+
+```
+
+``` {r animate plot}
+library(gganimate)
+soil_profile <- ggplot(data = storeForAnimation, aes(xmin = 0, xmax = 1, ymin = layer_bottom, ymax = layer_top, frame = Year)) +
+  geom_rect(aes(fill = organicMatter), color = rgb(0,0,0, alpha = 0.1)) +
+  scale_fill_gradient2(low = "darkgrey", mid = "lightgrey", high = "darkgreen", midpoint = 0.13, name = "Organic Matter (fraction)") + 
+  theme_minimal() +
+  geom_hline(data=annapolisTideGaugeTimeSeriesTall, aes(yintercept=WaterLevel, lty=Datum), color="blue") +
+  theme(axis.title.x=element_blank(),
+    axis.text.x=element_blank(),
+    axis.ticks.x=element_blank(),
+    text = element_text(size=14),
+    ) +
+  ylab("Depth (m NAVD88)") +
+  labs(title = 'Year: {round(frame_time,0)}') +
+  transition_time(Year) +
+  ease_aes('linear')
+
+animate(soil_profile, duration = 30)
+
+anim_save("temp/MEM-anim-190317.gif", width = 4, height = 8, units = "in", dpi = 300)
+
+```

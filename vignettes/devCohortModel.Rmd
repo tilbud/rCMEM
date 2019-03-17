@@ -38,44 +38,7 @@ source('../R/runToEquilibrium.R')
 
 ## Test root profile
 ```{r functionRootProfile}
-<<<<<<< HEAD
 
-#return the mass of the live roots between two layers
-massLiveRoots <- function(layerBottom, layerTop, parms = defaultParms, consts = defaultConsts){
-  
-  if(!all(c('soilLength', 'soilWidth') %in% names(consts))){
-    stop('Can not find all constants.')
-  }
-  soilLength <- consts$soilLength
-  soilWidth <- consts$soilWidth
-  
-  if(!all(c('totalRootBiomass', 'rootDepthMax') %in% names(parms))){
-    stop('Can not find all parameters.')
-  }
-  totalBiomassByArea <- parms$totalRootBiomass
-  rootDepthMax <- parms$rootDepthMax
-  
-  totalRootMass <- soilLength*soilWidth*totalBiomassByArea
-  
-  ##reset the layers that are beyond the root inputs to have 0 depths
-  layerBottom[layerBottom > rootDepthMax] <- rootDepthMax
-  layerTop[layerTop > rootDepthMax] <- rootDepthMax
-  
-  if(consts$shape == 'linear'){
-    #mass_per_depth = slope * depth + intercept
-    #totalRootMass = 1/2 * rootDepthMax * intecept ==> intercept = 2 * totalRootMass / rootDepthMax
-    #slope = - intercept/rootDepthMax
-    #mass = integral(mass_per_depth, depth)
-    rootMass <- 2*totalRootMass*(layerBottom-layerTop)/rootDepthMax - 
-      totalRootMass *(layerBottom ^2-layerTop^2)/rootDepthMax^2
-    return(rootMass)
-  }else{
-    stop('Unknown shape specified')
-  }
-}
-
-=======
->>>>>>> 7dabc20fcf68389d119c296e22e7680d0865d0ed
 ##Check liveRoots
 testRoots <- massLiveRoots(layerBottom = seq(5, 40, by=5), layerTop=seq(0, 35, by=5),
                     totalRootMass_per_area = defaultParms$totalRootBiomass,
@@ -88,55 +51,7 @@ paste('Conservation of mass is: ', sum(testRoots) - defaultParms$totalRootBiomas
 
 ## Test depth of given soil volume
 ```{r functionFindVol}
-<<<<<<< HEAD
-depthOfNotRootVolume <- function(nonRootVolume, parms = defaultParms, consts = defaultConsts){
- 
-  if(!all(c('soilLength', 'soilWidth', 'shape', 'packing') %in% names(consts))){
-    stop('Can not find all constants.')
-  }
-  soilLength <- consts$soilLength
-  soilWidth <- consts$soilWidth
-  rootDensity <- consts$packing$root
-  shape <- consts$shape
-  
-  if(!all(c('rootDepthMax', 'totalRootBiomass') %in% names(parms))){
-    stop('Can not find all expected parameters.')
-  }
-  rootDepthMax <- parms$rootDepthMax
-  totalBiomassByArea <- parms$totalRootBiomass
-  
-  ####
-  totalRootMass <- soilLength*soilWidth*totalBiomassByArea
-  totalRootVolume <- totalRootMass/rootDensity
-  
-  if(totalRootVolume > soilLength*soilWidth*rootDepthMax){
-    stop('Bad root volume')
-  }
-  
-  if(shape == 'linear'){
-    rootWidth <- totalRootVolume*2/(rootDepthMax*soilLength)
 
-    #nonRootVolume = ((rootWidth/rootDepthMax*depth^2)/2 + depth*(soilWidth-rootWidth))*soilLength
-    #            0 = rootWidth / (2*rootDepthMax) * depth ^2 + 
-    #                   (soilWidth-rootWidth) * depth - nonRootVolume/soilLength ##solve for depth
-    coef1 <- rootWidth / (2*rootDepthMax)
-    coef2 <- soilWidth-rootWidth
-    coef3 <- -nonRootVolume/soilLength
-    ansDepth <- (-coef2 + sqrt(coef2^2-4*coef1*coef3))/(2*coef1)
-    
-    #correct for beyond root zone
-    behondRootZone <- nonRootVolume > soilLength*soilWidth*rootDepthMax - totalRootVolume
-    ansDepth[behondRootZone] <- (rootDepthMax +
-                            (nonRootVolume - soilLength*soilWidth*rootDepthMax + totalRootVolume ) /
-                              (soilLength*soilWidth)) [behondRootZone] #treat as a square
-    return(ansDepth)
-  }else{
-    stop('Unknown shape specified')
-  }
-}
-
-=======
->>>>>>> 7dabc20fcf68389d119c296e22e7680d0865d0ed
 ##Check depth of non root volue
 testDepth <- depthOfNotRootVolume(nonRootVolume = 1:100,
                                   totalRootMass_per_area = defaultParms$totalRootBiomass,
