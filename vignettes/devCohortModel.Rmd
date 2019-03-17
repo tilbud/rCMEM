@@ -112,6 +112,43 @@ ggplot(equProfile) +
 
 ```
 
+```{r runWithNoIn}
+
+for(ii in 1:100){
+  if(ii == 1){
+    noInputProfile <- addCohort(massPools = equProfile,
+                                ssc = defaultParms$ssc, 
+                                meanTidalHeight = 0, 
+                                rootTurnover = defaultParms$rootTurnover, 
+                                rootOmFrac = defaultParms$rootOmFrac,
+                                omDecayRate = defaultParms$omDecayRate,
+                                totalRootMass_per_area = defaultParms$totalRootBiomass, 
+                                rootDepthMax = defaultParms$rootDepthMax,
+                                consts = defaultConsts)
+  }else{
+    noInputProfile <- addCohort(massPools = noInputProfile,
+                                ssc = defaultParms$ssc, 
+                                meanTidalHeight = 0, 
+                                rootTurnover = defaultParms$rootTurnover, 
+                                rootOmFrac = defaultParms$rootOmFrac,
+                                omDecayRate = defaultParms$omDecayRate,
+                                totalRootMass_per_area = defaultParms$totalRootBiomass, 
+                                rootDepthMax = defaultParms$rootDepthMax,
+                                consts = defaultConsts)
+  }
+}
+
+ggplot(noInputProfile %>%
+         gather(key='variable', value='value', -layer_top, -layer_bottom)) +
+  geom_line(aes(x=(layer_top+layer_bottom)/2, y=value)) +
+  geom_line(data=equProfile %>%
+         gather(key='variable', value='value', -layer_top, -layer_bottom),
+         aes(x=(layer_top+layer_bottom)/2, y=value), color='grey') +
+  labs(title='Equlibrium (grey) vs 100yr no input (black)') +
+  facet_wrap(~variable, scales='free')
+
+```
+
 ## Example converting cohort to uniform depth
 
 ```{r convertToUnifDepth}
