@@ -1,5 +1,5 @@
 ---
-title: "Work up cohort model"
+title: "Examples of cohort and march equlibrium models"
 author: "K Todd-Brown (ktoddbrown@gmail.com)"
 date: "12/9/2018"
 output: 
@@ -10,6 +10,9 @@ output:
 # Set up
 ```{r setUp}
 library(tidyverse)
+#library(devtools)
+#install_github("tilbud/MEMs")
+library(MEMs)
 
 defaultParms <- list(rootDepthMax = 30, # Depth of the root zone in cm below surface
                      totalRootBiomass = 0.3, # 0.3 Total Root Biomass, g/cm2
@@ -28,12 +31,6 @@ defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
                       sedimentInputType = c('constant', 'relative', 'dynamic')[1],
                       modernAge = NA) #max age in modern soil profile
 
-source('../R/massLiveRoots.R')
-source('../R/depthOfNonRootVolume.R')
-source('../R/addCohort.R')
-source('../R/sedimentInputs.R')
-source('../R/addCohort.R')
-source('../R/runToEquilibrium.R')
 ```
 
 ## Test root profile
