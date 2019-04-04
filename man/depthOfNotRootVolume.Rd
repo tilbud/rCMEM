@@ -5,18 +5,27 @@
 \title{Depth of the given soil volume}
 \usage{
 depthOfNotRootVolume(nonRootVolume, totalRootMass_per_area, rootDepthMax,
-  parms = NULL, consts)
+  rootDensity, soilLength = 1, soilWidth = 1, shape = "linear", ...)
 }
 \arguments{
-\item{nonRootVolume}{a numerical value that is the volume of interest, generally in cm3.}
+\item{nonRootVolume}{a numerical value (possibly array) that is the volume of interest, generally in cm3.}
 
 \item{totalRootMass_per_area}{an integer that is the total mass per area of the roots, generally in g cm-3}
 
 \item{rootDepthMax}{an integer that is the maximum root depth, generally in cm}
 
-\item{parms}{placeholder currently NULL}
+\item{rootDensity}{a numeric that is the root density in g per cm3}
 
-\item{consts}{a list of constants that must include numerics representing the soilLength (cm) and soilWidth (cm) for the area of interest, a flag shape, and a list called packing that includes a value of the root packing (or density).}
+\item{soilLength}{a numeric of the unit length of soil volume, generally 1 cm}
+
+\item{soilWidth}{a numeric of the unitl witdth of the soil colume, generally 1cm}
+
+\item{shape}{a character of the shape of the root distribution, currently only 'linear' is implimented}
+
+\item{...}{}
+}
+\value{
+A numeric (possibly array) corresponding to the depth of the specificed non root volume
 }
 \description{
 Given a shape and mass for the roots, calculate the depth of a specific non-root volume.

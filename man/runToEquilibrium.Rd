@@ -2,16 +2,12 @@
 % Please edit documentation in R/runToEquilibrium.R
 \name{runToEquilibrium}
 \alias{runToEquilibrium}
-\title{Run to equilbrium with proscribed depth to mean high tide}
+\title{Run to equilbrium with proscribed surface mineral input}
 \usage{
-runToEquilibrium(parms, consts, minAge = 50, maxAge = 200,
-  recordEvolution = FALSE, relTol = 1e-06, absTol = 1e-08)
+runToEquilibrium(minAge = 50, maxAge = 200, recordEvolution = FALSE,
+  relTol = 1e-06, absTol = 1e-08, ...)
 }
 \arguments{
-\item{parms}{a list of parameters that are passed to addCohort individually}
-
-\item{consts}{a list of constants that are passed to addCohort as a list}
-
 \item{minAge}{run the model for atleast these many years}
 
 \item{maxAge}{do not run the model for longer then these many years}
@@ -21,10 +17,12 @@ runToEquilibrium(parms, consts, minAge = 50, maxAge = 200,
 \item{relTol}{stop the evolution if the relative difference between the two oldest cohorts is less then this}
 
 \item{absTol}{stop the evolution if the absolute difference between the two oldest cohorts is less then this}
+
+\item{...}{arguments to be passed to \code{addCohort}}
 }
 \value{
-a data frame by age cohort with the layer top and bottom depths, age, and mass of the fast organic, slow organic, mineral, and root biomass pools.
+a data frame by age cohort with the layer top and bottom depths, age, and mass of the fast organic, slow organic, mineral, and root biomass pools OR a list that is a record of age cohorts
 }
 \description{
-Run to equilbrium with proscribed depth to mean high tide
+Repeatedly add new cohorts to a soil profile until the oldest layers are not siginficatly different AND the oldest layer are above some minimum age, within some upper bound of soil age.
 }

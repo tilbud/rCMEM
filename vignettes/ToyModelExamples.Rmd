@@ -1,7 +1,7 @@
 ---
 title: "Examples of cohort and march equlibrium models"
 author: "K Todd-Brown (ktoddbrown@gmail.com)"
-date: "12/9/2018"
+date: "Spring 2019"
 output: 
   html_document: 
     toc: yes
@@ -10,9 +10,15 @@ output:
 # Set up
 ```{r setUp}
 library(tidyverse)
+
+##Uncomment to install from the github repo
 #library(devtools)
 #install_github("tilbud/MEMs")
+
 library(MEMs)
+
+##Debug option
+#walk(list.files('../R', full.names = TRUE), source)
 
 defaultParms <- list(rootDepthMax = 30, # Depth of the root zone in cm below surface
                      totalRootBiomass = 0.3, # 0.3 Total Root Biomass, g/cm2
@@ -39,8 +45,7 @@ defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
 ##Check liveRoots
 testRoots <- massLiveRoots(layerBottom = seq(5, 40, by=5), layerTop=seq(0, 35, by=5),
                     totalRootMass_per_area = defaultParms$totalRootBiomass,
-                    rootDepthMax=defaultParms$rootDepthMax,
-               consts=defaultConsts)
+                    rootDepthMax=defaultParms$rootDepthMax)
 plot(x=1/2*(seq(5, 40, by=5) + seq(0, 35, by=5)), y=testRoots)
 
 paste('Conservation of mass is: ', sum(testRoots) - defaultParms$totalRootBiomass*defaultConsts$soilLength*defaultConsts$soilWidth < 1e-5)
@@ -52,7 +57,8 @@ paste('Conservation of mass is: ', sum(testRoots) - defaultParms$totalRootBiomas
 ##Check depth of non root volue
 testDepth <- depthOfNotRootVolume(nonRootVolume = 1:100,
                                   totalRootMass_per_area = defaultParms$totalRootBiomass,
-                    rootDepthMax=defaultParms$rootDepthMax, const=defaultConsts)
+                                  rootDepthMax=defaultParms$rootDepthMax,
+                                  rootDensity = defaultConsts$packing$root)
 plot(testDepth)
 plot(testDepth[1:99] - testDepth[2:100])
 ```
@@ -61,8 +67,8 @@ plot(testDepth[1:99] - testDepth[2:100])
 ```{r functionSedIn}
 #constant input of sediment
 defaultSedIn <- sedimentInputs(ssc = defaultParms$ssc, # Suspended Sediment Concentration, mg per liter
-               meanTidalHeight = defaultParms$depthBelowMHW, #mean tide height above marsh
-               parms=NULL, consts=defaultConsts)
+               meanTidalHeight = defaultParms$depthBelowMHW #mean tide height above marsh
+               )
 
 #constant sea level try 31.74 for default marshElevation
 #depthBelowMHW <- max(0, consts$meanHighWaterElevation - marshElevation)
@@ -76,19 +82,29 @@ paste('Sediment input rate with default parameters: ', defaultSedIn, ' g yr-1')
 ## Step soil profile forward
 
 ```{r functionStepCohort}
-startingProfile <- data.frame(age=0, fast_OM=0, slow_OM=0, mineral=0, root_mass=0,
-                              layer_top=0, layer_bottom=0)
+startingProfile <- data.frame(age=NA, fast_OM=NA, slow_OM=NA, mineral=NA, root_mass=NA,
+                              layer_top=NA, layer_bottom=NA)
 
 for(ii in 1:100){
   startingProfile <- addCohort(massPools = startingProfile,
-                               ssc = defaultParms$ssc, 
-                               meanTidalHeight = defaultParms$depthBelowMHW, 
                                rootTurnover = defaultParms$rootTurnover, 
                                rootOmFrac = defaultParms$rootOmFrac,
                                omDecayRate = defaultParms$omDecayRate,
-                               totalRootMass_per_area = defaultParms$totalRootBiomass, 
-                               rootDepthMax = defaultParms$rootDepthMax,
-                               consts = defaultConsts)
+                               packing = defaultConsts$packing,
+                               
+                               mineralInput_g_per_yr.fn = sedimentInputs,
+                               ssc = defaultParms$ssc, 
+                               meanTidalHeight = defaultParms$depthBelowMHW, 
+                               
+                               massLiveRoots.fn = massLiveRoots,
+                               totalRootMass_per_area = defaultParms$totalRootBiomass,
+                               rootDepthMax=defaultParms$rootDepthMax,
+                               
+                               depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                               rootDensity = defaultConsts$packing$root
+                               #totalRootMass_per_area, 
+                               #  rootDepthMax,
+                               )
 }
 ```
 
@@ -97,7 +113,21 @@ for(ii in 1:100){
 ```{r runMEM}
 
 tick <- Sys.time()
-equProfile <- runToEquilibrium(consts = defaultConsts, parms=defaultParms)
+equProfile <- runToEquilibrium(rootTurnover = defaultParms$rootTurnover, 
+                               rootOmFrac = defaultParms$rootOmFrac,
+                               omDecayRate = defaultParms$omDecayRate,
+                               packing = defaultConsts$packing,
+                               
+                               mineralInput_g_per_yr.fn = sedimentInputs,
+                               ssc = defaultParms$ssc, 
+                               meanTidalHeight = defaultParms$depthBelowMHW, 
+                               
+                               massLiveRoots.fn = massLiveRoots,
+                               totalRootMass_per_area = defaultParms$totalRootBiomass,
+                               rootDepthMax = defaultParms$rootDepthMax,
+                               
+                               depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                               rootDensity = defaultConsts$packing$root)
 tock <- Sys.time() - tick
 print(tock)
 
@@ -112,29 +142,24 @@ ggplot(equProfile) +
 ```
 
 ```{r runWithNoIn}
+nonInputProfile <- equProfile
 
 for(ii in 1:100){
-  if(ii == 1){
-    noInputProfile <- addCohort(massPools = equProfile,
-                                ssc = defaultParms$ssc, 
-                                meanTidalHeight = 0, 
-                                rootTurnover = defaultParms$rootTurnover, 
-                                rootOmFrac = defaultParms$rootOmFrac,
-                                omDecayRate = defaultParms$omDecayRate,
-                                totalRootMass_per_area = defaultParms$totalRootBiomass, 
-                                rootDepthMax = defaultParms$rootDepthMax,
-                                consts = defaultConsts)
-  }else{
     noInputProfile <- addCohort(massPools = noInputProfile,
-                                ssc = defaultParms$ssc, 
-                                meanTidalHeight = 0, 
-                                rootTurnover = defaultParms$rootTurnover, 
-                                rootOmFrac = defaultParms$rootOmFrac,
-                                omDecayRate = defaultParms$omDecayRate,
-                                totalRootMass_per_area = defaultParms$totalRootBiomass, 
-                                rootDepthMax = defaultParms$rootDepthMax,
-                                consts = defaultConsts)
-  }
+                               rootTurnover = defaultParms$rootTurnover, 
+                               rootOmFrac = defaultParms$rootOmFrac,
+                               omDecayRate = defaultParms$omDecayRate,
+                               packing = defaultConsts$packing,
+                               
+                               mineralInput_g_per_yr.fn = (function(...)0), #set 0 inputs
+                               
+                               massLiveRoots.fn = massLiveRoots,
+                               totalRootMass_per_area = defaultParms$totalRootBiomass,
+                               rootDepthMax=defaultParms$rootDepthMax,
+                               
+                               depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                               rootDensity = defaultConsts$packing$root)
+  
 }
 
 ggplot(noInputProfile %>%
@@ -148,9 +173,92 @@ ggplot(noInputProfile %>%
 
 ```
 
-## Example converting cohort to uniform depth
+
+# Run marsh forward under steady and raising sea levels
+```{r steadySealevel}
+steadySeaProfile <- equProfile
+raisingSeaProfile <- equProfile
+
+startingElevation <- max(equProfile$layer_bottom)
+
+profileDepth <- data.frame(year = 0:100,
+                     steadySea=c(startingElevation, rep(NA, 100)),
+                     raisingSea=c(startingElevation, rep(NA, 100)))
+
+for(ii in 1:100){
+  steadySeaProfile <- addCohort(massPools = steadySeaProfile,
+                               rootTurnover = defaultParms$rootTurnover, 
+                               rootOmFrac = defaultParms$rootOmFrac,
+                               omDecayRate = defaultParms$omDecayRate,
+                               packing = defaultConsts$packing,
+                               
+                               mineralInput_g_per_yr.fn = sedimentInputs,
+                               ssc = defaultParms$ssc, 
+                               meanTidalHeight = defaultParms$depthBelowMHW + startingElevation -
+                                 max(steadySeaProfile$layer_bottom, na.rm=TRUE),
+                               
+                               massLiveRoots.fn = massLiveRoots,
+                               totalRootMass_per_area = defaultParms$totalRootBiomass,
+                               rootDepthMax=defaultParms$rootDepthMax,
+                               
+                               depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                               rootDensity = defaultConsts$packing$root)
+  
+  raisingSeaProfile <- addCohort(massPools = raisingSeaProfile,
+                               rootTurnover = defaultParms$rootTurnover, 
+                               rootOmFrac = defaultParms$rootOmFrac,
+                               omDecayRate = defaultParms$omDecayRate,
+                               packing = defaultConsts$packing,
+                               
+                               mineralInput_g_per_yr.fn = sedimentInputs,
+                               ssc = defaultParms$ssc, 
+                               meanTidalHeight = defaultParms$depthBelowMHW+0.03*ii + 
+                                 startingElevation -
+                                 max(steadySeaProfile$layer_bottom, na.rm=TRUE),
+                               
+                               massLiveRoots.fn = massLiveRoots,
+                               totalRootMass_per_area = defaultParms$totalRootBiomass,
+                               rootDepthMax=defaultParms$rootDepthMax,
+                               
+                               depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                               rootDensity = defaultConsts$packing$root) 
+
+  profileDepth$steadySea[ii+1] <- max(steadySeaProfile$layer_bottom)
+  profileDepth$raisingSea[ii+1] <- max(raisingSeaProfile$layer_bottom)
+}
+
+```
+
+
+```{r}
+
+print(sprintf('Change in marsh elevation after 100 years with no change in sea level is %.4f cm, and with a 0.03 cm/yr raise in sea level %.4f cm', max(steadySeaProfile$layer_bottom) - startingElevation, 
+              max(raisingSeaProfile$layer_bottom) - startingElevation))
+
+ggplot(profileDepth %>% gather(key='type', value='max. profile depth [cm]', steadySea, raisingSea)) +
+         geom_line(aes(x=year, y=`max. profile depth [cm]`, color=type))
+
+ggplot(profileDepth %>%
+         mutate(`changeInElev_steadySea` = c(steadySea[2:length(year)] - steadySea[1:(length(year) - 1)], NA),
+                `changeInElev_raisingSea` = c(raisingSea[2:length(year)] - raisingSea[1:(length(year) - 1)], NA)) %>%
+         gather(key='type', value='change in elevation [cm yr-1]', starts_with('changeInElev'))) +
+         geom_line(aes(x=year, y=`change in elevation [cm yr-1]`, color=type))
+
+plot.df <- bind_rows(startingProfile %>% mutate(type='inital'),
+                     steadySeaProfile %>% mutate(type='steady seas'),
+                     raisingSeaProfile %>% mutate(type='raising seas'))
+
+ggplot(plot.df) +
+  geom_line(aes(x=(layer_top+layer_bottom)/2, y=age, color=type)) 
+
+ggplot(plot.df) +
+  geom_line(aes(x=(layer_top+layer_bottom)/2, y=fast_OM+slow_OM, color=type)) 
+```
+
+# Example converting cohort to uniform depth
 
 ```{r convertToUnifDepth}
+equProfile <- equProfile[is.finite(equProfile$age),]
 sampleStep<- 5
 profile_by_depth <- data.frame(top = seq(0, floor(max(equProfile$layer_top) - sampleStep),
                                          by=sampleStep), 
@@ -218,7 +326,23 @@ parametersToRun <- expand.grid(rootDepthMax=c(15, 30, 60),
                      omDecayRate = list(fast=xx$omDecayRate_fast, slow=0), # organic matter decay rate (labile, slow), 1/yr
                      ssc = xx$ssc, # Suspended Sediment Concentration, mg per liter
                      depthBelowMHW = xx$depthBelowMHW)
-    return(runToEquilibrium(parms = newParms, consts = defaultConsts, maxAge=1000))
+    return(runToEquilibrium(rootTurnover = newParms$rootTurnover, 
+                            rootOmFrac = newParms$rootOmFrac,
+                            omDecayRate = newParms$omDecayRate,
+                            packing = defaultConsts$packing,
+                            
+                            mineralInput_g_per_yr.fn = sedimentInputs,
+                            ssc = newParms$ssc, 
+                            meanTidalHeight = newParms$depthBelowMHW, 
+                            
+                            massLiveRoots.fn = massLiveRoots,
+                            totalRootMass_per_area = newParms$totalRootBiomass,
+                            rootDepthMax = newParms$rootDepthMax,
+                            
+                            depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                            rootDensity = defaultConsts$packing$root, 
+                            
+                            maxAge=1000))
   })(.)) %>%
   mutate('Total OM [g]' = fast_OM + slow_OM,
          'Soil volume [cm3]' = (fast_OM + slow_OM) / defaultConsts$packing$organic +
@@ -234,68 +358,4 @@ ggplot(parametersToRun %>%
   facet_wrap(~variable, scales='free')
 ```
 
-# Run marsh forward under steady and raising sea levels
-```{r steadySealevel}
-startingProfile <- runToEquilibrium(consts = defaultConsts, parms=defaultParms)
-steadySeaProfile <- startingProfile
-raisingSeaProfile <- startingProfile
 
-startingElevation <- max(startingProfile$layer_bottom)
-
-profileDepth <- data.frame(year = 0:100,
-                     steadySea=c(startingElevation, rep(NA, 100)),
-                     raisingSea=c(startingElevation, rep(NA, 100)))
-
-for(ii in 1:100){
-  steadySeaProfile <- addCohort(massPools = steadySeaProfile,
-                               ssc = defaultParms$ssc, 
-                               meanTidalHeight = (startingElevation + defaultParms$depthBelowMHW) -
-                                 max(steadySeaProfile$layer_bottom), 
-                               rootTurnover = defaultParms$rootTurnover, 
-                               rootOmFrac = defaultParms$rootOmFrac,
-                               omDecayRate = defaultParms$omDecayRate,
-                               totalRootMass_per_area = defaultParms$totalRootBiomass, 
-                               rootDepthMax = defaultParms$rootDepthMax,
-                               consts = defaultConsts)
-  
-  raisingSeaProfile <- addCohort(massPools = raisingSeaProfile,
-                               ssc = defaultParms$ssc, 
-                               meanTidalHeight = (startingElevation +
-                                                    defaultParms$depthBelowMHW+0.03*ii) -
-                                 max(raisingSeaProfile$layer_bottom) , 
-                               rootTurnover = defaultParms$rootTurnover, 
-                               rootOmFrac = defaultParms$rootOmFrac,
-                               omDecayRate = defaultParms$omDecayRate,
-                               totalRootMass_per_area = defaultParms$totalRootBiomass, 
-                               rootDepthMax = defaultParms$rootDepthMax,
-                               consts = defaultConsts)
-  profileDepth$steadySea[ii+1] <- max(steadySeaProfile$layer_bottom)
-  profileDepth$raisingSea[ii+1] <- max(raisingSeaProfile$layer_bottom)
-}
-
-```
-
-```{r}
-
-print(sprintf('Change in marsh elevation after 100 years with no change in sea level is %.4f cm, and with a 0.03 cm/yr raise in sea level %.4f cm', max(steadySeaProfile$layer_bottom) - startingElevation, 
-              max(raisingSeaProfile$layer_bottom) - startingElevation))
-
-ggplot(profileDepth %>% gather(key='type', value='max. profile depth [cm]', steadySea, raisingSea)) +
-         geom_line(aes(x=year, y=`max. profile depth [cm]`, color=type))
-
-ggplot(profileDepth %>%
-         mutate(`changeInElev_steadySea` = c(steadySea[2:length(year)] - steadySea[1:(length(year) - 1)], NA),
-                `changeInElev_raisingSea` = c(raisingSea[2:length(year)] - raisingSea[1:(length(year) - 1)], NA)) %>%
-         gather(key='type', value='change in elevation [cm yr-1]', starts_with('changeInElev'))) +
-         geom_line(aes(x=year, y=`change in elevation [cm yr-1]`, color=type))
-
-plot.df <- bind_rows(startingProfile %>% mutate(type='inital'),
-                     steadySeaProfile %>% mutate(type='steady seas'),
-                     raisingSeaProfile %>% mutate(type='raising seas'))
-
-ggplot(plot.df) +
-  geom_line(aes(x=(layer_top+layer_bottom)/2, y=age, color=type)) 
-
-ggplot(plot.df) +
-  geom_line(aes(x=(layer_top+layer_bottom)/2, y=fast_OM+slow_OM, color=type)) 
-```
