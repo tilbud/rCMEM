@@ -18,7 +18,7 @@ library(tidyverse)
 library(MEMs)
 
 ##Debug option
-#walk(list.files('../R', full.names = TRUE), source)
+#purrr::walk(list.files('../R', full.names = TRUE), source)
 
 defaultParms <- list(rootDepthMax = 30, # Depth of the root zone in cm below surface
                      totalRootBiomass = 0.3, # 0.3 Total Root Biomass, g/cm2
