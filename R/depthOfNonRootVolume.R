@@ -2,28 +2,24 @@
 #' 
 #' Given a shape and mass for the roots, calculate the depth of a specific non-root volume.
 #'
-#' @param nonRootVolume a numerical value that is the volume of interest, generally in cm3.
+#' @param nonRootVolume a numerical value (possibly array) that is the volume of interest, generally in cm3.
 #' @param totalRootMass_per_area an integer that is the total mass per area of the roots, generally in g cm-3
 #' @param rootDepthMax an integer that is the maximum root depth, generally in cm
-#' @param parms placeholder currently NULL
-#' @param consts a list of constants that must include numerics representing the soilLength (cm) and soilWidth (cm) for the area of interest, a flag shape, and a list called packing that includes a value of the root packing (or density). 
+#' @param rootDensity a numeric that is the root density in g per cm3
+#' @param soilLength a numeric of the unit length of soil volume, generally 1 cm
+#' @param soilWidth a numeric of the unitl witdth of the soil colume, generally 1cm
+#' @param shape a character of the shape of the root distribution, currently only 'linear' is implimented
+#' @param ... 
 #'
-#' @return
+#' @return A numeric (possibly array) corresponding to the depth of the specificed non root volume
+#' 
 #' @export
-#'
-#' @examples
 depthOfNotRootVolume <- function(nonRootVolume, 
                                  totalRootMass_per_area, 
                                  rootDepthMax,
-                                 parms=NULL, consts){
- 
-  if(!all(c('soilLength', 'soilWidth', 'shape', 'packing') %in% names(consts))){
-    stop('Can not find all constants.')
-  }
-  soilLength <- consts$soilLength
-  soilWidth <- consts$soilWidth
-  rootDensity <- consts$packing$root
-  shape <- consts$shape
+                                 rootDensity,
+                                 soilLength = 1, soilWidth=1,
+                                 shape='linear', ...){
   
   ####
   totalRootMass <- soilLength*soilWidth*totalRootMass_per_area

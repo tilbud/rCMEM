@@ -4,16 +4,21 @@
 \alias{sedimentInputs}
 \title{Annual mineral inputs into marsh surface}
 \usage{
-sedimentInputs(ssc, meanTidalHeight, parms = NULL, consts)
+sedimentInputs(ssc, meanTidalHeight, nTidesPerYear = 704,
+  soilLength = 1, soilWidth = 1, ...)
 }
 \arguments{
-\item{parms}{placeholder, currently NULL}
+\item{ssc}{a numeric representing suspended sediment concentration in (mg per liter)}
 
-\item{consts}{a list of constants including nTidesPerYear, soilLength, and soilWidth}
+\item{meanTidalHeight}{annual mean tide above marsh elevation}
 
-\item{sse}{a numeric representing suspended sediment concentration in (mg per liter)}
+\item{nTidesPerYear}{number of tides per year}
 
-\item{meanTidalVolume}{a numeric representing the the mean tide volume above the marsh surface (cm^33)}
+\item{soilLength}{unit length of interest}
+
+\item{soilWidth}{unit width of interest}
+
+\item{...}{}
 }
 \value{
 a numeric that is the mass of mineral added in one year to the top of the marsh

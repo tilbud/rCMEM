@@ -5,7 +5,7 @@
 \title{Mass of living roots}
 \usage{
 massLiveRoots(layerBottom, layerTop, totalRootMass_per_area, rootDepthMax,
-  parms = NULL, consts)
+  soilLength = 1, soilWidth = 1, shape = "linear", ...)
 }
 \arguments{
 \item{layerBottom}{an array of depths from soil top to the bottom of the layer, generally in cm}
@@ -16,9 +16,13 @@ massLiveRoots(layerBottom, layerTop, totalRootMass_per_area, rootDepthMax,
 
 \item{rootDepthMax}{an integer that is the maximum root depth, generally in cm}
 
-\item{parms}{currently a placeholder and not used}
+\item{soilLength}{unit length of soil area, generally 1}
 
-\item{consts}{a list of constants including integers for the soilLength and soilWidth of the area of interest, as well as the flag for the shape of the root mass. See example for details.}
+\item{soilWidth}{unit width of soil area, generally 1.}
+
+\item{shape}{flag of root shape, only \code{linear} is implimented.}
+
+\item{...}{}
 }
 \value{
 an array of the associated live root mass for each layer specified.
@@ -26,7 +30,7 @@ an array of the associated live root mass for each layer specified.
 \description{
 This function returns the mass of the living roots between two layers. Given a mass per area of roots and a maximum rooting depth, this calculates the total mass between two layers with a specified distribution. Currently only a linear distribution is implimented. \cr
 The linear algorithm is as follows:  \itemize{
-   \item mass_per_depth = slope * depth + intercept
+   \item #mass_per_depth = slope * depth + intercept
    \item slope <- -2 * totalRootMass / (rootDepthMax^2)
    \item intercept <- 2 * totalRootMass / rootDepthMax
    \item #mass = integral(mass_per_depth, depth)
@@ -36,5 +40,5 @@ The linear algorithm is as follows:  \itemize{
 \examples{
 massLiveRoots(layerBottom = 1:10, layerTop = 0:9, 
               totalRootMass_per_area = 0.3, rootDepthMax=5,
-              consts=list(soilLength=1, soilWidth=1, shape='linear'))
+              soilLength=1, soilWidth=1, shape='linear')
 }
