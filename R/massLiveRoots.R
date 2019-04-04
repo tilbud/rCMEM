@@ -1,7 +1,13 @@
 #' Mass of living roots
 #'
-#' This function returns the mass of the living roots between two layers. Layers are defined by depth
-#'  from top of the soil. The bottom layer should be greater then the top.
+#' This function returns the mass of the living roots between two layers. Given a mass per area of roots and a maximum rooting depth, this calculates the total mass between two layers with a specified distribution. Currently only a linear distribution is implimented. \cr
+#' The linear algorithm is as follows:  \itemize{
+#'    \item #mass_per_depth = slope * depth + intercept
+#'    \item slope <- -2 * totalRootMass / (rootDepthMax^2)
+#'    \item intercept <- 2 * totalRootMass / rootDepthMax
+#'    \item #mass = integral(mass_per_depth, depth)
+#'    \item rootMass <- intercept * (layerBottom-layerTop) + slope/2 * (layerBottom ^2-layerTop^2)
+#'    }
 #' 
 #' @param layerBottom an array of depths from soil top to the bottom of the layer, generally in cm
 #' @param layerTop an array of depths from soil top to the top of the layer, generally in cm
@@ -20,7 +26,7 @@
 massLiveRoots <- function(layerBottom, layerTop, 
                           totalRootMass_per_area, 
                           rootDepthMax,
-                          parms = NULL, consts ){
+                          parms = NULL, consts){
   
   if(!all(c('soilLength', 'soilWidth', 'shape') %in% names(consts))){
     stop('Can not find all constants.')
