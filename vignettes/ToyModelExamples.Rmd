@@ -140,7 +140,7 @@ ggplot(equProfile) +
 ```
 
 ```{r runWithNoIn}
-nonInputProfile <- equProfile
+noInputProfile <- equProfile
 
 for(ii in 1:100){
     noInputProfile <- addCohort(massPools = noInputProfile,
@@ -258,44 +258,21 @@ ggplot(plot.df) +
 ```{r convertToUnifDepth}
 equProfile <- equProfile[is.finite(equProfile$age),]
 sampleStep<- 5
-profile_by_depth <- data.frame(top = seq(0, floor(max(equProfile$layer_top) - sampleStep),
-                                         by=sampleStep), 
-           bottom = seq(sampleStep, floor(max(equProfile$layer_top)), by=sampleStep)) %>%
-  group_by(top, bottom) %>%
-  mutate(age = weighted.mean(equProfile$age, 
-                             pmax(pmin(equProfile$layer_bottom, bottom) - 
-                                    pmax(equProfile$layer_top, top), 0)),
-         fast_OM = sum(equProfile$fast_OM *
-                             pmax(pmin(equProfile$layer_bottom, bottom) - 
-                                    pmax(equProfile$layer_top, top), 0) / 
-                         (equProfile$layer_bottom - equProfile$layer_top)),
-         slow_OM = sum(equProfile$slow_OM * 
-                             pmax(pmin(equProfile$layer_bottom, bottom) - 
-                                    pmax(equProfile$layer_top, top), 0) / 
-                         (equProfile$layer_bottom - equProfile$layer_top)),
-         mineral = sum(equProfile$mineral* 
-                             pmax(pmin(equProfile$layer_bottom, bottom) - 
-                                    pmax(equProfile$layer_top, top), 0) / 
-                         (equProfile$layer_bottom - equProfile$layer_top)),
-         root = sum(equProfile$root_mass * 
-                             pmax(pmin(equProfile$layer_bottom, bottom) - 
-                                    pmax(equProfile$layer_top, top), 0) / 
-                         (equProfile$layer_bottom - equProfile$layer_top)),
-         soil_volume = sum((equProfile$cumCohortVol - 
-                        c(0, equProfile$cumCohortVol[-length(equProfile$cumCohortVol)])) * 
-                             pmax(pmin(equProfile$layer_bottom, bottom) - 
-                                    pmax(equProfile$layer_top, top), 0) / 
-                         (equProfile$layer_bottom - equProfile$layer_top))) %>%
-  mutate(bulk_density = sum(fast_OM+slow_OM+mineral)/soil_volume) %>%
-  mutate(SOM = sum(fast_OM+slow_OM)/bulk_density)
+profile_by_depth <- convertProfile_AgeToDepth(equProfile,
+  layerTop = seq(0, floor(max(equProfile$layer_top) - sampleStep),by=sampleStep), 
+  layerBottom = seq(sampleStep, floor(max(equProfile$layer_top)), by=sampleStep))
 
 ggplot(profile_by_depth) +
-  geom_line(aes(x=(top+bottom)/2, y=age)) +
-  geom_line(data=equProfile, aes(x=(layer_top+layer_bottom)/2, y=age), color='yellow', linetype=3)
+  geom_line(data=equProfile, aes(x=(layer_top+layer_bottom)/2, y=age), color='red') +
+  geom_point(aes(x=(layer_top+layer_bottom)/2, y=age)) 
 
 ggplot(profile_by_depth %>%
-         gather(key='variable', value='value', SOM, bulk_density, fast_OM, slow_OM, mineral)) +
-  geom_line(aes(x=(top+bottom)/2, y=value)) +
+         gather(key='variable', value='value', fast_OM, slow_OM, mineral)) +
+  geom_line(data=equProfile %>%
+         gather(key='variable', value='value', fast_OM, slow_OM, mineral),
+         aes(x=(layer_top+layer_bottom)/2, y=value/(layer_bottom-layer_top)), 
+         color='red') +
+  geom_point(aes(x=(layer_top+layer_bottom)/2, y=value/(layer_bottom-layer_top))) +
   facet_wrap(~variable, scales = 'free_y')
 ```
 
