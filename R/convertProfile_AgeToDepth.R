@@ -21,12 +21,13 @@ convertProfile_AgeToDepth <- function(ageCohort, layerTop, layerBottom){
                         function(yy)sum(yy*layerWeights))
     
     ans$age <- weighted.mean(ageCohort$age, layerWeights)
+    ans$input_yrs <- sum(layerWeights)
     ans$layer_bottom <- xx$bottom
     ans$layer_top <- xx$top
     
     return(as.data.frame(ans))
   })
   
-  return(ans[,c('layer_top', 'layer_bottom', 'age', 
+  return(ans[,c('layer_top', 'layer_bottom', 'age', 'input_yrs',
                 'fast_OM', 'slow_OM', 'mineral', 'root_mass')])
 }
