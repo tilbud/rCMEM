@@ -41,6 +41,7 @@ defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
 
 ## Test root profile
 ```{r functionRootProfile}
+
 ##Check liveRoots
 testRoots <- massLiveRoots(layerBottom = seq(5, 40, by=5), layerTop=seq(0, 35, by=5),
                     totalRootMass_per_area = defaultParms$totalRootBiomass,
@@ -52,6 +53,7 @@ paste('Conservation of mass is: ', sum(testRoots) - defaultParms$totalRootBiomas
 
 ## Test depth of given soil volume
 ```{r functionFindVol}
+
 ##Check depth of non root volue
 testDepth <- depthOfNotRootVolume(nonRootVolume = 1:100,
                                   totalRootMass_per_area = defaultParms$totalRootBiomass,

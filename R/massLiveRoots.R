@@ -33,7 +33,12 @@ massLiveRoots <- function(layerBottom, layerTop,
   
   totalRootMass <- soilLength*soilWidth*totalRootMass_per_area
   
-  if(any(layerBottom < layerTop)){
+  if (totalRootMass == 0) {
+    rootMass <- rep(0, length(layerBottom))
+    return(rootMass)
+  } else {
+    
+    if(any(layerBottom < layerTop)){
     stop('Bad layer definition.')
   }
   
@@ -59,4 +64,8 @@ massLiveRoots <- function(layerBottom, layerTop,
  
     stop('Unknown shape specified')
   }
+  }
+    
+  
+  
 }
