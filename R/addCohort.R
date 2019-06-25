@@ -27,7 +27,7 @@
 addCohort <- function(massPools,
                       rootTurnover, rootOmFrac, omDecayRate, #decay paraemters
                       packing, #packing densities
-                      mineralInput_g_per_yr.fn = sediementInputs, 
+                      mineralInput_g_per_yr.fn = sedimentInputs, 
                       massLiveRoots.fn = massLiveRoots,
                       depthOfNotRootVolume.fn = depthOfNotRootVolume,
                       dt_yr=1, ...){
