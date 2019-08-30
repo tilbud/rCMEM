@@ -23,7 +23,7 @@ sedimentInputs <- function(ssc, # Suspended Sediment Concentration, mg per liter
   }
 
   annSediment <- (ssc * 1e-6)  * # convert mg/l to grams/cm^3
-    nTidesPerYear * (meanTidalHeight * soilLength * soilWidth) # Cumulative water volume
+    nTidesPerYear * (meanTidalHeight * 0.5 * soilLength * soilWidth) # Cumulative water volume
   
   if (annSediment < 0) {
     return(0)
