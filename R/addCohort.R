@@ -89,7 +89,7 @@ addCohort <- function(massPools,
   }
   
   #calculate the volume of each cohort
-  temp_Vol <- (ans$fast_OM + ans$slow_OM)*packing$organic + ans$mineral*packing$mineral
+  temp_Vol <- (ans$fast_OM + ans$slow_OM)/packing$organic + ans$mineral/packing$mineral
   temp_Vol[is.na(temp_Vol)] <- 0 #replace NA with 0 so we can calculate cumulative colume
   ans$cumCohortVol <- cumsum(temp_Vol)
   
