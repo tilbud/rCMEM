@@ -27,7 +27,7 @@
 addCohort <- function(massPools,
                       rootTurnover, rootOmFrac, omDecayRate, #decay paraemters
                       packing, #packing densities
-                      mineralInput_g_per_yr.fn = sediementInputs, 
+                      mineralInput_g_per_yr.fn = sedimentInputs, 
                       massLiveRoots.fn = massLiveRoots,
                       depthOfNotRootVolume.fn = depthOfNotRootVolume,
                       dt_yr=1, ...){
@@ -89,12 +89,16 @@ addCohort <- function(massPools,
   }
   
   #calculate the volume of each cohort
-  temp_Vol <- (ans$fast_OM + ans$slow_OM)*packing$organic + ans$mineral*packing$mineral
+  temp_Vol <- (ans$fast_OM + ans$slow_OM)/packing$organic + ans$mineral/packing$mineral
   temp_Vol[is.na(temp_Vol)] <- 0 #replace NA with 0 so we can calculate cumulative colume
   ans$cumCohortVol <- cumsum(temp_Vol)
   
   #calculate depth profile
-  ans$layer_bottom <- depthOfNotRootVolume.fn(nonRootVolume = ans$cumCohortVol, ...)
+  ans$layer_bottom <- depthOfNotRootVolume.fn(nonRootVolume = ans$cumCohortVol,
+                                              massLiveRoots.fn=massLiveRoots.fn,
+                                              soilLength=1, soilWidth=1,
+                                              relTol = 1e-6,
+                                              ...)
   ans$layer_top <- c(0, ans$layer_bottom[-length(ans$layer_bottom)])
   
   #recalculate the root mass
