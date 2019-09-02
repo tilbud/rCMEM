@@ -94,7 +94,11 @@ addCohort <- function(massPools,
   ans$cumCohortVol <- cumsum(temp_Vol)
   
   #calculate depth profile
-  ans$layer_bottom <- depthOfNotRootVolume.fn(nonRootVolume = ans$cumCohortVol, ...)
+  ans$layer_bottom <- depthOfNotRootVolume.fn(nonRootVolume = ans$cumCohortVol,
+                                              massLiveRoots.fn=massLiveRoots.fn,
+                                              soilLength=1, soilWidth=1,
+                                              relTol = 1e-6,
+                                              ...)
   ans$layer_top <- c(0, ans$layer_bottom[-length(ans$layer_bottom)])
   
   #recalculate the root mass
