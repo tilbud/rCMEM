@@ -1,7 +1,7 @@
-Package: MEMs
+Package: rCTM
 Type: Package
-Title: Marsh Equlibrium Model
-Version: 0.1.0
+Title: Cohort Theory Model
+Version: 6.1.1
 Author: J Moore
 Maintainer: The package maintainer <yourself@somewhere.net>
 Description: More about what it does (maybe more than one line)
