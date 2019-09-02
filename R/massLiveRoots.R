@@ -28,7 +28,9 @@
 massLiveRoots <- function(layerBottom, layerTop, 
                           totalRootMass_per_area, 
                           rootDepthMax,
-                          soilLength=1, soilWidth=1, shape='linear',
+                          soilLength=1, soilWidth=1, 
+                          shape,
+                          expDecayRate_perMaxDepth = log(0.05),
                           ...){
   
   totalRootMass <- soilLength*soilWidth*totalRootMass_per_area
@@ -38,34 +40,61 @@ massLiveRoots <- function(layerBottom, layerTop,
     return(rootMass)
   } else {
     
-    if(any(layerBottom < layerTop)){
-    stop('Bad layer definition.')
-  }
-  
-  ##reset the layers that are beyond the root inputs to have 0 depths
-  layerBottom[layerBottom > rootDepthMax] <- rootDepthMax
-  layerTop[layerTop > rootDepthMax] <- rootDepthMax
-  
-  if(shape == 'linear'){
-    #mass_per_depth(depth) = slope * depth + intercept; mass(depth) = slope/2*depth^2+intercept*depth
-    #Given
-    #   mass_per_depth(maxDepth) = 0  => intercept = -slope * maxDepth
-    #   mass(maxDepth) = TotalMass => 
-    #                                 TotalMass = slope/2*maxDepth^2 + intercept*maxDepth
-    #                                 => slope = 2*TotalMass/maxDepth^2
-    #                                    intercept = -2 * TotalMass/maxDepth
-    #
-    slope <- -2 * totalRootMass / (rootDepthMax^2)
-    intercept <- 2 * totalRootMass / rootDepthMax
-    #mass = integral(mass_per_depth, depth)
-    rootMass <- intercept*(layerBottom-layerTop) + slope/2*(layerBottom ^2-layerTop^2)
-    return(rootMass)
-  }else{
- 
-    stop('Unknown shape specified')
-  }
-  }
+    layerBottom[is.na(layerBottom)] <- 0
+    layerTop[is.na(layerTop)] <- 0
     
+    if(any(layerBottom < layerTop)){
+      #print(data.frame(layerBottom, layerTop))
+      stop('Bad layer definition.')
+    }
+    
+    ##reset the layers that are beyond the root inputs to have 0 depths
+    layerBottom[layerBottom > rootDepthMax] <- rootDepthMax
+    layerTop[layerTop > rootDepthMax] <- rootDepthMax
+    
+    if(shape == 'linear'){
+      #mass_per_depth(depth) = slope * depth + intercept; mass(depth) = slope/2*depth^2+intercept*depth
+      #Given
+      #   mass_per_depth(maxDepth) = 0  => intercept = -slope * maxDepth
+      #   mass(maxDepth) = TotalMass => 
+      #                                 TotalMass = slope/2*maxDepth^2 + intercept*maxDepth
+      #                                 => slope = 2*TotalMass/maxDepth^2
+      #                                    intercept = -2 * TotalMass/maxDepth
+      #
+      slope <- -2 * totalRootMass / (rootDepthMax^2)
+      intercept <- 2 * totalRootMass / rootDepthMax
+      #mass = integral(mass_per_depth, depth)
+      rootMass <- intercept*(layerBottom-layerTop) + slope/2*(layerBottom ^2-layerTop^2)
+      
+    }else{
+      if(shape == 'exponential'){
+        # root mass with depth x: r(x) = a * exp(b * x) - m
+        # Let R(x) be the antiderivative: R(x) = a / b * exp(b * x) - m * x + C0
+        # Assume
+        # r( x = rootDepthMax) => m = a * exp(b * rootDepthMax)
+        # Total root biomass is integral of r from 0 to rootDepthMax
+        #                 TotalMass  = a / b * exp(b*rootDepthMax) - m * rootDepthMax - a / b
+        #                            = a / b * exp(b*rootDepthMax) -  a * exp(b * rootDepthMax) * rootDepthMax - a / b
+        #  a = TotalMass * [1 / b * exp(b * rootDepthMax) -  exp(b * rootDepthMax) * rootDepthMax - 1 / b]^-1
+        #
+        # mass between two layers is the integral of r from x1 to x2
+        #         mass = (a / b * exp(b * x2) - m * x2) - (a / b * exp(b * x1) - m * x1)
+        #         mass = a / b * (exp(b * x2)-exp(b * x1)) + m *(x1 - x2)
+        #layerTop <- 0; layerBottom = 1; expDecayRate_perRootDepthMax <- log(0.05); totalRootMass <- 0.2; rootDepthMax <- 30
+        b <- expDecayRate_perMaxDepth / rootDepthMax #convert from total profile to per cm
+        a <- totalRootMass * (1 / b * exp(b * rootDepthMax) -  
+                                exp(b * rootDepthMax) * rootDepthMax - 1 / b)^-1
+        m <- a * exp(b * rootDepthMax)
+        rootMass <- a / b * (exp(b * layerBottom)-exp(b * layerTop)) +  m*(layerTop - layerBottom)
+        
+      }else{
+        
+        stop(paste('Unknown shape specified:', shape))
+      }
+    }
+    return(rootMass)
+  }
+  
   
   
 }
