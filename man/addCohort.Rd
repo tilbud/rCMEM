@@ -5,7 +5,7 @@
 \title{Add another cohort to the soil profile}
 \usage{
 addCohort(massPools, rootTurnover, rootOmFrac, omDecayRate, packing,
-  mineralInput_g_per_yr.fn = sediementInputs,
+  mineralInput_g_per_yr.fn = sedimentInputs,
   massLiveRoots.fn = massLiveRoots,
   depthOfNotRootVolume.fn = depthOfNotRootVolume, dt_yr = 1, ...)
 }
