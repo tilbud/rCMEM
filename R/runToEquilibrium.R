@@ -1,26 +1,23 @@
-#' Run to equilbrium with proscribed depth to mean high tide
+#' Run to equilbrium with proscribed surface mineral input
 #' 
-#' 
+#' Repeatedly add new cohorts to a soil profile until the oldest layers are not siginficatly different AND the oldest layer are above some minimum age, within some upper bound of soil age.
 #'
-#' @param parms a list of parameters that are passed to addCohort individually
-#' @param consts a list of constants that are passed to addCohort as a list
 #' @param minAge run the model for atleast these many years
 #' @param maxAge do not run the model for longer then these many years
 #' @param recordEvolution a boolean flag to record how the equalibrium profile evolves
 #' @param relTol stop the evolution if the relative difference between the two oldest cohorts is less then this
 #' @param absTol stop the evolution if the absolute difference between the two oldest cohorts is less then this
+#' @param ... arguments to be passed to \code{addCohort}
 #'
-#' @return a data frame by age cohort with the layer top and bottom depths, age, and mass of the fast organic, slow organic, mineral, and root biomass pools.
+#' @return a data frame by age cohort with the layer top and bottom depths, age, and mass of the fast organic, slow organic, mineral, and root biomass pools OR a list that is a record of age cohorts
 #' @export
 #'
-#' @examples
-runToEquilibrium <- function(parms, consts, 
-                             minAge = 50, maxAge = 200,
+runToEquilibrium <- function(minAge = 50, maxAge = 200,
                              recordEvolution = FALSE,
-                             relTol = 1e-6, absTol = 1e-8){
+                             relTol = 1e-6, absTol = 1e-8, ...){
   
   #initalize things to empty
-  cohortProfile <- data.frame(age=0, fast_OM=0, slow_OM=0, mineral=0, root_mass=0,
+  cohortProfile <- data.frame(age=NA, fast_OM=NA, slow_OM=NA, mineral=NA, root_mass=NA,
                               layer_top=NA, layer_bottom=NA)
   
   if(recordEvolution){
@@ -31,19 +28,8 @@ runToEquilibrium <- function(parms, consts,
       record.ls[[sprintf('Yr%d', ii)]] <- cohortProfile
     }
     #oldCohort <- cohortProfile
-    cohortProfile <- addCohort(massPools = cohortProfile,
-                               ssc = parms$ssc, 
-                               meanTidalHeight = parms$depthBelowMHW, 
-                               rootTurnover = parms$rootTurnover, 
-                               rootOmFrac = parms$rootOmFrac,
-                               omDecayRate = parms$omDecayRate,
-                               totalRootMass_per_area = parms$totalRootBiomass, 
-                               rootDepthMax = parms$rootDepthMax,
-                               consts = consts)
+    cohortProfile <- addCohort(massPools = cohortProfile, ...)
     
-    if(ii == 2){
-      cohortProfile <- cohortProfile[1,] #chop off the 0 initalizaiton
-    }
     ##have the last layer OM pools stabilized?
     if(ii > minAge){
       if((abs(diff(cohortProfile$fast_OM[ii-c(1:2)] + cohortProfile$slow_OM[ii-c(1:2)])) < absTol |
@@ -55,7 +41,7 @@ runToEquilibrium <- function(parms, consts,
   }
   
   if(recordEvolution){
-    record.ls
+    return(record.ls)
   }else{
     return(cohortProfile)
   }

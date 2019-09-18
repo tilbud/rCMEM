@@ -1,0 +1,218 @@
+---
+title: "Benchmark rCTM"
+author: "K Todd-Brown (ktoddbrown@gmail.com)"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setUp}
+library(rCTM)
+library(tidyverse)
+```
+
+## Root profiles
+
+There are currently two root profiles implimented; linear and expodential.
+The linear implimentation follows $ax+b$ where $x$ is depth as (positive) distance from surface. 
+The expodential implementation follows $ae^{bx}+m$ where $x$ is depth as (positive) distance from surface.
+
+```{r rootProfiles}
+rootParams <- as.data.frame(t(CTMv6.1_vba_testcase$parameters.df[c(1,2,11), 4:9]))
+names(rootParams) <- unlist(CTMv6.1_vba_testcase$parameters.df[c(1,2,11),1])
+rootParams <- rootParams %>% 
+  mutate('RunName' = row.names(.),
+         rootShape = if_else(rootShape == 1, 'exponential', 'linear')) 
+
+testRootProfiles <- rootParams %>%
+  group_by_all() %>%
+  dplyr::do((
+    data.frame(top_cm = 0:59, 
+               bottom_cm = 1:60,
+               rootMass_g = massLiveRoots(layerBottom = 1:60, layerTop=0:59, 
+                                          totalRootMass_per_area = .$RT*1e-4, 
+                                          rootDepthMax = .$Dm, shape=.$rootShape))
+  ))
+
+
+knitr::kable(rootParams)
+ggplot(testRootProfiles) +
+  geom_line(aes(x=(top_cm+bottom_cm)/2, y=rootMass_g/(bottom_cm-top_cm) * 1e4, group=RunName, color=RT, linetype=rootShape))
+```
+
+##Depth of non-root volume
+
+```{r nonRootVolume}
+
+nonRootVolParams <- as.data.frame(t(CTMv6.1_vba_testcase$parameters.df[c(1,2,11, 9), 4:9]))
+names(nonRootVolParams) <- unlist(CTMv6.1_vba_testcase$parameters.df[c(1,2,11, 9),1])
+nonRootVolParams <- nonRootVolParams %>% 
+  mutate('RunName' = row.names(.),
+         rootShape = if_else(rootShape == 1, 'exponential', 'linear')) 
+
+testNonRootVolume <- nonRootVolParams %>%
+  group_by_all() %>%
+  dplyr::do(({
+    ans <- data.frame(top_cm = 0:59, 
+               bottom_cm = 1:60,
+               rootMass_g = massLiveRoots(layerBottom = 1:60, layerTop=0:59, 
+                                          totalRootMass_per_area = .$RT*1e-4, 
+                                          rootDepthMax = .$Dm, shape=.$rootShape))
+    ans$rootVol_cm3 <- ans$rootMass_g/.$k1
+    ans$nonRootVol_cm3 <- (ans$bottom_cm - ans$top_cm)*1*1 - ans$rootVol_cm3
+    ans$cumNonRootVol_cm3 <- cumsum( ans$nonRootVol_cm3)
+    ans$calcBottom_cm <- depthOfNotRootVolume(nonRootVolume.arr =  ans$cumNonRootVol_cm3,
+                                              massLiveRoots.fn = massLiveRoots,
+                                              rootDensity = .$k1,
+                                              totalRootMass_per_area = .$RT*1e-4, 
+                                              rootDepthMax = .$Dm, 
+                                              shape=.$rootShape)
+    ans
+  }
+  ))
+
+
+knitr::kable(nonRootVolParams)
+ggplot(testNonRootVolume) +
+  geom_line(aes(x=bottom_cm, y=(calcBottom_cm - bottom_cm)/bottom_cm, 
+                #y=cumNonRootVol_cm3,
+                #y=rootVol_cm3,
+                group=RunName, color=RT, linetype=rootShape)) +
+  labs(title='Difference between calculated non-root depth and true',
+      y='Relative error [(calc-true)/true]', x='Bottom layer depth')
+```
+
+```{r mineralInput}
+inputParams <- as.data.frame(t(CTMv6.1_vba_testcase$parameters.df[c(4,7), 4:9]))
+names(inputParams) <- unlist(CTMv6.1_vba_testcase$parameters.df[c(4,7),1])
+inputParams <- inputParams %>% 
+  mutate('RunName' = row.names(.)) 
+
+testInput <- inputParams %>%
+  group_by_all() %>%
+  mutate(input_g_per_yr = sedimentInputs(ssc=SSC, meanTidalHeight = D))
+
+knitr::kable(testInput)
+ggplot(testInput) +
+  geom_point(aes(x=SSC, y=input_g_per_yr, shape=as.factor(D)))
+```
+
+## CTM v6.1 benchmarking
+```{r runTestcases}
+
+
+testCases <- CTMv6.1_vba_testcase
+
+print(testCases$reference)
+print(testCases$parameters.df)
+for(runName in c('Run1', 'Run2', 'Run3', 'Run4', 'Run5', 'Run6')){ 
+  #runName <- 'Run3'
+  parm <- setNames(as.list(testCases$parameters.df[[runName]]), testCases$parameters.df$Sheet)
+  
+  profile_byAge <- data.frame(age=0, fast_OM=0, slow_OM=0, mineral=0, root_mass=0,
+                              layer_top=0, layer_bottom=0)
+     tic <- Sys.time()
+  #for(ii in 1:(ceiling(1.1*sum(testCases[[runName]]$`years of input`, na.rm = TRUE)))){
+
+  profile_byAge <- runToEquilibrium(minAge =ceiling(1.1*sum(testCases[[runName]]$`years of input`,
+                                                            na.rm = TRUE)),
+  #  profile_byAge <- addCohort( massPools = profile_byAge,
+                                rootTurnover = parm$BGTR, 
+                                rootOmFrac = list(fast=(1-parm$kr), slow=parm$kr),
+                                omDecayRate = list(fast=parm$OMDR, slow=0),
+                                packing = list(root = parm$k1, #density of roots g-C/cm3
+                                               organic = parm$k1,  # Organic Self Packing Densities: k1 g-C/cm3
+                                               mineral = parm$k2),
+                                
+                                mineralInput_g_per_yr.fn = sedimentInputs,
+                                ssc = parm$SSC,
+                                meanTidalHeight = parm$D, 
+                                
+                                massLiveRoots.fn = massLiveRoots,
+                                totalRootMass_per_area = parm$RT*1e-4,
+                                rootDepthMax=parm$Dm,
+                                shape=c('exponential', 'linear')[parm$rootShape],
+                                
+                                depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                                rootDensity = parm$k1)
+  
+  print(paste(runName, ':', format(Sys.time() - tic)))
+  
+  profile_byAgePlus <- addCohort(massPools = profile_byAge,
+                                rootTurnover = parm$BGTR, 
+                                rootOmFrac = list(fast=(1-parm$kr), slow=parm$kr),
+                                omDecayRate = list(fast=parm$OMDR, slow=0),
+                                packing = list(root = parm$k1, #density of roots g-C/cm3
+                                               organic = parm$k1,  # Organic Self Packing Densities: k1 g-C/cm3
+                                               mineral = parm$k2),
+                                
+                                mineralInput_g_per_yr.fn = sedimentInputs,
+                                ssc = parm$SSC,
+                                meanTidalHeight = parm$D, 
+                                
+                                massLiveRoots.fn = massLiveRoots,
+                                totalRootMass_per_area = parm$RT*1e-4,
+                                rootDepthMax=parm$Dm,
+                                shape=c('exponential', 'linear')[parm$rootShape],
+                                
+                                depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                                rootDensity = parm$k1)
+  
+  #}
+  
+  print(paste('Accresion rate (cm yr-1):',
+              max(profile_byAgePlus$layer_bottom, na.rm = TRUE) - 
+                max(profile_byAge$layer_bottom, na.rm=TRUE)))
+  
+  endingProfile_byAge <- profile_byAge %>% 
+    filter(is.finite(age), (layer_bottom-layer_top) > 0, age > 0) %>%
+    mutate(layer_bottom = layer_bottom - layer_top[1]) %>%
+    mutate(layer_top = layer_top -layer_top[1]) %>%
+    mutate("Core Section or Depth (cm)" = (layer_bottom+layer_top)/2,
+           "years of input" = 1,
+           "Calc'd volume (cm3)" = layer_bottom-layer_top,
+           "Horizon Age (yr)" = age,
+           ##conver from g to to g/m2 to 
+           "Root Biomass (g/m2)" = (root_mass/(layer_bottom-layer_top))*1e4,
+           "Labile OM (g/m2)" = (fast_OM/(layer_bottom-layer_top))*1e4,
+           "Refrac Biomass (g/m2)" = (slow_OM/(layer_bottom-layer_top))*1e4,
+           "Mineral (g/cm2)" = (mineral/(layer_bottom-layer_top))*1e4) %>% ##bugging, actually g/m2
+    select(`Core Section or Depth (cm)`:`Mineral (g/cm2)`) %>%
+    mutate(model = 'R')
+  
+  endingProfile_byDepth <- profile_byAge %>% 
+    filter(is.finite(age), (layer_bottom-layer_top) > 0, age > 0) %>%
+    mutate(layer_bottom = layer_bottom - layer_top[1]) %>%
+    mutate(layer_top = layer_top -layer_top[1]) %>%
+    convertProfile_AgeToDepth(layerTop = 0:(floor(max(profile_byAge$layer_bottom, na.rm=TRUE))-1),
+                              layerBottom =  1:(floor(max(profile_byAge$layer_bottom, na.rm=TRUE)))) %>%
+    mutate("Core Section or Depth (cm)" = (layer_bottom+layer_top)/2,
+           "years of input" = input_yrs,
+           "Calc'd volume (cm3)" = layer_bottom-layer_top,
+           "Horizon Age (yr)" = age,
+           ##conver from g to to g/m2 to 
+           "Root Biomass (g/m2)" = (root_mass/(layer_bottom-layer_top))*1e4,
+           "Labile OM (g/m2)" = (fast_OM/(layer_bottom-layer_top))*1e4,
+           "Refrac Biomass (g/m2)" = (slow_OM/(layer_bottom-layer_top))*1e4,
+           "Mineral (g/cm2)" = (mineral/(layer_bottom-layer_top))*1e4) %>% ##bugging, actually g/m2
+    select(`Core Section or Depth (cm)`:`Mineral (g/cm2)`) %>%
+    mutate(model = 'R-depth') 
+  
+  compareReady <- endingProfile_byDepth %>%
+    #dplyr::bind_rows(endingProfile_byDepth) %>%
+    dplyr::bind_rows(testCases[[runName]] %>% 
+                select(`Core Section or Depth (cm)`:`Mineral (g/cm2)`) %>%
+                  mutate(model = 'VBA')) %>%
+    gather(key='variable', value='value', -model, -`Core Section or Depth (cm)`)
+  
+  comparePlot <- ggplot(compareReady, aes(x=`Core Section or Depth (cm)`, y=value, color=model)) +
+    geom_line() +
+    labs(title=runName) +
+    #facet_grid(variable~model, scales='free_y')
+    facet_wrap(~variable, scales='free')
+  
+  print(comparePlot)
+  
+  #ggsave(paste0('ComparisonPlot_20190829v2_',runName,'.pdf'), comparePlot)
+}
+
+```

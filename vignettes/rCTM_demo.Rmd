@@ -15,11 +15,14 @@ library(nleqslv)
 
 ``` {r functions, warning=FALSE, message=FALSE} 
 # Functions for running simple versions of Cohort Theory Model and process outputs.
-source("R/fillDepthCellsWithRoots.R")
-source("R/fillDepthsUsingSimpleCTM.R")
-source("R/return_overlap.R")
-source("R/depthIntervalsToAgeCohorts.R")
-source('R/ageCohortsToDepthIntervals.R')
+R.dir <- '../R_old'
+source(file.path(R.dir, "fillDepthCellsWithRoots.R"))
+source(file.path(R.dir, "fillDepthsUsingSimpleCTM.R"))
+source(file.path(R.dir, "return_overlap.R"))
+source(file.path(R.dir, "depthIntervalsToAgeCohorts.R"))
+source(file.path(R.dir, "ageCohortsToDepthIntervals.R"))
+
+temp.dir <- '../temp'
 ``` 
 
 ``` {r ctm inputs, warning=FALSE, message = FALSE} 
