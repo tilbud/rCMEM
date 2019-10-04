@@ -1,0 +1,539 @@
+---
+title: "rMEM"
+author: "James T Morris, James R Holmquist, Kathe Todd-Brown"
+date: "10/2/2019"
+output: html_document
+---
+
+The marsh equilibrium model is a concept developed by Morris et al over several iterations. Different versions have in common that as sea-levels rise marsh surfaces dynamically respond to increasing inundation. Organic 
+
+MEM is a 0 dimensional model, meaning it treats spatial dynamics as a single point with no input from or output to other connected patches of the marsh. This makes it relatively simple and tractable.  
+
+Different versions of MEM have these elements in common.
+
+This is a full-blown implementation of MEM. It can be used for hind-casting long-term carbon burial rates, and or hindcasting forecasting carbon removal and net-elevation change. The MEM inputs 
+
+New optionalities include.
+*  More optionalities for inputing biomass parabolas
+*  Multiple Plant Species Can be Input
+*  Option to incorporate sediment deposition accross 3 different tidal ranges (high, higher high, and spring tides)
+*  More flexibility for inputing custom sea-level change, suspended sediment concentraton scenarios. 
+*  Custom specification of depth intervals for soil cores
+*  Options to create animations of soil profile formation, sea-level and surface elevation change, and biomass and elevation response.
+
+## Load R CTM
+The first thing we will do is load the cohort theory model as a dependency.
+
+```{r setup, include=TRUE}
+# devtools::install_github("https://github.com/tilbud/rCTM")
+require(rCTM)
+require(tidyverse)
+require(gridExtra)
+```
+
+## Define Some Inputs
+
+``` {r define inputs}
+
+# Settings for the functions we're going to run
+verbose = T
+
+# Inputs for MEM
+
+# eInit
+# yearStart
+# yearEnd
+# rslr at time 1
+# rslr at time 2
+# ssc
+
+# Parameters
+# q
+# bMax
+# zVegMin, zVegMax, zVegMed
+# rootShoot
+# maxRootDepth
+# recalictrantFraction
+# decayRate
+# MSL, MHW, MHHW, MHHWS
+# MLW, MLLW, MLLWS
+# lunar nodal amplitude
+
+```
+
+## Build Biomass Parabolas Function
+
+This function takes relative elevation (Z) as an input. It also has parameters descriping parabolic relationship between Z\* and above ground biomass production (grams dry mass m^-2^). It has three manditory parameters, maximum biomass, and minimum and maximum growing elevations.
+
+``` {r parabolic biomass}
+
+agbFromElv <- function(z=0, bMax=2500, zVegMax=3, zVegMin=-1, zVegPeak=NA) {
+  # Function takes elevation (z) as an input and outputs biomass.
+  # Maximum growing biomass (bmax), upper and lower elevation limits
+  # (zVegMin and zVegMax) are mandatory parameters
+  # The elevation of peak biomass is an optional parameter.
+  # This is a version of the function that can create skewed parabolic distributions.
+  
+  # Stop the function if there are invalid parameters
+  if ( (bMax < 0) | # negative peak biomss
+       # or elevations that don't make sense
+       (zVegMax <= max(zVegMin, zVegPeak, na.rm=T)) |
+       ((zVegMin >= min(zVegMax, zVegPeak, na.rm=T)))
+       ) {
+    stop("invalid biomass parameters")
+  }
+  
+  # If there is no peak elevation for vegetation parabola is symmetric.
+  if (is.na(zVegPeak)) { 
+    
+    # Elevation of the veg. peak is halfway between the min and max limits
+    zVegPeak<-(zVegMax+zVegMin)/2
+  
+    # From bmax, min, and max elevation limits, solve for parameters of a parabola.
+    a <- -((-zVegMin * bMax - zVegMax * bMax) / ((zVegMin - zVegPeak) * (-zVegMax + zVegPeak)))
+    b <- -(bMax / ((zVegMin - zVegPeak) * (-zVegMax + zVegPeak)))
+    c <- (zVegMin * zVegMax * bMax) / ((zVegMin - zVegPeak) * (zVegMax - zVegPeak))
+    
+    # Apply parabolic function to elevation to calulate above ground biomass.
+    agb <- a*z + b*z^2 + c
+  
+  # If elevation of peak biomass is specified the curve can be more flexible ...
+  } else {
+    # ... but we need to split it into two curves.
+    
+    # For the curve applied on the 'upper end' create a new minimum elevation
+    # mirroring  upper elevation limit accross the peak biomass elevation.
+    zVegMin_up <- zVegPeak-((zVegMax-zVegPeak)) 
+    
+    # For the curve applied at the 'lower end', same. Create new maximum elevation 
+    # tolerance mirroring, lower elevation limit accros the peak biomass elevation.
+    zVegMax_low <-zVegPeak+((zVegPeak-zVegMin))
+    
+    # Solve for the parameters of the upper curve.
+    a_up <- -((-zVegMin_up * bMax - zVegMax * bMax) / ((zVegMin_up - zVegPeak) * (-zVegMax + zVegPeak)))
+    b_up <- -(bMax / ((zVegMin_up - zVegPeak) * (-zVegMax + zVegPeak)))
+    c_up <- (zVegMin_up * zVegMax * bMax) / ((zVegMin_up - zVegPeak) * (zVegMax - zVegPeak))
+    
+    # Solve for the parametrs of the lower curve.
+    a_low <- -((-zVegMin * bMax - zVegMax_low * bMax) / ((zVegMin - zVegPeak) * (-zVegMax_low + zVegPeak)))
+    b_low <- -(bMax / ((zVegMin - zVegPeak) * (-zVegMax_low + zVegPeak)))
+    c_low <- (zVegMin * zVegMax_low * bMax) / ((zVegMin - zVegPeak) * (zVegMax_low - zVegPeak))
+    
+    # If elevation is above the specified peak biomass elevation, apply the upper curve,
+    # if it's under apply the lower curve
+    agb <- ifelse(z>zVegPeak, a_up*z + b_up*z^2 + c_up, a_low*z + b_low*z^2 + c_low)
+    
+  }
+  
+  # Recast any negative values as 0, since biomass can't be negative.
+  agb <- ifelse(agb>0,agb,0) 
+  return(agb) # Return biomass as a function of elevation.
+  
+}
+
+```
+
+## Create Helper Scripts for Converting Too and From Dimensionless Tidal Elevation
+
+In the biomass functions the units for the elevation can be any thing as long as they are all referenced to the same system. We prefer elevation relative to mean sea level (MSL), normalized to the daily high tide range, mean high water (MHW) This is sometimes referred to as a dimensionless tidal elevation (Z\*). Using Z\* makes biomass curves more comparable accross sites and times, accross which MSL and tidal ranges can vary.  
+
+$$Z^*={E-MSL\over{MHW-MSL}}$$
+
+If you use the most basic settings the function will assume median growing biomass is exactly in between min and max. If you specify a median the function will create a piecewise, flexible parabola.
+
+Here are two scripts for quickly converting to and from dimensionless tidal elevation
+```{r zStarFunctions}
+
+# Convert elevation to dimensionless tidal elvation
+zToZstar <- function(z, MHW, MSL) { (z-MSL)/(MHW-MSL) }
+
+# Convert dimensionless tidal elevation back to regular elevation
+zStarToZ <- function(zStar, MHW, MSL) { (zStar * ((MHW-MSL))) + MSL }
+
+```
+
+
+``` {r example parabolas, fig.height = 3.54, fig.width=7}
+
+bMax=2500
+zVegMax=3 
+zVegMin=-1
+zVegPeak=2
+
+# Create vector for the x axis 
+target_x <- seq((zVegMin-abs(zVegMin*.1)), (zVegMax+abs(zVegMax*.1)), 
+                by = ((zVegMax-zVegMin)/100) )
+
+# run function without peak elevation 
+target_y1 <- agbFromElv(z=target_x, bMax=2500, zVegMax=3, zVegMin=-1, zVegPeak=NA)
+
+# run function with peak elevation
+target_y2 <- agbFromElv(z=target_x, bMax=2500, zVegMax=3, zVegMin=-1, zVegPeak=2)
+
+# make dataframe for displaying
+displayAGB <- data.frame(elevation=c(target_x, target_x), 
+                         agb=c(target_y1, target_y2),
+                         parabolaType = c(rep("no peak elv.", length(target_x)), 
+                                          rep("w/ peak elv.", length(target_x))
+                                          )
+                         )
+
+# and plot
+ggplot(data=displayAGB, aes(x=elevation, y=agb)) +
+  geom_line(color="red") +
+  facet_wrap(.~parabolaType)
+
+```
+
+## Below Ground Biomass
+
+Below Ground Biomass Production is a function of above ground biomass, root shoot ratio, and below ground turnover rate. We can wrap these functions into a single biomass productivity function.
+
+```{r belowground biomass}
+
+# Simple multiplications
+bgbFromAgb <- function(agb, rootToShoot, bgTurnover) {agb*rootToShoot*bgTurnover} 
+
+totalBmassElevResponse <- function(z, bMax, zVegMax, zVegMin, zVegPeak, bgTurnover, rootShoot) {
+  agb <- agbFromElv(z=z, bMax=bMax, zVegMax=zVegMax, zVegMin=zVegMin, zVegPeak=zVegPeak)
+  bgb <- bgbFromAgb(agb=agb, rootToShoot=rootToShoot, bgTurnover=bgTurnover)
+  return(list(agb, bgb))
+}
+
+```
+
+But what if we have a more complicated ecology at our wetlands and we want to represent different species 
+
+``` {r multispecies biomass function }
+
+totalBmassElevMultiSpeciesResponse <- function(z, bMax, zVegMax, zVegMin, zVegPeak, bgTurnover, 
+                                               rootShoot, rootDepth, speciesCode, presenceAbsence=c(1,1)) {
+  
+  # Add some stops to make sure that all the input vectors are the same length 
+  if (all(is.na(zVegPeak))) {
+   inputsList <- list(bMax, zVegMax, zVegMin, bgTurnover, rootShoot, rootDepth) 
+  } else {
+    inputsList <- list(bMax, zVegMax, zVegMin, zVegPeak, bgTurnover, rootShoot, rootDepth) 
+  }
+  inputLengths <- mapply(length, x = inputsList)
+  if (min(inputLengths)!=max(inputLengths)) { stop("inputs are not all the same length") }
+  
+  if (all(is.na(speciesCode))) {
+    speciesCode <- as.character(1:length(bMax))
+  }
+  
+  # Set up a dataframe with the
+  agbBySpecies <- data.frame(agb = rep(NA, length(bMax)*length(z)),
+                             elevation = rep(NA, length(bMax)*length(z)),
+                             speciesCode = rep(NA, length(bMax)*length(z)))
+  
+  # iterate through all species
+  rowStart = 1
+  for (i in 1:length(bMax)) {
+    agbBySpecies$agb[rowStart:(i*length(z))] <- agbFromElv(z=z, bMax=bMax[i], zVegMax=zVegMax[i],
+                                                  zVegMin=zVegMin[i], zVegPeak=zVegPeak[i])
+    agbBySpecies$elevation[rowStart:(i*length(z))] <- z
+    agbBySpecies$speciesCode[rowStart:(i*length(z))] <- rep(speciesCode[i], length(z))
+    
+    rowStart <- (i*length(z))+1
+  }
+  
+  # Get totals
+  totalBmass <- agbBySpecies %>%
+    group_by(elevation) %>%
+    summarise(totalAgb = sum(agb))
+  
+  # Calculate ratio of total to species agb
+  ratioOfSpToTotal <- agbBySpecies %>%
+    left_join(totalBmass) %>%
+    mutate(bmassRatio = agb/totalAgb) %>%
+    # filter(complete.cases(.)) %>%
+    select(elevation, speciesCode, bmassRatio) %>% 
+    spread(key=speciesCode, value=bmassRatio) %>%
+    select(-elevation)
+  
+  ratioOfSpToTotal[is.na(ratioOfSpToTotal)] <- 0
+  
+  # weighted average bgTurnover, rootShoot, and rootDepth
+  weightedBgTurnover <- rowSums(t(bgTurnover * t(ratioOfSpToTotal)))
+  weightedRootShoot <- rowSums(t(rootShoot * t(ratioOfSpToTotal)))
+  weightedRootDepth <- rowSums(t(rootDepth * t(ratioOfSpToTotal))) 
+  
+  totalBmass <- totalBmass %>%
+    mutate(totalBgb = bgbFromAgb(agb=totalAgb, bgTurnover = weightedBgTurnover,
+                                 rootToShoot = weightedRootShoot))
+  return(list(totalBmass, agbBySpecies, weightedRootDepth))
+} 
+
+```
+
+Here's an example of two different plants, with similar above ground biomass, and root shoot ratio, but a higher marsh that has more turnover than the lower marsh.
+
+``` {r multispecies biomass function example, fig.height = 3.54, fig.width=6}
+
+# Multiple Species Response
+bMax=c(2500, 2200)
+zVegMax=c(3,4)
+zVegMin=c(-1,1)
+zVegPeak=c(2,3.5)
+bgTurnover=c(1,2.5)
+rootShoot=c(2,2)
+rootDepth=c(0.5,1)
+speciesCode=c("SPAL","SPPA")
+z <- seq(-1.1,4.1, by=0.1)
+
+# 
+twoSpeciesExample <- totalBmassElevMultiSpeciesResponse(z=z, bMax=bMax, zVegMax=zVegMax, zVegMin=zVegMin,
+                                                        zVegPeak=zVegPeak, bgTurnover=bgTurnover,
+                                                        rootShoot=rootShoot, rootDepth=rootDepth,
+                                                        speciesCode=speciesCode)
+
+agbSpecies <- twoSpeciesExample[[2]] %>%
+  mutate(biomassType=paste(speciesCode, " agb", sep="")) %>%
+  rename(biomass = agb)
+
+agbBgbDisplay <- twoSpeciesExample[[1]] %>%
+  mutate(totalBgb = -totalBgb) %>% 
+  gather(key = biomassType, value = biomass, -elevation) %>%
+  bind_rows(agbSpecies)
+
+ggplot(agbBgbDisplay, aes(x=elevation, y=biomass)) +
+  geom_line(aes(color=biomassType), lwd=1.25)
+
+```
+
+## Build Sedimentation Functions
+
+Sedimentation in MEM is a function of suspended sediment concentration, and three properties of elevation relative to tidal range, the number of tides a year, the mean flood depth, and the mean flood time per tidal cycle. 
+
+The original version of MEM makes some simplistic assumptions about n tides, and flood time. Original MEM assumes that no sedimentation occurs above the MHW line and that
+
+```{r simple flood time}
+
+avaliableSediment <- function(floodPct, ssc, q, k) {
+  
+  availableSSC <- ifelse(floodPct < 1/q, # if the sediment column IS NOT able to clear
+                         ssc * floodPct/(1/q) * k, # available ssc is total possible caputre 
+                         ssc * k) # if the sediment column IS able to clear
+  
+  return(availableSSC)
+}
+
+deliveredSedimentSimple <- function(z, ssc=30, MSL=0, MHW=1, MLW = MSL-MHW, 
+                                    nTides=704, q=2.8, k=1) {
+  
+  # Flood depth in meters is the same as water volume when in m and assuming a 1m2 area of interest
+  floodDepth <- ifelse(z<=MHW, (MHW-z)*0.5, 0)
+  
+  # Mean flood percent is a line, relative position of elevation between MHW and MLW.
+  floodPct <- ifelse(z >= MHW, 0, ifelse(z <= MLW, 1, (MHW-z)/(MHW-MLW)))
+  
+  availableSSC <- avaliableSediment(ssc=ssc, floodPct=floodPct, q=q, k=k)
+  
+  # Mean flood depth is depth below MHW. If above MHW the marsh does not flood.
+  # delivered sediment is the ssc available to the surface (g/m3) multiplied by 
+  # the cumulative water volume (cube of water) and number of times the cube passes over the marsh. 
+  deliveredSSC <- availableSSC * floodDepth * nTides
+  
+  return(deliveredSSC)
+}
+
+```
+
+Here's an example.
+
+```{r simple sediment example, fig.width=3.54, fig.height=3.54}
+
+targetElevations <- seq(-1.8, 1.8, by = 0.05)
+deliveredSedimentExample <- mapply(deliveredSedimentSimple, z=targetElevations)
+
+simpleSedimentPlotData <- data.frame(elevation=targetElevations,
+                                     deliveredSediment=deliveredSedimentExample)
+
+ggplot(data=simpleSedimentPlotData, aes(x=elevation, y=deliveredSediment)) +
+  geom_line(lwd=1.25) +
+  ylab(expression(paste("Delivered Sediment (g m"^"-2",")", sep="")))
+
+```
+
+_Question? Is there a lower limit on sediment delivery to the marsh in MEM? Is it MLW or the lower vegetation line?_
+
+```{r flood time accross datums }
+
+floodTimeFromDatum <- function(z=0, datumHigh=1, datumLow=-1) {
+  # Rising time over cell = 6.21 (A/pi - 1)	
+  # where A = 2* pi - cos-1 [2 (height of cell – MLW) / (MHW – MLW) - 1] radians
+  A1 <- 2 * pi - acos(2 * (z-datumLow) / (datumHigh-datumLow) - 1)
+  risingTime <- 6.21 * (A1/pi - 1)
+  
+  # Falling time over cell = 6.21 (A/pi - 1) where
+  # A = 2* - cos-1 [2 (height of cell – MHW) / (MLW – MHW) - 1] radians
+  A2 <- 2 * pi - acos(2 * (z-datumHigh) / (datumLow-datumHigh) - 1)
+  fallingTime <- 6.21 * (A2/pi - 1)
+
+  # If elevation is above the tidal range indation time is 0
+  # If elevation is below inundation time is a full tidal cycle
+  # If between inundation time = abs (time rising - 6.21) + time falling
+  inundationTime <- ifelse(z>=datumHigh, 0 ,
+                           ifelse(z<=datumLow, 6.21*2,
+                                  abs(risingTime - 6.21) + fallingTime))
+  return(inundationTime)
+}
+
+deliveredSediment3TidalCycle <- function(z = 1.1, ssc=30, MSL=0, MHW=1, MHHW=1.3, MHHWS=1.5,
+                                        MLW=MSL-MHW, MLLW=MSL-MHHW, MLLWS=MSL-MHHWS,
+                                        q=2.8, k=1) {
+  
+  # Define Constants
+  highTidesPerYear <- 352.657
+  higherHighTidesPerYear <- 352.657 - 24.720
+  springTidesPerYear <- 24.720
+  hoursInTidalCycle <- 12.42
+  
+  # Create a data frame operation so we can use tidy functions to speed this up
+  tidalCycles <- data.frame(datumHigh = c(MHW, MHHW, MHHWS), 
+                            datumLow = c(MLW, MLLW, MLLWS),
+                            nTides = c(highTidesPerYear, higherHighTidesPerYear, springTidesPerYear))
+  
+  tidalCycles <- tidalCycles %>%
+     # Set tidal propoerties to 0 if surface is above tidal range in each case
+    mutate(nTides = ifelse(z>datumHigh, 0, nTides), # number of tides
+           tidalHeight = ifelse(z>datumHigh, 0, (datumHigh-z)*0.5), # Tidal height relative to surface
+           floodTime = ifelse(z>datumHigh, 0, floodTimeFromDatum(z=z, # Call flood time function.
+                                                                 datumHigh=datumHigh, 
+                                                                 datumLow=datumLow)), 
+           floodPct = ifelse(z>datumHigh, 0, floodTime / hoursInTidalCycle), # Convert hours to fraction
+           availableSSC = avaliableSediment(floodPct=floodPct, ssc=ssc, q=q, k=k), # Call available sediment function
+           deliveredSSC = availableSSC * nTides * tidalHeight) # Calculated delivered SSC
+  
+  # Sum delivered SSC accross tidal cycles
+  totalDeliveredSSC <- sum(tidalCycles$deliveredSSC) 
+  
+  return(totalDeliveredSSC)
+}
+
+```
+
+Let's see how the simple vs two tidal cycle modules compare. 
+
+```{r example of simple vs complex sedimentation modules, warning=FALSE, fig.height=3.54, fig.width=7}
+
+# floodPctPerElv <- mapply(floodTimeAccrossTidalCycles, E=targetElevations)
+deliveredSedimentExample2 <- mapply(deliveredSediment3TidalCycle, z=targetElevations)
+
+threeTideSedimentPlotData <- data.frame(elevation=targetElevations,
+                                        deliveredSediment = deliveredSedimentExample2,
+                                        moduleType = rep("3 tide", length(targetElevations)))
+
+simpleSedimentPlotData$moduleType <- rep("simple ", nrow(simpleSedimentPlotData))
+
+sedimentComparisonPlot <- threeTideSedimentPlotData %>%  bind_rows(simpleSedimentPlotData)
+
+totalRange <- ggplot(data=sedimentComparisonPlot, aes(x=elevation, y=deliveredSediment)) +
+  geom_line(lwd=1.25, aes(color=moduleType, lty=moduleType), alpha=0.6) +
+  ylab(expression(paste("Delivered Sediment (g m"^"-2",")", sep=""))) +
+  ggtitle("Total Tidal Range")
+
+sedimentComparisonPlotZoomedIn <- filter(sedimentComparisonPlot, elevation>1)
+
+# Zoom In
+zoomedIn <- ggplot(data=sedimentComparisonPlotZoomedIn, aes(x=elevation, y=deliveredSediment)) +
+  geom_line(lwd=1.25, aes(color=moduleType, lty=moduleType), alpha=0.6) +
+  ylab(expression(paste("Delivered Sediment (g m"^"-2",")", sep=""))) +
+  ggtitle("Zoomed in Above MHW")
+
+grid.arrange(totalRange,zoomedIn, ncol=2)
+
+```
+
+## Set Initial Conditions and Run them to Equilibrium
+
+``` {r set initial conditions}
+
+# Inputs
+rslrT1 <- 0.3
+rslrT2 <- 0.9
+startYear <- 2015 
+initElev <- 219
+MSL <- 74 
+MHW <- 169
+MHHW <- 254
+MHHWS <- 312
+ssc <- 30
+
+# Parameters
+# cm/yr
+bMax <- 2500
+zVegMin <- -0.028
+zVegMax <- 0.351
+zVegPeak <- 0.209
+rootToShoot <- 2
+bgTurnover <- 0.5
+rootDepth <- 30
+omDecayRate <- 0.8
+recalcitrantFrac <- 0.2
+q <- 2.8
+
+# totalRootMass_per_area, rootDepthMax, rootTurnover, omDecayRate, 
+# mineralInput_g_per_yr.fn = function{mineralInput}
+
+# Initial Conditions
+initAgb <- agbFromElv(z=initElev, bMax=bMax, zVegMin=zVegMin, zVegMax=zVegMax)/10000 
+initBgb <- initAgb*rootToShoot
+
+initSedimentDelivery <- deliveredSediment3TidalCycle(z=initElev, ssc=ssc, MSL=MSL, MHW=MHW, MHHW=MHHW, MHHWS=MHHWS, q=q)/10000
+
+depositInitSediment <- function(...) { return(initSedimentDelivery) }
+
+equilibriumCohorts <- runToEquilibrium(totalRootMass_per_area=initBgb, rootDepthMax=rootDepth, rootTurnover = bgTurnover,
+                                       omDecayRate = list(fast=0.8, slow=0), rootOmFrac=list(fast=0.8, slow=0.2),
+                                       packing=list(organic=0.085, mineral=1.99), rootDensity=0.085, shape="linear",
+                                       mineralInput_g_per_yr.fn = depositInitSediment)
+
+# Calculate Steady State Accretion
+depth0 <- max(equilibriumCohorts$layer_bottom)
+
+equilibriumCohorts <- addCohort(equilibriumCohorts, totalRootMass_per_area=initBgb, rootDepthMax=rootDepth, 
+                                rootTurnover = bgTurnover,       
+                                omDecayRate = list(fast=0.8, slow=0), 
+                                rootOmFrac=list(fast=0.8, slow=0.2),
+                                packing=list(organic=0.085, mineral=1.99), rootDensity=0.085, shape="linear",
+                                mineralInput_g_per_yr.fn = depositInitSediment)
+
+depth1 <- max(equilibriumCohorts$layer_bottom)
+
+steadyStateAccretion = depth1 - depth0
+
+# seems high
+
+ggplot(equilibriumCohorts, aes(y = age, x=layer_bottom)) +
+  geom_line()
+
+ggplot(equilibriumCohorts, aes(y = root_mass, x=layer_bottom)) +
+  geom_line()
+
+ggplot(equilibriumCohorts, aes(y = fast_OM, x=layer_bottom)) +
+  geom_line()
+
+ggplot(equilibriumCohorts, aes(y = slow_OM, x=layer_bottom)) +
+  geom_line()
+
+ggplot(equilibriumCohorts, aes(y = mineral, x=layer_bottom)) +
+  geom_line()
+
+```
+
+
+## Build Mean-Sea Level Curve
+
+## Build MHW Lines
+
+## Run Dynamic Step 
+
+## Run all functions together
+
+## Animate Depth Profile Formation
+
+## Animate Biomass Response to Sea-Level Change
+
+## Animate Marsh Elevation Relative to Mean Sea-Level
