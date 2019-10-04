@@ -69,6 +69,8 @@ This function takes relative elevation (Z) as an input. It also has parameters d
 
 agbFromElv <- predictedBiomass
 
+print(agbFromElv)
+
 ```
 
 ## Create Helper Scripts for Converting Too and From Dimensionless Tidal Elevation
@@ -83,10 +85,10 @@ Here are two scripts for quickly converting to and from dimensionless tidal elev
 ```{r zStarFunctions}
 
 # Convert elevation to dimensionless tidal elvation
-zToZstar <- function(z, MHW, MSL) { (z-MSL)/(MHW-MSL) }
+print(zToZstar)
 
 # Convert dimensionless tidal elevation back to regular elevation
-zStarToZ <- function(zStar, MHW, MSL) { (zStar * ((MHW-MSL))) + MSL }
+print(zStarToZ)
 
 ```
 
