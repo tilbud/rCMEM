@@ -13,7 +13,7 @@ Different versions of MEM have these elements in common.
 
 This is a full-blown implementation of MEM. It can be used for hind-casting long-term carbon burial rates, and or hindcasting forecasting carbon removal and net-elevation change. The MEM inputs 
 
-New optionalities include.
+New optionalities include.  
 *  More optionalities for inputing biomass parabolas
 *  Multiple Plant Species Can be Input
 *  Option to incorporate sediment deposition accross 3 different tidal ranges (high, higher high, and spring tides)
@@ -29,6 +29,7 @@ The first thing we will do is load the cohort theory model as a dependency.
 require(rCTM)
 require(tidyverse)
 require(gridExtra)
+source("../R/predictedBiomass.R")
 ```
 
 ## Define Some Inputs
@@ -36,28 +37,31 @@ require(gridExtra)
 ``` {r define inputs}
 
 # Settings for the functions we're going to run
-verbose = T
-
-# Inputs for MEM
-
-# eInit
-# yearStart
-# yearEnd
-# rslr at time 1
-# rslr at time 2
-# ssc
+# Inputs
+exStartYear <- 2015 # yearStart
+exRslrT1 <- 0.3 # rslr at time 1 (cm/yr)
+exRslrTotal <- 100 # cm of total relative seal level rise
+exInitElev <- 21.9 # eInit # cm relative to NAVD88
+exMSL <- 7.4 # tidal datums, cm relative to NAVD88
+exMHW <- 16.9
+exMHHW <- 25.4
+exMHHWS <- 31.2
+exSsc <- 30 # milligrams per liter /  grams per m3
+exPresenceAbsence <- data.frame(SCAM = rep(1,100),
+                             PHAU = c(rep(0,50), rep(1,50)))
+exLunarNodalAmp <- 5 
 
 # Parameters
-# q
-# bMax
-# zVegMin, zVegMax, zVegMed
-# rootShoot
-# maxRootDepth
-# recalictrantFraction
-# decayRate
-# MSL, MHW, MHHW, MHHWS
-# MLW, MLLW, MLLWS
-# lunar nodal amplitude
+exBMax <- 2500 # grams per m-2
+exZVegMin <- -28 # cm relative to datum
+exZVegMax <- 351
+exZVegPeak <- 209
+exRootToShoot <- 2
+exBgTurnover <- 0.5
+exRootDepth <- 30
+exOmDecayRate <- 0.8
+exRecalcitrantFrac <- 0.2
+exQ <- 2.8 # n clearences / tide cycle
 
 ```
 
@@ -67,7 +71,10 @@ This function takes relative elevation (Z) as an input. It also has parameters d
 
 ``` {r parabolicBiomass}
 
-agbFromElv <- predictedBiomass
+agbFromElv <- predictedBiomass(z=exInitElev, bMax = exBMax, zVegMax = exZVegMax,
+                               zVegMin = exZVegMin, zVegPeak = exZVegPeak)
+
+(agbFromElv)
 
 print(agbFromElv)
 
@@ -81,7 +88,8 @@ $$Z^*={E-MSL\over{MHW-MSL}}$$
 
 If you use the most basic settings the function will assume median growing biomass is exactly in between min and max. If you specify a median the function will create a piecewise, flexible parabola.
 
-Here are two scripts for quickly converting to and from dimensionless tidal elevation
+Here are two scripts for quickly converting to and from dimensionless tidal elevation.
+
 ```{r zStarFunctions}
 
 # Convert elevation to dimensionless tidal elvation
@@ -95,10 +103,7 @@ print(zStarToZ)
 
 ``` {r exampleParabolas, fig.height = 3.54, fig.width=7}
 
-bMax=2500
-zVegMax=3 
-zVegMin=-1
-zVegPeak=2
+# targetElevations <- seq(min(zVegMin, MSL-MHHWS), max(zVegMax, MHHWS), by = 4)
 
 displayAGB <- data.frame(elevation=seq((zVegMin-abs(zVegMin*.1)), 
                                        (zVegMax+abs(zVegMax*.1)), 
@@ -122,7 +127,7 @@ Below Ground Biomass Production is a function of above ground biomass, root shoo
 ```{r belowground biomass}
 
 # Simple multiplications
-bgbFromAgb <- function(agb, rootToShoot, bgTurnover) {agb*rootToShoot*bgTurnover} 
+bgbFromAgb <- function(agb, rootToShoot, bgTurnover) {agb*rootToShoot} 
 
 totalBmassElevResponse <- function(z, bMax, zVegMax, zVegMin, zVegPeak, bgTurnover, rootShoot) {
   agb <- agbFromElv(z=z, bMax=bMax, zVegMax=zVegMax, zVegMin=zVegMin, zVegPeak=zVegPeak)
@@ -132,7 +137,7 @@ totalBmassElevResponse <- function(z, bMax, zVegMax, zVegMin, zVegPeak, bgTurnov
 
 ```
 
-But what if we have a more complicated ecology at our wetlands and we want to represent different species 
+But what if we have a more complicated ecology at our wetlands and we want to represent different species?
 
 ``` {r multispecies biomass function }
 
@@ -212,7 +217,6 @@ rootDepth=c(0.5,1)
 speciesCode=c("SPAL","SPPA")
 z <- seq(-1.1,4.1, by=0.1)
 
-# 
 twoSpeciesExample <- totalBmassElevMultiSpeciesResponse(z=z, bMax=bMax, zVegMax=zVegMax, zVegMin=zVegMin,
                                                         zVegPeak=zVegPeak, bgTurnover=bgTurnover,
                                                         rootShoot=rootShoot, rootDepth=rootDepth,
@@ -236,7 +240,7 @@ ggplot(agbBgbDisplay, aes(x=elevation, y=biomass)) +
 
 Sedimentation in MEM is a function of suspended sediment concentration, and three properties of elevation relative to tidal range, the number of tides a year, the mean flood depth, and the mean flood time per tidal cycle. 
 
-The original version of MEM makes some simplistic assumptions about n tides, and flood time. Original MEM assumes that no sedimentation occurs above the MHW line and that
+The original version of MEM makes some simplistic assumptions about n tides, and flood time. Original MEM assumes that no sedimentation occurs above the MHW line.
 
 ```{r simple flood time}
 
@@ -274,7 +278,6 @@ Here's an example.
 
 ```{r simple sediment example, fig.width=3.54, fig.height=3.54}
 
-targetElevations <- seq(-1.8, 1.8, by = 0.05)
 deliveredSedimentExample <- mapply(deliveredSedimentSimple, z=targetElevations)
 
 simpleSedimentPlotData <- data.frame(elevation=targetElevations,
@@ -380,30 +383,6 @@ grid.arrange(totalRange,zoomedIn, ncol=2)
 
 ``` {r set initial conditions}
 
-# Inputs
-rslrT1 <- 0.3
-rslrT2 <- 0.9
-startYear <- 2015 
-initElev <- 219
-MSL <- 74 
-MHW <- 169
-MHHW <- 254
-MHHWS <- 312
-ssc <- 30
-
-# Parameters
-# cm/yr
-bMax <- 2500
-zVegMin <- -0.028
-zVegMax <- 0.351
-zVegPeak <- 0.209
-rootToShoot <- 2
-bgTurnover <- 0.5
-rootDepth <- 30
-omDecayRate <- 0.8
-recalcitrantFrac <- 0.2
-q <- 2.8
-
 # totalRootMass_per_area, rootDepthMax, rootTurnover, omDecayRate, 
 # mineralInput_g_per_yr.fn = function{mineralInput}
 
@@ -453,10 +432,103 @@ ggplot(equilibriumCohorts, aes(y = mineral, x=layer_bottom)) +
 
 ```
 
-
 ## Build Mean-Sea Level Curve
 
+``` {r build sea-level curve}
+
+buildScenarioCurve <- function(year0, yearEnd=year0+99, MSL, rslr0=0.3, rslrTotal=100, ssc, presenceAbsence,
+                               speciesCode=names(presenceAbsence)) {
+  
+  # Create a sequence of the number of years
+  years <- year0:yearEnd
+  nYearsOfSim <- length(years)
+  
+  scenario <- data.frame(index = 1:nYearsOfSim, years = years,
+                         MSL = rep(NA, nYearsOfSim),
+                         ssc = rep(NA, nYearsOfSim))
+  
+  # Build the Mean Sea Level Scenario
+  # If the input only specifies an initial Mean Sea Level at time = 0 ... 
+  if (length(MSL) == 1) {
+    # ... create a sea-level rise scenario based on total sea-level rise and inital relative sea-level rise rate
+    # Probably could use a stop here in case there are invalid entries of rslr0 and slrTotal
+    scenario$MSL[1] <- MSL
+    
+    # IPCC, 2013 and Sweet et al., 2017
+    # MSL(t) = MSL(0) + At + Bt^2 - where t is years from time zero
+    # A=[MSL(1)-MSL(0)] – B  
+    # Where [MSL(1)-MSL(0)] is the SLR at the start as determined from NOAA trend analyses 
+    # Coefficient B is the acceleration term 
+    # B = {[MSL(T)-MSL(0)] / T - [MSL(1)-MSL0] } / (T-1) where T - length of the simulation
+    
+    B <- ((rslrTotal)/nYearsOfSim - rslr0) / (nYearsOfSim-1)
+    A <- rslr0 - B
+    
+    scenario$MSL[2:nYearsOfSim] <- scenario$MSL[1] + A*scenario$index[2:nYearsOfSim] + B*scenario$index[2:nYearsOfSim]^2
+    
+  } else if (length(MSL) == length(years)) {
+    
+    # If the user enters in a vector of MSL that is equal to the number of years in the simulation.
+    scenario$MSL <- MSL
+    
+  } else {
+    stop("RSLR input is incorrect. Either enter a value at for the beginning and ending of the scenario, or a vector of RSLR one for each year of the scenario.")
+  }
+
+  # Add suspended sediment concentration
+  if (length(ssc) == 1) {
+    # If ssc is a single value.
+    scenario$ssc <- rep(ssc, nYearsOfSim)
+  } else if (length(ssc) == nYearsOfSim) {
+    # If ssc is a vector in equal length to the number of years of the simulation.
+    scenario$ssc <- ssc
+  } else {
+    stop("SSC input is incorrect. Either enter a single average value, or a vector equal in length to the number of years in the scenario.")
+  }
+  
+  # Add species presence or absence if people want to simulate new species arriving
+  if (!missing(presenceAbsence)) {
+    if (nrow(presenceAbsence) == nYearsOfSim) {
+      if (ncol(presenceAbsence) == length(speciesCode)) {
+        scenario[1:nYearsOfSim, speciesNames] <- presenceAbsence
+      } else {
+        stop("Species names are not defined.")
+      }
+    } else {
+      stop("Species presence absence input is incorrect. Enter a dataframe equal in length equal to the number of years in the scenario.")
+    }
+  } 
+  return(scenario)
+  # This is a start. We could also allow flexibility to change biomass and sediment addition functions later on to incorporate things like conversions of emergent to forested wetland.
+}
+
+```
+
 ## Build MHW Lines
+
+``` {r build tidal range scenario}
+
+# Now we will build MHW lines based on MSL, long-term tidal range and lunar nodal amplitude
+buildHighTideScenarios <- function(year, MHW0, MSL0, MSL, lunarNodalAmp=5) {
+  
+  MHW <- MSL + (MHW0-MSL0) + (lunarNodalAmp * (sin(2*pi*(year-1983)/18.61)))
+  
+  return(MHW)
+}
+
+scenarioCurve <- buildScenarioCurve(year0 = 2015, MSL = exMSL, rslr0=0.3, rslrTotal = 100, ssc=30)
+head(scenarioCurve)
+
+scenarioCurve$MHW <- buildHighTideScenarios(year = scenarioCurve$years, MSL= scenarioCurve$MSL, MSL0 = exMSL, MHW0 = exMHW, lunarNodalAmp = exLunarNodalAmp)
+
+ggplot(data=scenarioCurve) + 
+  geom_ribbon(aes(x=years, ymax=MHW, ymin=MSL-(MHW-MSL)), alpha=0.6) +
+  geom_line(aes(x=years, y=MSL), color="darkblue") +
+  geom_point(aes(x=years, y=MSL), color="darkblue", pch=16) +
+  ylab("Water Level (cm NAVD88)") +
+  ggtitle("Sea-Level Rise and Tidal Amplitude Scenario.")
+
+```
 
 ## Run Dynamic Step 
 
