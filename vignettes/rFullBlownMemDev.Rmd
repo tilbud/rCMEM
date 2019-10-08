@@ -76,6 +76,8 @@ agbFromElv <- predictedBiomass(z=exInitElev, bMax = exBMax, zVegMax = exZVegMax,
 
 (agbFromElv)
 
+print(agbFromElv)
+
 ```
 
 ## Create Helper Scripts for Converting Too and From Dimensionless Tidal Elevation
@@ -91,10 +93,10 @@ Here are two scripts for quickly converting to and from dimensionless tidal elev
 ```{r zStarFunctions}
 
 # Convert elevation to dimensionless tidal elvation
-zToZstar <- function(z, MHW, MSL) { (z-MSL)/(MHW-MSL) }
+print(zToZstar)
 
 # Convert dimensionless tidal elevation back to regular elevation
-zStarToZ <- function(zStar, MHW, MSL) { (zStar * ((MHW-MSL))) + MSL }
+print(zStarToZ)
 
 ```
 
@@ -103,23 +105,13 @@ zStarToZ <- function(zStar, MHW, MSL) { (zStar * ((MHW-MSL))) + MSL }
 
 # targetElevations <- seq(min(zVegMin, MSL-MHHWS), max(zVegMax, MHHWS), by = 4)
 
-# Create vector for the x axis 
-target_x <- seq((zVegMin-abs(zVegMin*.1)), (zVegMax+abs(zVegMax*.1)), 
-                by = ((zVegMax-zVegMin)/100) )
+displayAGB <- data.frame(elevation=seq((zVegMin-abs(zVegMin*.1)), 
+                                       (zVegMax+abs(zVegMax*.1)), 
+                                       by = ((zVegMax-zVegMin)/100) )) %>%
+  mutate(`no peak evl.`= predictedBiomass(z=elevation, bMax=2500, zVegMax=3, zVegMin=-1, zVegPeak=NA),
+         `w/ peak elv.`= predictedBiomass(z=elevation, bMax=2500, zVegMax=3, zVegMin=-1, zVegPeak=2)) %>%
+  pivot_longer(cols = c('no peak evl.', 'w/ peak elv.'), names_to='parabolaType', values_to = 'agb')
 
-# run function without peak elevation 
-target_y1 <- agbFromElv(z=target_x, bMax=2500, zVegMax=3, zVegMin=-1, zVegPeak=NA)
-
-# run function with peak elevation
-target_y2 <- agbFromElv(z=target_x, bMax=2500, zVegMax=3, zVegMin=-1, zVegPeak=2)
-
-# make dataframe for displaying
-displayAGB <- data.frame(elevation=c(target_x, target_x), 
-                         agb=c(target_y1, target_y2),
-                         parabolaType = c(rep("no peak elv.", length(target_x)), 
-                                          rep("w/ peak elv.", length(target_x))
-                                          )
-                         )
 
 # and plot
 ggplot(data=displayAGB, aes(x=elevation, y=agb)) +
