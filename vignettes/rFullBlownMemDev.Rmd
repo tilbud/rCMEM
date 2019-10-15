@@ -29,9 +29,9 @@ The first thing we will do is load the cohort theory model as a dependency.
 require(rCTM)
 require(tidyverse)
 require(gridExtra)
-source("../R/predictedBiomass.R")
-source("../R/zToZstar.R")
-source("../R/zStarToZ.R")
+#source("../R/predictedBiomass.R")
+#source("../R/zToZstar.R")
+#source("../R/zStarToZ.R")
 
 ```
 
@@ -182,7 +182,7 @@ totalBmassElevMultiSpeciesResponse <- function(z, bMax, zVegMax, zVegMin, zVegPe
   # iterate through all species
   rowStart = 1
   for (i in 1:length(bMax)) {
-    agbBySpecies$agb[rowStart:(i*length(z))] <- agbFromElv(z=z, bMax=bMax[i], zVegMax=zVegMax[i],
+    agbBySpecies$agb[rowStart:(i*length(z))] <- predictedBiomass(z=z, bMax=bMax[i], zVegMax=zVegMax[i],
                                                   zVegMin=zVegMin[i], zVegPeak=zVegPeak[i])
     agbBySpecies$elevation[rowStart:(i*length(z))] <- z
     agbBySpecies$speciesCode[rowStart:(i*length(z))] <- rep(speciesCode[i], length(z))
@@ -212,7 +212,7 @@ totalBmassElevMultiSpeciesResponse <- function(z, bMax, zVegMax, zVegMin, zVegPe
   weightedRootDepth <- rowSums(t(rootDepth * t(ratioOfSpToTotal))) 
   
   totalBmass <- totalBmass %>%
-    mutate(totalBgb = bgbFromAgb(agb=totalAgb, bgTurnover = weightedBgTurnover,
+    mutate(totalBgb = bgbFromAgb(agb=totalAgb,
                                  rootShoot = weightedRootShoot))
   return(list(totalBmass, agbBySpecies, weightedRootDepth))
 } 
@@ -602,6 +602,10 @@ trimCohorts <- function(cohorts) {
 plantElevationType <- "orthometric"
 
 scenario <- exScenarioCurve
+scenario$surfaceElevation <- rep(NA, nrow(scenario))
+scenario$biomass <- rep(NA, nrow(scenario))
+scenario$mineral <- rep(NA, nrow(scenario))
+scenario$cumulativeTotalOm <- rep(NA, nrow(scenario))
 
 {  
   # Trim NA rows from eq cohorts
@@ -636,19 +640,21 @@ scenario <- exScenarioCurve
 
   # Calculate surface elevation
   scenario$surfaceElevation[1] <- initElv
-  
+  scenario$mineral[1] <- initSedimentDelivery
+  scenario$biomass[1] <- initBgb
+  scenario$cumulativeTotalOm[1] <- sum(cohorts$fast_OM, cohorts$root_mass, cohorts$slow_OM, na.rm=T) 
   # Iterate through scenario table
-  for (i in 2:91) {
+  for (i in 2:nrow(scenario)) {
     
     # Calculate surface elevation relative to datum
     surfaceElvZStar <- zToZstar(z=scenario$surfaceElevation[i-1], MHW=scenario$MHW[i], MSL=scenario$MSL[i])
     
     # Caluclate dynamic root biomass
-    dynamicBgb <- dynamicRootBiomass(z=surfaceElvZStar, bMax=exBMax, zVegMax=zStarVegMax, zVegMin=zStarVegMin, 
-                                     zVegPeak=zStarVegPeak, bgTurnover=exBgTurnover, rootShoot=exRootToShoot)/10000
+    dynamicBgb <- dynamicRootBiomass(z=surfaceElvZStar, bMax=exBMax/10000, zVegMax=zStarVegMax, zVegMin=zStarVegMin, 
+                                     zVegPeak=zStarVegPeak, bgTurnover=exBgTurnover, rootShoot=exRootToShoot)
     dynamicMineralPool <- deliveredSediment3TidalCycle(z=scenario$surfaceElevation[i-1], MSL=scenario$MSL[i], MHW=scenario$MHW[i],
                                                        MHHW=scenario$MHHW[i], MHHWS=scenario$MHHWS[i],
-                                                       ssc=scenario$ssc[i], q=exQ)/(1000*1000)
+                                                       ssc=scenario$ssc[i]/(1000*1000), q=exQ)
     
     # Temporary workaround until I can get Kathe's syntax right
     depositMineralPool <- function(...){return(dynamicMineralPool)}
@@ -663,32 +669,9 @@ scenario <- exScenarioCurve
     # cohorts <- trimCohorts(cohorts)
     
     scenario$surfaceElevation[i] <- profileBottomElv + max(cohorts$layer_bottom, na.rm=T)
-    #scenario$biomass[i] <- dynamicBgb
-    #scenario$mineral[i] <- dynamicMineralPool
-    #scenario$cumulativeTotalOm[i] <- sum(cohorts$fast_OM, cohorts$root_mass, cohorts$slow_OM, na.rm=T) 
-  }
-  i=i+1
-  
-  # Calculate surface elevation relative to datum
-    surfaceElvZStar <- zToZstar(z=scenario$surfaceElevation[i-1], MHW=scenario$MHW[i], MSL=scenario$MSL[i])
-    
-    # Caluclate dynamic root biomass
-    dynamicBgb <- dynamicRootBiomass(z=surfaceElvZStar, bMax=exBMax, zVegMax=zStarVegMax, zVegMin=zStarVegMin, 
-                                     zVegPeak=zStarVegPeak, bgTurnover=exBgTurnover, rootShoot=exRootToShoot)/10000
-    dynamicMineralPool <- deliveredSediment3TidalCycle(z=scenario$surfaceElevation[i-1], MSL=scenario$MSL[i], MHW=scenario$MHW[i],
-                                                       MHHW=scenario$MHHW[i], MHHWS=scenario$MHHWS[i],
-                                                       ssc=scenario$ssc[i], q=exQ)/(1000*1000)
-    
-    # Temporary workaround until I can get Kathe's syntax right
-    depositMineralPool <- function(...){return(dynamicMineralPool)}
-    
-    # Calculate dynamic sediment deliver
-    failCohorts <- addCohort(cohorts, totalRootMass_per_area=dynamicBgb, rootDepthMax=exRootDepth, 
-                         rootTurnover = exBgTurnover, omDecayRate = list(fast=exOmDecayRate, slow=0),
-                         rootOmFrac=list(fast=1-exRecalcitrantFrac, slow=exRecalcitrantFrac),
-                         packing=list(organic=0.085, mineral=1.99), rootDensity=0.085, shape="linear",
-                         mineralInput_g_per_yr.fn = depositMineralPool)
-  
+    scenario$biomass[i] <- dynamicBgb
+    scenario$mineral[i] <- dynamicMineralPool
+    scenario$cumulativeTotalOm[i] <- sum(cohorts$fast_OM, cohorts$root_mass, cohorts$slow_OM, na.rm=T) 
   }
 }
 
@@ -697,10 +680,34 @@ scenarioNetElevationChange <- scenario %>%
   gather(key="Elevation Type", value="Elevation", -years)
 
 ggplot(data=scenarioNetElevationChange, aes(x=years, y=Elevation)) +
-  geom_line(aes(color=`Elevation Type`))
+  geom_line(aes(color=`Elevation Type`)) +
+  ggtitle("Elevation vs Sea-Level")
 
 ggplot(data=scenario, aes(x=years, y=biomass)) +
-  geom_line()
+  geom_line() +
+  ggtitle("Belowground Biomass Over Time")
+
+ggplot(data=scenario, aes(x=years, y=mineral)) +
+  geom_line() +
+  ggtitle("Mineral Deposition Over Time")
+
+ggplot(data=scenario, aes(x=years, y=cumulativeTotalOm)) +
+  geom_line() +
+  ggtitle("Cumulative OM deposited over time")
+
+```
+
+__Here is an example of something you can't do with simple MEM.__
+
+``` {r fullBlownMem exampl}
+scenario <- scenario %>%
+  mutate(omFlux = cumulativeTotalOm - lag(cumulativeTotalOm),
+         fluxDirection = ifelse(omFlux>0, "positive", "negative"))
+
+ggplot(data=scenario, aes(x=years, y=omFlux)) +
+  geom_step() +
+  geom_point(aes(color=fluxDirection)) +
+  ggtitle("Net OM Flux")
 
 ```
 
