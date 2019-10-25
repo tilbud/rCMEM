@@ -13,13 +13,12 @@ Different versions of MEM have these elements in common.
 
 This is a full-blown implementation of MEM. It can be used for hind-casting long-term carbon burial rates, and or hindcasting forecasting carbon removal and net-elevation change. The MEM inputs 
 
-New optionalities include.  
-*  More optionalities for inputing biomass parabolas
-*  Multiple Plant Species Can be Input
-*  Option to incorporate sediment deposition accross 3 different tidal ranges (high, higher high, and spring tides)
-*  More flexibility for inputing custom sea-level change, suspended sediment concentraton scenarios. 
-*  Custom specification of depth intervals for soil cores
-*  Options to create animations of soil profile formation, sea-level and surface elevation change, and biomass and elevation response.
+New optionalities include.    
+  *  More optionalities for inputing biomass parabolas.  
+  *  Option to incorporate sediment deposition accross 3 different tidal ranges (high, higher high, and spring tides).  
+  *  More flexibility for inputing custom sea-level change, suspended sediment concentraton scenarios.  
+  *  Custom specification of depth intervals for soil cores.  
+  *  Options to create animations of soil profile formation, sea-level and surface elevation change, and biomass and elevation response.  
 
 ## Load R CTM
 The first thing we will do is load the cohort theory model as a dependency.
@@ -75,7 +74,7 @@ This function takes relative elevation (Z) as an input. It also has parameters d
 
 ``` {r parabolicBiomass}
 
-agbFromElv <- predictedBiomass(z=initElev, bMax = bMax, zVegMax = zVegMax,
+agbFromElv <- predictedBiomass(z=initElv, bMax = bMax, zVegMax = zVegMax,
                                zVegMin = zVegMin, zVegPeak = zVegPeak)
 
 (agbFromElv)
@@ -126,35 +125,20 @@ head(zReconstructExample)
 # targetElevations <- seq(min(zVegMin, MSL-MHHWS), max(zVegMax, MHHWS), by = 4)
 
 displayAGB <- data.frame(elevation=targetElevation) %>%
-  mutate(`no peak evl.`= predictedBiomass(z=targetElevation, bMax=bMax, zVegMax=zVegMax, zVegMin=zVegMin, zVegPeak=NA),
-         `w/ peak elv.`= predictedBiomass(z=targetElevation, bMax=bMax, zVegMax=zVegMax, zVegMin=zVegMin, zVegPeak=zVegPeak)) %>%
+  mutate(`no peak evl.`= predictedBiomass(z=targetElevation, bMax=bMax, zVegMax=zVegMax, 
+                                          zVegMin=zVegMin, zVegPeak=NA),
+         `w/ peak elv.`= predictedBiomass(z=targetElevation, bMax=bMax, zVegMax=zVegMax, 
+                                          zVegMin=zVegMin, zVegPeak=zVegPeak)) %>%
   gather(value="agb", key='parabolaType', -elevation)
 
 
 # and plot
 ggplot(data=displayAGB, aes(x=elevation, y=agb)) +
   geom_line(color="red", lwd=1.25) +
-  facet_wrap(.~parabolaType)
+  facet_wrap(.~parabolaType) +
+  ylab(expression(paste("Above Ground Biomass (g cm"^"-2", ")", sep="")))
 
 ```
-
-## Below Ground Biomass
-
-Below Ground Biomass Production is a function of above ground biomass, root shoot ratio, and below ground turnover rate. We can wrap these functions into a single biomass productivity function.
-
-```{r belowground biomass}
-
-# Simple multiplications
-bgbFromAgb <- function(agb, rootShoot) {agb*rootShoot} 
-
-dynamicRootBiomass <- function(z, bMax, zVegMax, zVegMin, zVegPeak, bgTurnover, rootShoot) {
-  agb <- predictedBiomass(z=z, bMax=bMax, zVegMax=zVegMax, zVegMin=zVegMin, zVegPeak=zVegPeak)
-  bgb <- bgbFromAgb(agb=agb, rootShoot=rootShoot)
-  return(bgb)
-}
-
-```
-
 
 ## Build Sedimentation Functions
 
@@ -167,8 +151,10 @@ The original version of MEM makes some simplistic assumptions about n tides, and
 avaliableSediment <- function(floodPct, ssc, settlingVelocity, k=1) {
   
   availableSSC <- ifelse(floodPct < 1/settlingVelocity, # if the sediment column IS NOT able to clear
-                         ssc * floodPct/(1/settlingVelocity) * k, # available ssc is total possible caputre 
-                         ssc * k) # if the sediment column IS able to clear
+                         # available ssc is total possible caputre 
+                         ssc * floodPct/(1/settlingVelocity) * k, 
+                         # if the sediment column IS able to clear
+                         ssc * k)
   
   return(availableSSC)
 }
@@ -221,7 +207,14 @@ _Question? Is there a lower limit on sediment delivery to the marsh in MEM? Is i
 
 ```{r flood time accross datums }
 
-floodTimeFromDatum <- function(z, datumHigh, datumLow) {
+floodTimeFromDatum <- function(z, datumHigh, datumLow, ...) {
+  
+  # If elevation is above the tidal range indation time is 0
+  datumHigh <- ifelse(z>=datumHigh, z, datumHigh)
+  
+  # If elevation is below inundation time is a full tidal cycle
+  datumLow <- ifelse(z<=datumLow, z, datumLow)
+  
   # Rising time over cell = 6.21 (A/pi - 1)	
   # where A = 2* pi - cos-1 [2 (height of cell – MLW) / (MHW – MLW) - 1] radians
   A1 <- 2 * pi - acos(2 * (z-datumLow) / (datumHigh-datumLow) - 1)
@@ -232,12 +225,9 @@ floodTimeFromDatum <- function(z, datumHigh, datumLow) {
   A2 <- 2 * pi - acos(2 * (z-datumHigh) / (datumLow-datumHigh) - 1)
   fallingTime <- 6.21 * (A2/pi - 1)
 
-  # If elevation is above the tidal range indation time is 0
-  # If elevation is below inundation time is a full tidal cycle
   # If between inundation time = abs (time rising - 6.21) + time falling
-  inundationTime <- ifelse(z>=datumHigh, 0 ,
-                           ifelse(z<=datumLow, 6.21*2,
-                                  abs(risingTime - 6.21) + fallingTime))
+  inundationTime <- abs(risingTime - 6.21) + fallingTime
+
   return(inundationTime)
 }
 
@@ -257,14 +247,16 @@ deliveredSediment3TidalCycle <- function(z, ssc, MSL, MHW, MHHW, MHHWS,
                             nTides = c(highTidesPerYear, higherHighTidesPerYear, springTidesPerYear))
   
   tidalCycles <- tidalCycles %>%
-     # Set tidal propoerties to 0 if surface is above tidal range in each case
+    # Set tidal propoerties to 0 if surface is above tidal range in each case
     dplyr::mutate(nTides = ifelse(z>datumHigh, 0, nTides), # number of tides
            tidalHeight = ifelse(z>datumHigh, 0, (datumHigh-z)*0.5), # Tidal height relative to surface
            floodTime = ifelse(z>datumHigh, 0, floodTimeFromDatum(z=z, # Call flood time function.
                                                                  datumHigh=datumHigh, 
                                                                  datumLow=datumLow)), 
            floodPct = ifelse(z>datumHigh, 0, floodTime / hoursInTidalCycle), # Convert hours to fraction
-           availableSSC = avaliableSediment(floodPct=floodPct, ssc=ssc, settlingVelocity=settlingVelocity, k=k), # Call available sediment function
+           # Call available sediment function
+           availableSSC = avaliableSediment(floodPct=floodPct, ssc=ssc, 
+                                            settlingVelocity=settlingVelocity, k=k),
            deliveredSSC = availableSSC * nTides * tidalHeight) # Calculated delivered SSC
   
   # Sum delivered SSC accross tidal cycles
@@ -331,9 +323,7 @@ grid.arrange(totalRange,zoomedIn, ncol=2)
 
 ``` {r build sea-level curve}
 
-buildScenarioCurve <- function(startYear, endYear=startYear+99, MSL, rslr0=0.3, rslrTotal=100, ssc
-                               #, presenceAbsence, speciesCode=names(presenceAbsence)
-                               ) {
+buildScenarioCurve <- function(startYear, endYear=startYear+99, MSL, rslr0=0.3, rslrTotal=100, ssc) {
   
   # Create a sequence of the number of years
   years <- startYear:endYear
@@ -381,19 +371,6 @@ buildScenarioCurve <- function(startYear, endYear=startYear+99, MSL, rslr0=0.3, 
   } else {
     stop("SSC input is incorrect. Either enter a single average value, or a vector equal in length to the number of years in the scenario.")
   }
-  
-  # Add species presence or absence if people want to simulate new species arriving
-  # if (!missing(presenceAbsence)) {
-  #   if (nrow(presenceAbsence) == nYearsOfSim) {
-  #     if (ncol(presenceAbsence) == length(speciesCode)) {
-  #       scenario[1:nYearsOfSim, speciesNames] <- presenceAbsence
-  #     } else {
-  #       stop("Species names are not defined.")
-  #     }
-  #   } else {
-  #     stop("Species presence absence input is incorrect. Enter a dataframe equal in length equal to the number of years in the scenario.")
-  #   }
-  # } 
   return(scenario)
   # This is a start. We could also allow flexibility to change biomass and sediment addition functions later on to incorporate things like conversions of emergent to forested wetland.
 }
@@ -404,8 +381,8 @@ buildScenarioCurve <- function(startYear, endYear=startYear+99, MSL, rslr0=0.3, 
 
 ``` {r build tidal range scenario}
 
-predictLunarNodalCyle <- function(year, floodElv, MSL0, MSL, lunarNodalAmp=exLunarNodalAmp) {
-  # NBuild MHW lines based on MSL, long-term tidal range and lunar nodal amplitude
+predictLunarNodalCyle <- function(year, floodElv, MSL0, MSL, lunarNodalAmp) {
+  # Build MHW lines based on MSL, long-term tidal range and lunar nodal amplitude
   MHW <- MSL + (floodElv-MSL0) + (lunarNodalAmp * (sin(2*pi*(year-1983)/18.61)))
   return(MHW)
 }
@@ -428,12 +405,16 @@ buildHighTideScenario <- function(scenarioCurve, MHW0, MHHW0, MHHWS0, lunarNodal
   }
   return(scenarioCurve)
 }
+```
 
-exScenarioCurve <- buildScenarioCurve(startYear = 2015, MSL = MSL, rslr0=0.3, rslrTotal = 100, ssc=30)
+### High Tide Scenario Curve Example
+```{r build scenario}
+exScenarioCurve <- buildScenarioCurve(startYear = 2015, MSL = MSL, rslr0=0.3, 
+                                      rslrTotal = 100, ssc=30)
 head(exScenarioCurve)
 
-exScenarioCurve <- buildHighTideScenario(scenarioCurve=exScenarioCurve, MHW0=MHW, MHHW0=MHHW, MHHWS0=MHHWS, 
-                                         lunarNodalAmp = lunarNodalAmp)
+exScenarioCurve <- buildHighTideScenario(scenarioCurve=exScenarioCurve, MHW0=MHW, MHHW0=MHHW, 
+                                         MHHWS0=MHHWS, lunarNodalAmp = lunarNodalAmp)
 head(exScenarioCurve)
 
 ggplot(data=exScenarioCurve) + 
@@ -451,9 +432,11 @@ highTideScenarios <- exScenarioCurve %>%
 ggplot(data=exScenarioCurve) + 
   geom_line(aes(x=years, y=MSL), color="black") +
   geom_point(aes(x=years, y=MSL), color="black", pch=16) +
-  geom_ribbon(data = highTideScenarios, aes(x=years, ymax=elevation, ymin=MSL-(elevation-MSL), color=`high tide`),fill=NA) +
+  geom_ribbon(data = highTideScenarios, aes(x=years, ymax=elevation, ymin=MSL-(elevation-MSL), 
+                                            color=`high tide`),fill=NA) +
   ylab("Water Level (cm NAVD88)") +
-  ggtitle("Sea-Level Rise and Multi-Tide Amplitude Scenario.")
+  ggtitle("Sea-Level Rise and Multi-Tide Amplitude Scenario.") +
+  theme(legend.title = element_blank())
 
 ```
 
@@ -473,19 +456,21 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
                               bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
                               rootToShoot, rootTurnover, rootDepthMax, shape="linear",
                               omDecayRate, recalcitrantFrac, settlingVelocity,
-                              omPackingDensity=0.085, mineralPackingDensity=1.99, rootPackingDensity=omPackingDensity,
-                              coreYear, coreDepth, coreMaxs, coreMins,
+                              omPackingDensity=0.085, mineralPackingDensity=1.99,
+                              rootPackingDensity=omPackingDensity,
+                              coreYear=NA, coreDepth=100, coreMaxs=1:100, coreMins=0:99,
                               ...) {
   
   # Run checks on input and trigger warnings if units seem off
   # Need to develop this
   
   # Build scenario curve
-  scenario <- buildScenarioCurve(startYear = startYear, endYear=endYear,
-                                      MSL=MSL, rslr0=rslr0, rslrTotal=rslrTotal, ssc=ssc)
+  scenario <- buildScenarioCurve(startYear=startYear, endYear=endYear, MSL=MSL, 
+                                 rslr0=rslr0, rslrTotal=rslrTotal, ssc=ssc)
   
   # add high tides
-  scenario <- buildHighTideScenario(scenario, MHW0=MHW, MHHW0=MHHW, MHHWS0=MHHWS, lunarNodalAmp = lunarNodalAmp)
+  scenario <- buildHighTideScenario(scenario, MHW0=MHW, MHHW0=MHHW, MHHWS0=MHHWS, 
+                                    lunarNodalAmp = lunarNodalAmp)
   
   # Add blank colums for attributes we will add later
   scenario$surfaceElevation <- rep(NA, nrow(scenario))
@@ -509,25 +494,27 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   initElvStar <- zToZstar(z=initElv, MSL=scenario$MSL[1], MHW=scenario$MHW[1])
   
   # Initial Above Ground Biomass
-  initAgb <- predictedBiomass(z=initElvStar, bMax = bMax, zVegMax = zStarVegMax, zVegMin = zStarVegMin, zVegPeak = zStarVegPeak)
+  initAgb <- predictedBiomass(z=initElvStar, bMax = bMax, zVegMax = zStarVegMax, 
+                              zVegMin = zStarVegMin, zVegPeak = zStarVegPeak)
   
   # Initial Below Ground Biomass
   initBgb <- initAgb * rootToShoot
   
   # Initial Sediment
   initSediment <- deliverSedimentFlexibly(z=initElv, ssc=scenario$ssc[1], 
-                                          MSL=scenario$MSL[1], MHW=scenario$MHW[1], MHHW = scenario$MHHW[1], 
-                                          MHHWS = scenario$MHHWS[1], settlingVelocity=settlingVelocity)
+                                          MSL=scenario$MSL[1], MHW=scenario$MHW[1], 
+                                          MHHW = scenario$MHHW[1], MHHWS = scenario$MHHWS[1],
+                                          settlingVelocity=settlingVelocity)
   
   depositInitSediment <- function(...){return(initSediment)}
   
   # Run initial conditions to equilibrium
-  cohorts <- runToEquilibrium(totalRootMass_per_area=initBgb, rootDepthMax=rootDepthMax, rootTurnover=rootTurnover,
-                                       omDecayRate = list(fast=omDecayRate, slow=0), 
-                                       rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
-                                       packing=list(organic=omPackingDensity, mineral=mineralPackingDensity), 
-                                       rootDensity=rootPackingDensity, shape=shape,
-                                       mineralInput_g_per_yr.fn = depositInitSediment)
+  cohorts <- runToEquilibrium(totalRootMass_per_area=initBgb, rootDepthMax=rootDepthMax,
+                              rootTurnover=rootTurnover, omDecayRate = list(fast=omDecayRate, slow=0),
+                              rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
+                              packing=list(organic=omPackingDensity, mineral=mineralPackingDensity),
+                              rootDensity=rootPackingDensity, shape=shape, 
+                              mineralInput_g_per_yr.fn = depositInitSediment)
   
   # Add initial conditions to annual time step tracker
   scenario$surfaceElevation[1] <- initElv
@@ -606,52 +593,94 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   }
   
   # Return annual time steps and full set of cohorts
-  return(list(annualTimeSteps = scenario, cohorts = trackCohorts))
+  outputsList <- list(annualTimeSteps = scenario, cohorts = trackCohorts)
+  
+  return(outputsList)
 }
 
 ```
 
-
-
 ``` {r graph MEM-CTM output}
+# First we'll profile the script
+start_time <- Sys.time()
+memCohortExample <- runMemWithCohorts(startYear=2015, rslrT1=0.3, rslrTotal=100,
+                                      initElv=21.9, MSL=7.4, MHW=16.9, MHHW=25.4, MHHWS=31.2, 
+                                      ssc=3e-05, lunarNodalAmp=5, bMax=0.25, 
+                                      zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
+                                      plantElevationType="orthometric", rootToShoot=2,
+                                      rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
+                                      recalcitrantFrac=0.2, settlingVelocity=2.8
+                                      )
+print(Sys.time()-start_time)
+
+scenario <- memCohortExample$annualTimeSteps
+cohorts <- memCohortExample$cohorts
 
 scenarioNetElevationChange <- scenario %>%
   select(years, MSL, surfaceElevation) %>%
   gather(key="Elevation Type", value="Elevation", -years)
 
-ggplot(data=scenarioNetElevationChange, aes(x=years, y=Elevation)) +
+plot1 <- ggplot(data=scenarioNetElevationChange, aes(x=years, y=Elevation)) +
   geom_line(aes(color=`Elevation Type`)) +
-  ggtitle("Elevation vs Sea-Level")
+  ggtitle("Elevation vs Sea-Level") +
+  theme(legend.title = element_blank(),
+        legend.position="top")
 
-ggplot(data=scenario, aes(x=years, y=biomass)) +
+plot2 <- ggplot(data=scenario, aes(x=years, y=biomass)) +
   geom_line() +
   ggtitle("Belowground Biomass Over Time")
 
-ggplot(data=scenario, aes(x=years, y=mineral)) +
+plot3 <- ggplot(data=scenario, aes(x=years, y=mineral)) +
   geom_line() +
   ggtitle("Mineral Deposition Over Time")
 
-ggplot(data=scenario, aes(x=years, y=cumulativeTotalOm)) +
+plot4 <- ggplot(data=scenario, aes(x=years, y=cumulativeTotalOm)) +
   geom_line() +
   ggtitle("Cumulative OM deposited over time")
+
+grid.arrange(plot1, plot2, plot3, plot4, ncol=2)
 
 ```
 
 __Here is an example of something you can't do with simple MEM.__
 
 ``` {r fullBlownMem exampl}
-scenario <- scenario %>%
+scenarioFlux <- scenario %>%
   mutate(omFlux = cumulativeTotalOm - lag(cumulativeTotalOm),
-         fluxDirection = ifelse(omFlux>0, "positive", "negative"))
+         fluxDirection = ifelse(omFlux>0, "positive", "negative")) %>%
+  filter(complete.cases(.))
 
-ggplot(data=scenario, aes(x=years, y=omFlux)) +
+fluxPlot <- ggplot(data=scenarioFlux, aes(x=years, y=omFlux)) +
+  geom_hline(aes(yintercept=0), lwd=1.25) +
   geom_step() +
   geom_point(aes(color=fluxDirection)) +
-  ggtitle("Net OM Flux")
+  ggtitle("Net OM Flux") +
+  theme(legend.title=element_blank(),
+        legend.position = "top") +
+  ylab(expression(paste("Net Flux (g Organic Matter cm"^"-2",")", sep="")))
+
+grid.arrange(plot2, fluxPlot, ncol=1)
 
 ```
 
 ## Animate Depth Profile Formation
+
+``` {r animate cohorts code }
+
+animateCohorts <- function(cohorts, scenario) {
+  # First reshape the mass cohorts so that they're in long form
+  # Calculate cumulative and additive volume 
+  # Second reshape the scenario, so that we have MSL and MHW to MLW
+  # If MHHW and MHHWS, do the same
+  
+  # gganimate stuff
+  
+  # return gif
+  
+}
+
+```
+
 
 ## Animate Biomass Response to Sea-Level Change
 
@@ -726,6 +755,30 @@ totalBmassElevMultiSpeciesResponse <- function(z, bMax, zVegMax, zVegMin, zVegPe
 Here's an example of two different plants, with similar above ground biomass, and root shoot ratio, but a higher marsh that has more turnover than the lower marsh.
 
 ``` {r multispecies biomass function example, fig.height = 3.54, fig.width=6}
+
+
+# Code that could be part of the scenario developer program
+  # Add species presence or absence if people want to simulate new species arriving
+  # if (!missing(presenceAbsence)) {
+  #   if (nrow(presenceAbsence) == nYearsOfSim) {
+  #     if (ncol(presenceAbsence) == length(speciesCode)) {
+  #       scenario[1:nYearsOfSim, speciesNames] <- presenceAbsence
+  #     } else {
+  #       stop("Species names are not defined.")
+  #     }
+  #   } else {
+  #     stop("Species presence absence input is incorrect. Enter a dataframe equal in length equal to the number of years in the scenario.")
+  #   }
+  # } 
+
+# Simple multiplications
+bgbFromAgb <- function(agb, rootShoot) {agb*rootShoot} 
+
+dynamicRootBiomass <- function(z, bMax, zVegMax, zVegMin, zVegPeak, bgTurnover, rootShoot) {
+  agb <- predictedBiomass(z=z, bMax=bMax, zVegMax=zVegMax, zVegMin=zVegMin, zVegPeak=zVegPeak)
+  bgb <- bgbFromAgb(agb=agb, rootShoot=rootShoot)
+  return(bgb)
+}
 
 # Multiple Species Response
 bMax=c(2500, 2200)
