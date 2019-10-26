@@ -50,7 +50,7 @@ MHHW <- 25.4
 MHHWS <- 31.2
 ssc <- 30 # milligrams per liter /  grams per m3
 ssc <- ssc / 1000000 # convert to grams per cubic cm
-lunarNodalAmp <- 5 # cm
+lunarNodalAmp <- 2.5 # cm
 
 # Parameters
 bMax <- 2500 # grams per m-2
@@ -605,7 +605,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
 start_time <- Sys.time()
 memCohortExample <- runMemWithCohorts(startYear=2015, rslrT1=0.3, rslrTotal=100,
                                       initElv=21.9, MSL=7.4, MHW=16.9, MHHW=25.4, MHHWS=31.2, 
-                                      ssc=3e-05, lunarNodalAmp=5, bMax=0.25, 
+                                      ssc=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
@@ -654,10 +654,9 @@ fluxPlot <- ggplot(data=scenarioFlux, aes(x=years, y=omFlux)) +
   geom_hline(aes(yintercept=0), lwd=1.25) +
   geom_step() +
   geom_point(aes(color=fluxDirection)) +
-  ggtitle("Net OM Flux") +
   theme(legend.title=element_blank(),
         legend.position = "top") +
-  ylab(expression(paste("Net Flux (g Organic Matter cm"^"-2",")", sep="")))
+  ylab(expression(paste("Net OM Flux (g cm"^"-2",")", sep="")))
 
 grid.arrange(plot2, fluxPlot, ncol=1)
 
@@ -667,25 +666,80 @@ grid.arrange(plot2, fluxPlot, ncol=1)
 
 ``` {r animate cohorts code }
 
-animateCohorts <- function(cohorts, scenario) {
+library(gganimate)
+
+animateCohorts <- function(cohorts, scenario,
+                           savePath="/MEM-CTM-animated.gif",
+                           chPalette = c("#56B4E9", "#999999", "#E69F00", "#009E73"), 
+                           trackThresholds = c("MSL", "MHW"), duration = 30,
+                            width = 4, height = 8) {
+  
+  surface_elv <- scenario %>%
+    select(years, surfaceElevation) %>%
+    rename(year=years)
+  
   # First reshape the mass cohorts so that they're in long form
-  # Calculate cumulative and additive volume 
-  # Second reshape the scenario, so that we have MSL and MHW to MLW
-  # If MHHW and MHHWS, do the same
-  
+  mass_cohorts <- cohorts %>%
+    select(-cumCohortVol) %>% 
+    gather(key = "mass_pool", value = "mass_fraction", 
+           -age, -year, -layer_top, -layer_bottom) %>%
+    group_by(year, age) %>%
+    mutate(mass_pool = factor(mass_pool, 
+                              levels=c("mineral", 
+                                       "slow_OM", 
+                                       "fast_OM", 
+                                       "root_mass"))) %>%
+    arrange(year, age, mass_pool) %>%
+    mutate(max_mass = cumsum(mass_fraction),
+           min_mass = ifelse(mass_pool==first(mass_pool),0,lag(max_mass)),
+           mass_pool = as.character(mass_pool)) %>%
+    # Join mass cohorts with scenario table to convert depths to referenced elevations
+    ungroup() %>%
+    left_join(surface_elv) %>%
+    mutate(layer_top=surfaceElevation-layer_top, 
+           layer_bottom=surfaceElevation-layer_bottom)
+
+  # Reshape the scenario table
+  tides <- scenario %>%
+    # Track any elevation threholds in the animation speciefied.
+    # MSL and MHW are the defaults
+    select(years, trackThresholds) %>%
+    gather(value="WaterLevel", key="datum", -years) %>%
+    rename(year=years) %>%
+    arrange(year) %>%
+    filter(complete.cases(.))
+                           
+  # get rid of any NA values.               
+  mass_cohorts_almostAll <- mass_cohorts %>%  filter(complete.cases(.))
+    
   # gganimate stuff
+  animate_mass_cohorts <- ggplot(data = mass_cohorts_almostAll, 
+       aes(xmin = min_mass, xmax = max_mass, 
+           ymin = layer_top, ymax = layer_bottom, 
+                                frame = year
+                                )) +
+    geom_rect(aes(fill = mass_pool), color = rgb(0,0,0, alpha = 0.1)) +
+    theme_minimal() +
+    scale_fill_manual(values=chPalette) +
+    geom_hline(data=tides, aes(yintercept=WaterLevel, lty=datum), color="blue") +
+    theme(text = element_text(size=14)) +
+    ylab("Depth (cm)") +
+    xlab("Mass Accumulated Per Cohort (g)")
+    labs(title = 'Year: {round(frame_time,0)}',
+       fill = "Mass Pools") +
+    transition_time(year) +
+    ease_aes('linear')
   
-  # return gif
+  animate(animate_mass_cohorts, duration = duration)
+  
+  # save gif to filepath
+  anim_save(savePath, width = width, height = height, units = "in", dpi = 300)
   
 }
 
 ```
 
-
-## Animate Biomass Response to Sea-Level Change
-
-## Animate Marsh Elevation Relative to Mean Sea-Level
-
+## Multi-Species Modeling
 
 But what if we have a more complicated ecology at our wetlands and we want to represent different species?
 
