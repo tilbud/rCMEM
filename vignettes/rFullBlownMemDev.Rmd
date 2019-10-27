@@ -614,7 +614,11 @@ memCohortExample <- runMemWithCohorts(startYear=2015, rslrT1=0.3, rslrTotal=100,
 print(Sys.time()-start_time)
 
 scenario <- memCohortExample$annualTimeSteps
+head(scenario)
+
 cohorts <- memCohortExample$cohorts
+head(cohorts)
+
 
 scenarioNetElevationChange <- scenario %>%
   select(years, MSL, surfaceElevation) %>%
@@ -669,7 +673,7 @@ grid.arrange(plot2, fluxPlot, ncol=1)
 library(gganimate)
 
 animateCohorts <- function(cohorts, scenario,
-                           savePath="/MEM-CTM-animated.gif",
+                           savePath="MEM-CTM-animated.gif",
                            chPalette = c("#56B4E9", "#999999", "#E69F00", "#009E73"), 
                            trackThresholds = c("MSL", "MHW"), duration = 30,
                             width = 4, height = 8) {
@@ -724,7 +728,7 @@ animateCohorts <- function(cohorts, scenario,
     geom_hline(data=tides, aes(yintercept=WaterLevel, lty=datum), color="blue") +
     theme(text = element_text(size=14)) +
     ylab("Depth (cm)") +
-    xlab("Mass Accumulated Per Cohort (g)")
+    xlab("Mass Accumulated Per Cohort (g)") +
     labs(title = 'Year: {round(frame_time,0)}',
        fill = "Mass Pools") +
     transition_time(year) +
@@ -736,6 +740,16 @@ animateCohorts <- function(cohorts, scenario,
   anim_save(savePath, width = width, height = height, units = "in", dpi = 300)
   
 }
+
+```
+
+## Try out Animate Cohorts Function
+
+``` {r try out animate cohorts}
+animateCohorts(scenario = scenario, cohorts = cohorts,
+               savePath="../temp/MEM-CTM-example-191026.gif")
+
+knitr::include_graphics("../temp/MEM-CTM-example-191026.gif")
 
 ```
 
