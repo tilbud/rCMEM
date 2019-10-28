@@ -595,6 +595,20 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   # Return annual time steps and full set of cohorts
   outputsList <- list(annualTimeSteps = scenario, cohorts = trackCohorts)
   
+  # If a core year is specificed return a core too.
+  if (! is.na(coreYear)) {
+    # Filter only to cohorts in the core year
+    cohortsInCoreYear <- filter(cohorts, year=coreYear)
+    
+    # Convert cohorts to age-depth profile
+    coreYearAgeDepth <- convertProfile_AgeToDepth(ageCohort=cohortsInCoreYear,
+                                                  layerTop=coreMins,
+                                                  layerBottom=coreMaxs)
+    
+    # Add to the list of outputs
+    outputsList[["core"]] <- coreYearAgeDepth
+  }
+  
   return(outputsList)
 }
 
