@@ -458,7 +458,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
                               omDecayRate, recalcitrantFrac, settlingVelocity,
                               omPackingDensity=0.085, mineralPackingDensity=1.99,
                               rootPackingDensity=omPackingDensity,
-                              coreYear=NA, coreDepth=100, coreMaxs=1:100, coreMins=0:99,
+                              coreYear=NA, coreDepth=100, coreMaxs=1:coreDepth, coreMins=coreMaxs-1,
                               ...) {
   
   # Run checks on input and trigger warnings if units seem off
@@ -598,15 +598,25 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   # If a core year is specificed return a core too.
   if (! is.na(coreYear)) {
     # Filter only to cohorts in the core year
-    cohortsInCoreYear <- filter(cohorts, year=coreYear)
+    cohortsInCoreYear <- trackCohorts %>% 
+      filter(year==coreYear) %>%
+      select(-year)
     
     # Convert cohorts to age-depth profile
     coreYearAgeDepth <- convertProfile_AgeToDepth(ageCohort=cohortsInCoreYear,
                                                   layerTop=coreMins,
                                                   layerBottom=coreMaxs)
+    coreYearAgeDepth <- coreYearAgeDepth %>%  filter(complete.cases(.)) %>%
+      mutate(om_fraction = (fast_OM+slow_OM+root_mass)/(fast_OM+slow_OM+root_mass+mineral),
+             dry_bulk_density = (1/(
+                               (om_fraction/omPackingDensity) +
+                               ((1-om_fraction)/mineralPackingDensity)
+                              )
+                             )
+             )
     
     # Add to the list of outputs
-    outputsList[["core"]] <- coreYearAgeDepth
+    outputsList$core <- coreYearAgeDepth
   }
   
   return(outputsList)
@@ -623,8 +633,8 @@ memCohortExample <- runMemWithCohorts(startYear=2015, rslrT1=0.3, rslrTotal=100,
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
-                                      recalcitrantFrac=0.2, settlingVelocity=2.8
-                                      )
+                                      recalcitrantFrac=0.2, settlingVelocity=2.8,
+                                      coreYear = 2050)
 print(Sys.time()-start_time)
 
 scenario <- memCohortExample$annualTimeSteps
@@ -633,6 +643,8 @@ head(scenario)
 cohorts <- memCohortExample$cohorts
 head(cohorts)
 
+core <- memCohortExample$core
+head(core)
 
 scenarioNetElevationChange <- scenario %>%
   select(years, MSL, surfaceElevation) %>%
@@ -677,6 +689,40 @@ fluxPlot <- ggplot(data=scenarioFlux, aes(x=years, y=omFlux)) +
   ylab(expression(paste("Net OM Flux (g cm"^"-2",")", sep="")))
 
 grid.arrange(plot2, fluxPlot, ncol=1)
+
+```
+
+Here is what the core output looks like. 
+
+``` {r core plot} 
+
+accretionPlot <- ggplot(data = core, aes(x=layer_bottom, y=1/input_yrs)) +
+  geom_point() +
+  geom_line() +
+  xlab("Depth (cm)") +
+  ylab("Accretion Rate (cm/yr)") +
+  scale_x_reverse() +
+  coord_flip()
+    
+loiPlot <- ggplot(data = core, aes(x=layer_bottom, y=om_fraction)) +
+  geom_point() +
+  geom_line() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank()) +
+  ylab("Organic Matter (fraction)") +
+  scale_x_reverse() +
+  coord_flip()
+
+bdPlot <- ggplot(data = core, aes(x=layer_bottom, y=dry_bulk_density)) +
+  geom_point() +
+  geom_line() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank()) +
+  ylab(expression(paste("Bulk Density (g cm"^"-3",")",sep=""))) +
+  scale_x_reverse() +
+  coord_flip()
+
+grid.arrange(accretionPlot, loiPlot, bdPlot, nrow=1)
 
 ```
 
