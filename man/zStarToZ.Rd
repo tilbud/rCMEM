@@ -7,11 +7,11 @@
 zStarToZ(zStar, MHW, MSL)
 }
 \arguments{
+\item{zStar}{a numeric describing the normalized Z* elevation}
+
 \item{MHW}{a numeric, mean high water tide}
 
 \item{MSL}{a numeric, mean sea level}
-
-\item{zStara}{a numeric describing the normalized Z* elevation}
 }
 \value{
 a numerical describing the marsh elevation

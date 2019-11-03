@@ -14,11 +14,11 @@ Different versions of MEM have these elements in common.
 This is a full-blown implementation of MEM. It can be used for hind-casting long-term carbon burial rates, and or hindcasting forecasting carbon removal and net-elevation change. The MEM inputs 
 
 New optionalities include.    
-  *  More optionalities for inputing biomass parabolas.  
-  *  Option to incorporate sediment deposition accross 3 different tidal ranges (high, higher high, and spring tides).  
-  *  More flexibility for inputing custom sea-level change, suspended sediment concentraton scenarios.  
-  *  Custom specification of depth intervals for soil cores.  
-  *  Options to create animations of soil profile formation, sea-level and surface elevation change, and biomass and elevation response.  
+  +  More optionalities for inputing biomass parabolas.  
+  +  Option to incorporate sediment deposition accross 3 different tidal ranges (high, higher high, and spring tides).  
+  +  More flexibility for inputing custom sea-level change, suspended sediment concentraton scenarios.  
+  +  Custom specification of depth intervals for soil cores.  
+  +  Options to create animations of soil profile formation, sea-level and surface elevation change, and biomass and elevation response.  
 
 ## Load R CTM
 The first thing we will do is load the cohort theory model as a dependency.

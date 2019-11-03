@@ -1,6 +1,6 @@
 #' Convert from Z* to elevation
 #'
-#' @param zStara a numeric describing the normalized Z* elevation
+#' @param zStar a numeric describing the normalized Z* elevation
 #' @param MHW a numeric, mean high water tide
 #' @param MSL a numeric, mean sea level
 #'
