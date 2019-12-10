@@ -28,6 +28,7 @@ addCohort <- function(massPools,
                       rootTurnover, rootOmFrac, omDecayRate, #decay paraemters
                       packing, #packing densities
                       mineralInput_g_per_yr.fn = sedimentInputs, 
+                      mineralInput_g_per_yr = NA,
                       massLiveRoots.fn = massLiveRoots,
                       depthOfNotRootVolume.fn = depthOfNotRootVolume,
                       dt_yr=1, ...){
@@ -64,8 +65,17 @@ addCohort <- function(massPools,
              ans$root_mass * rootOmFrac$slow * rootTurnover * dt_yr -
              ans$slow_OM * omDecayRate$slow * dt_yr
   
+  # track respiration
+  ans$respired_OM <- ((ans$fast_OM * omDecayRate$fast * dt_yr) +  # Fast Pool Lost
+    (ans$slow_OM * omDecayRate$slow * dt_yr)) # Slow Pool Lost
+  
+  # Check to see if mineral input is a static value or a function
+  if (is.na(mineralInput_g_per_yr)) {
+    mineralInput_g_per_yr <- mineralInput_g_per_yr.fn(...)
+  }
+  
   #if we are laying down a new cohort
-  if(mineralInput_g_per_yr.fn(...) > 0){
+  if(mineralInput_g_per_yr > 0){
     if(!any(is.na(ans$age))){ #if there aren't any empty cohort slots
       bufferAns <- ans
       bufferAns[TRUE] <- NA
@@ -82,9 +92,10 @@ addCohort <- function(massPools,
     ans$age[newCohortIndex] <- 0
     ans$fast_OM[newCohortIndex] <- 0
     ans$slow_OM[newCohortIndex] <- 0
+    ans$respired_OM[newCohortIndex] <- 0
     
     #lay down the new mineral inputs
-    ans$mineral[newCohortIndex] <- mineralInput_g_per_yr.fn(...) * dt_yr
+    ans$mineral[newCohortIndex] <- mineralInput_g_per_yr * dt_yr
     
   }
   

@@ -6,7 +6,7 @@
 #' @param rslrT1 a numeric, initial rate of relative sea-level rise
 #' @param rslrTotal a numeric, total relative sea-level rise over the course of the scanario
 #' @param initElv a numeric, the initial elevation of the marsh at the start of the scenario
-#' @param MSL a numeric or a vector, Mean Sea Level at the start of the scenario, or a vector of Mean Sea Levels the same lenght as the number of years in a scenario
+#' @param MSL a numeric or a vector, Mean Sea Level at the start of the scenario, or a vector of Mean Sea Levels the same length as the number of years in a scenario
 #' @param MSL0 a numeric, Mean Sea level over the last datum period
 #' @param MHW a numeric, Mean High Water level over the last datum period
 #' @param MHHW a numeric (optional), Mean Higher High Water level over the last datum period
@@ -50,6 +50,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   # Need to develop this
   
   # Build scenario curve
+  # !!! Could build a data.table or tibble if it's more optomized for memory
   scenario <- buildScenarioCurve(startYear=startYear, endYear=endYear, MSL=MSL, 
                                  rslr0=rslr0, rslrTotal=rslrTotal, ssc=ssc)
   
@@ -59,10 +60,9 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
                                     lunarNodalAmp = lunarNodalAmp)
   
   # Add blank colums for attributes we will add later
-  scenario$surfaceElevation <- rep(NA, nrow(scenario))
-  scenario$biomass <- rep(NA, nrow(scenario))
-  scenario$mineral <- rep(NA, nrow(scenario))
-  scenario$cumulativeTotalOm <- rep(NA, nrow(scenario)) 
+  scenario$surfaceElevation <- as.numeric(rep(NA, nrow(scenario)))
+  scenario$biomass <- as.numeric(rep(NA, nrow(scenario)))
+  scenario$mineral <- as.numeric(rep(NA, nrow(scenario)))
   
   # Convert dimensionless plant growing elevations to real growing elevations
   if (! plantElevationType %in% c("dimensionless", "zStar", "Z*", "zstar")) {
@@ -87,12 +87,11 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   initBgb <- initAgb * rootToShoot
   
   # Initial Sediment
+  # !!! would be great if deposited sediment was either a single input or a function, not only a function
   initSediment <- deliverSedimentFlexibly(z=initElv, ssc=scenario$ssc[1], 
                                           MSL=scenario$MSL[1], MHW=scenario$MHW[1], 
                                           MHHW = scenario$MHHW[1], MHHWS = scenario$MHHWS[1],
                                           settlingVelocity=settlingVelocity)
-  
-  depositInitSediment <- function(...){return(initSediment)}
   
   # Run initial conditions to equilibrium
   cohorts <- runToEquilibrium(totalRootMass_per_area=initBgb, rootDepthMax=rootDepthMax,
@@ -100,16 +99,15 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
                               rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
                               packing=list(organic=omPackingDensity, mineral=mineralPackingDensity),
                               rootDensity=rootPackingDensity, shape=shape, 
-                              mineralInput_g_per_yr.fn = depositInitSediment)
+                              mineralInput_g_per_yr = initSediment)
   
   # Add initial conditions to annual time step tracker
   scenario$surfaceElevation[1] <- initElv
   scenario$mineral[1] <- initSediment
   scenario$biomass[1] <- initBgb
-  scenario$cumulativeTotalOm[1] <- sum(cohorts$fast_OM, cohorts$root_mass, cohorts$slow_OM, na.rm=T) 
+  # AGB
+  # BGB Turnover
   
-  # Trim NA rows from eq cohorts
-  cohorts <- trimCohorts(cohorts)
   cohorts$year <- rep(scenario$years[1], nrow(cohorts))
   
   # Preallocate memory for cohort tracking
@@ -119,27 +117,34 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   newCohortRows <- sum(1:nScenarioYears)
   totalRows <- initCohortRows+newCohortRows
   
-  trackCohorts <- data.frame(age=rep(rep(NA, totalRows)),
-                             fast_OM=rep(NA, totalRows), slow_OM=rep(NA, totalRows), 
-                             mineral=rep(NA, totalRows), root_mass=rep(NA, totalRows), 
-                             layer_top=rep(NA, totalRows), layer_bottom=rep(NA, totalRows),
-                             cumCohortVol=rep(NA, totalRows),
-                             year=rep(NA, totalRows))
+  # !!! could try making this a data.table or a tibble to optimize memory
+  trackCohorts <- data.frame(age=as.numeric(rep(NA, totalRows)),
+                             fast_OM=as.numeric(rep(NA, totalRows)),
+                             slow_OM=as.numeric(rep(NA, totalRows)),
+                             respired_OM=as.numeric(rep(NA, totalRows)),
+                             mineral=as.numeric(rep(NA, totalRows)), 
+                             root_mass=as.numeric(rep(NA, totalRows)),
+                             layer_top=as.numeric(rep(NA, totalRows)),
+                             layer_bottom=as.numeric(rep(NA, totalRows)),
+                             cumCohortVol=as.numeric(rep(NA, totalRows)),
+                             year=as.integer(rep(NA, totalRows)))
   
   # add initial set of cohorts
-  trackCohorts[0:nInitialCohorts,] <- cohorts
+  trackCohorts[1:nInitialCohorts,] <- cohorts
   
   # create variables to keep track of cohorts added to the full cohort tracker
-  cohortsNewRowMin <- length(trackCohorts$age[!is.na(trackCohorts$age)]) + 1
+  cohortsNewRowMin <- nInitialCohorts + 1
   
   # Calculate the unmoving bottom of the profile as a consistent reference point
   profileBottomElv <- initElv - max(cohorts$layer_bottom)
   
   # Fourth, add one cohort for each year in the scenario
   # Iterate through scenario table
+  # !!! Try to convert to Apply ?
   for (i in 2:nrow(scenario)) {
     
     # Calculate surface elevation relative to datum
+    # !!! This could be part of the dynamic biomass function
     surfaceElvZStar <- zToZstar(z=scenario$surfaceElevation[i-1], MHW=scenario$MHW[i], MSL=scenario$MSL[i])
     
     # Caluclate dynamic root biomass
@@ -148,35 +153,36 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
     # Initial Below Ground Biomass
     dynamicBgb <- dynamicAgb * rootToShoot
     
+    # Calculate Mineral pool
     dynamicMineralPool <- deliverSedimentFlexibly(z=scenario$surfaceElevation[i-1], ssc=scenario$ssc[i], 
                                                   MSL=scenario$MSL[i], MHW=scenario$MHW[i], MHHW = scenario$MHHW[i], 
                                                   MHHWS = scenario$MHHWS[i], settlingVelocity=settlingVelocity)
     
-    depositMineralPool <- function(...){return(dynamicMineralPool)}
-    
+   
     # Calculate dynamic sediment deliver
     cohorts <- addCohort(cohorts, totalRootMass_per_area=dynamicBgb, rootDepthMax=rootDepthMax, 
                          rootTurnover = rootTurnover, omDecayRate = list(fast=omDecayRate, slow=0),
                          rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
                          packing=list(organic=omPackingDensity, mineral=mineralPackingDensity), 
                          rootDensity=rootPackingDensity, shape=shape,
-                         mineralInput_g_per_yr.fn = depositMineralPool)
+                         mineralInput_g_per_yr = dynamicMineralPool)
     
-    cohorts <- trimCohorts(cohorts)
     cohorts$year <- rep(scenario$years[i], nrow(cohorts))
     
     scenario$surfaceElevation[i] <- profileBottomElv + max(cohorts$layer_bottom, na.rm=T)
     scenario$biomass[i] <- dynamicBgb
     scenario$mineral[i] <- dynamicMineralPool
-    scenario$cumulativeTotalOm[i] <- sum(cohorts$fast_OM, cohorts$root_mass, cohorts$slow_OM, na.rm=T) 
-    
+
     # add initial set of cohorts
-    cohortsNewRowMax <- cohortsNewRowMin + nrow(cohorts)-1
+    cohortsNewRowMax <- cohortsNewRowMin + nrow(cohorts) - 1
     trackCohorts[cohortsNewRowMin:cohortsNewRowMax,] <- cohorts
     
     # create variables to keep track of cohorts added to the full cohort tracker
-    cohortsNewRowMin <- length(trackCohorts$age[!is.na(trackCohorts$age)]) + 1
+    cohortsNewRowMin <- cohortsNewRowMin + nrow(cohorts) + 1
   }
+  
+  # Remove NA values from cohorts
+  trackCohorts <- trimCohorts(trackCohorts)
   
   # Return annual time steps and full set of cohorts
   outputsList <- list(annualTimeSteps = scenario, cohorts = trackCohorts)
@@ -185,15 +191,15 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   if (! is.na(coreYear)) {
     # Filter only to cohorts in the core year
     cohortsInCoreYear <- trackCohorts %>% 
-      plyr::filter(year==coreYear) %>%
-      plyr::select(-year)
+      dplyr::filter(year==coreYear) %>%
+      dplyr::select(-year)
     
     # Convert cohorts to age-depth profile
     coreYearAgeDepth <- convertProfile_AgeToDepth(ageCohort=cohortsInCoreYear,
                                                   layerTop=coreMins,
                                                   layerBottom=coreMaxs)
-    coreYearAgeDepth <- coreYearAgeDepth %>%  filter(complete.cases(.)) %>%
-      plyr::mutate(om_fraction = (fast_OM+slow_OM+root_mass)/(fast_OM+slow_OM+root_mass+mineral),
+    coreYearAgeDepth <- coreYearAgeDepth %>%  dplyr::filter(complete.cases(.)) %>%
+      dplyr::mutate(om_fraction = (fast_OM+slow_OM+root_mass)/(fast_OM+slow_OM+root_mass+mineral),
              dry_bulk_density = (1/(
                (om_fraction/omPackingDensity) +
                  ((1-om_fraction)/mineralPackingDensity)

@@ -6,7 +6,7 @@
 #' @param MHW a numeric, mean high water tide
 #' @param MSL a numeric, mean sea level
 #'
-#' @return a normalized 
+#' @return elevation normalized to the tidal range
 #' @export
 #'
 #' @examples

@@ -14,13 +14,21 @@
 #' @export
 deliverSedimentFlexibly <- function(z, ssc, MSL, MHW, MHHW=NA, MHHWS=NA, settlingVelocity, ...) {
   # If the user does not include detailed tidal datums
-  if (any(is.na(c(MHHW, MHHWS)))) {
-    # run the simple SSC module
-    deliveredSSC <- deliveredSedimentSimple(z=z, ssc=ssc, MSL=MSL, MHW=MHW, settlingVelocity=settlingVelocity)
-  } else {
-    # If they do include them, run the 3 tide stage module
-    deliveredSSC <- deliveredSediment3TidalCycle(z=z, ssc=ssc, MSL=MSL, MHW=MHW, settlingVelocity=settlingVelocity,
-                                                 MHHW=MHHW, MHHWS=MHHWS)
-  }
+  deliveredSSC <- ifelse(any(is.na(c(MHHW, MHHWS))),
+                         # run the simple SSC module
+                         deliveredSedimentSimple(z=z, 
+                                                 ssc=ssc, 
+                                                 MSL=MSL, MHW=MHW, 
+                                                 settlingVelocity=settlingVelocity),
+                         # If they do include them, run the 3 tide stage module
+                         deliveredSediment3TidalCycle(z=z, 
+                                                      ssc=ssc, 
+                                                      MSL=MSL, 
+                                                      MHW=MHW, 
+                                                      settlingVelocity=settlingVelocity,
+                                                      MHHW=MHHW, 
+                                                      MHHWS=MHHWS))
+  
   return(deliveredSSC)
+  
 }

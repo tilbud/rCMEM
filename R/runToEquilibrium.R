@@ -17,7 +17,9 @@ runToEquilibrium <- function(minAge = 50, maxAge = 200,
                              relTol = 1e-6, absTol = 1e-8, ...){
   
   #initalize things to empty
-  cohortProfile <- data.frame(age=NA, fast_OM=NA, slow_OM=NA, mineral=NA, root_mass=NA,
+  cohortProfile <- data.frame(age=NA, fast_OM=NA, slow_OM=NA, 
+                              respired_OM=NA,
+                              mineral=NA, root_mass=NA,
                               layer_top=NA, layer_bottom=NA)
   
   if(recordEvolution){

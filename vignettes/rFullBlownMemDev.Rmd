@@ -5,7 +5,7 @@ date: "10/2/2019"
 output: html_document
 ---
 
-The marsh equilibrium model is a concept developed by Morris et al over several iterations. Different versions have in common that as sea-levels rise marsh surfaces dynamically respond to increasing inundation. Organic 
+The marsh equilibrium model is a concept developed by Morris over several iterations. What different versions have in common is that as sea-levels rise, marsh surfaces dynamically respond to increasing inundation. Organic matter input is a function of plant production and decay and follows a parabolic relationship with elevation relative to the tidal range. Sediment input is a function of suspended sediment concentration, flooding depth, number of floods per year, and average flooding time.
 
 MEM is a 0 dimensional model, meaning it treats spatial dynamics as a single point with no input from or output to other connected patches of the marsh. This makes it relatively simple and tractable.  
 
@@ -13,24 +13,22 @@ Different versions of MEM have these elements in common.
 
 This is a full-blown implementation of MEM. It can be used for hind-casting long-term carbon burial rates, and or hindcasting forecasting carbon removal and net-elevation change. The MEM inputs 
 
-New optionalities include.    
+New optionalities include  
   +  More optionalities for inputing biomass parabolas.  
   +  Option to incorporate sediment deposition accross 3 different tidal ranges (high, higher high, and spring tides).  
   +  More flexibility for inputing custom sea-level change, suspended sediment concentraton scenarios.  
   +  Custom specification of depth intervals for soil cores.  
-  +  Options to create animations of soil profile formation, sea-level and surface elevation change, and biomass and elevation response.  
+  +  Options to create animations of soil profile formation, sea-level and surface elevation change, and biomass and elevation response.    
 
 ## Load R CTM
-The first thing we will do is load the cohort theory model as a dependency.
+
+The first thing we will do is load the cohort theory model and it's dependencies.
 
 ```{r setup, include=TRUE}
-# devtools::install_github("https://github.com/tilbud/rCTM")
+
 require(rCTM)
 require(tidyverse)
 require(gridExtra)
-#source("../R/predictedBiomass.R")
-#source("../R/zToZstar.R")
-#source("../R/zStarToZ.R")
 
 ```
 
@@ -144,43 +142,7 @@ ggplot(data=displayAGB, aes(x=elevation, y=agb)) +
 
 Sedimentation in MEM is a function of suspended sediment concentration, and three properties of elevation relative to tidal range, the number of tides a year, the mean flood depth, and the mean flood time per tidal cycle. 
 
-The original version of MEM makes some simplistic assumptions about n tides, and flood time. Original MEM assumes that no sedimentation occurs above the MHW line.
-
-```{r simple flood time}
-
-avaliableSediment <- function(floodPct, ssc, settlingVelocity, k=1) {
-  
-  availableSSC <- ifelse(floodPct < 1/settlingVelocity, # if the sediment column IS NOT able to clear
-                         # available ssc is total possible caputre 
-                         ssc * floodPct/(1/settlingVelocity) * k, 
-                         # if the sediment column IS able to clear
-                         ssc * k)
-  
-  return(availableSSC)
-}
-
-deliveredSedimentSimple <- function(z, ssc, MSL, MHW, MLW = MSL-MHW, settlingVelocity, 
-                                    k=1, nTides=704) {
-  
-  # Flood depth in meters is the same as water volume when in m and assuming a 1m2 area of interest
-  floodDepth <- ifelse(z<=MHW, (MHW-z)*0.5, 0)
-  
-  # Mean flood percent is a line, relative position of elevation between MHW and MLW.
-  floodPct <- ifelse(z >= MHW, 0, ifelse(z <= MLW, 1, (MHW-z)/(MHW-MLW)))
-  
-  availableSSC <- avaliableSediment(ssc=ssc, floodPct=floodPct, settlingVelocity=settlingVelocity, k=k)
-  
-  # Mean flood depth is depth below MHW. If above MHW the marsh does not flood.
-  # delivered sediment is the ssc available to the surface (g/m3) multiplied by 
-  # the cumulative water volume (cube of water) and number of times the cube passes over the marsh. 
-  deliveredSSC <- availableSSC * floodDepth * nTides
-  
-  return(deliveredSSC)
-}
-
-```
-
-Here's an example.
+The original version of MEM makes some simplistic assumptions about n tides, and flood time. Original MEM assumes that no sedimentation occurs above the MHW line. Here's an example.
 
 ```{r simple sediment example, fig.width=3.54, fig.height=3.54}
 
@@ -204,82 +166,6 @@ ggplot(data=simpleSedimentPlotData, aes(x=elevation, y=deliveredSediment)) +
 ```
 
 _Question? Is there a lower limit on sediment delivery to the marsh in MEM? Is it MLW or the lower vegetation line?_
-
-```{r flood time accross datums }
-
-floodTimeFromDatum <- function(z, datumHigh, datumLow, ...) {
-  
-  # If elevation is above the tidal range indation time is 0
-  datumHigh <- ifelse(z>=datumHigh, z, datumHigh)
-  
-  # If elevation is below inundation time is a full tidal cycle
-  datumLow <- ifelse(z<=datumLow, z, datumLow)
-  
-  # Rising time over cell = 6.21 (A/pi - 1)	
-  # where A = 2* pi - cos-1 [2 (height of cell – MLW) / (MHW – MLW) - 1] radians
-  A1 <- 2 * pi - acos(2 * (z-datumLow) / (datumHigh-datumLow) - 1)
-  risingTime <- 6.21 * (A1/pi - 1)
-  
-  # Falling time over cell = 6.21 (A/pi - 1) where
-  # A = 2* - cos-1 [2 (height of cell – MHW) / (MLW – MHW) - 1] radians
-  A2 <- 2 * pi - acos(2 * (z-datumHigh) / (datumLow-datumHigh) - 1)
-  fallingTime <- 6.21 * (A2/pi - 1)
-
-  # If between inundation time = abs (time rising - 6.21) + time falling
-  inundationTime <- abs(risingTime - 6.21) + fallingTime
-
-  return(inundationTime)
-}
-
-deliveredSediment3TidalCycle <- function(z, ssc, MSL, MHW, MHHW, MHHWS,
-                                        MLW=MSL-MHW, MLLW=MSL-MHHW, MLLWS=MSL-MHHWS,
-                                        settlingVelocity, k=1) {
-  
-  # Define Constants
-  highTidesPerYear <- 352.657
-  higherHighTidesPerYear <- 352.657 - 24.720
-  springTidesPerYear <- 24.720
-  hoursInTidalCycle <- 12.42
-  
-  # Create a data frame operation so we can use tidy functions to speed this up
-  tidalCycles <- data.frame(datumHigh = c(MHW, MHHW, MHHWS), 
-                            datumLow = c(MLW, MLLW, MLLWS),
-                            nTides = c(highTidesPerYear, higherHighTidesPerYear, springTidesPerYear))
-  
-  tidalCycles <- tidalCycles %>%
-    # Set tidal propoerties to 0 if surface is above tidal range in each case
-    dplyr::mutate(nTides = ifelse(z>datumHigh, 0, nTides), # number of tides
-           tidalHeight = ifelse(z>datumHigh, 0, (datumHigh-z)*0.5), # Tidal height relative to surface
-           floodTime = ifelse(z>datumHigh, 0, floodTimeFromDatum(z=z, # Call flood time function.
-                                                                 datumHigh=datumHigh, 
-                                                                 datumLow=datumLow)), 
-           floodPct = ifelse(z>datumHigh, 0, floodTime / hoursInTidalCycle), # Convert hours to fraction
-           # Call available sediment function
-           availableSSC = avaliableSediment(floodPct=floodPct, ssc=ssc, 
-                                            settlingVelocity=settlingVelocity, k=k),
-           deliveredSSC = availableSSC * nTides * tidalHeight) # Calculated delivered SSC
-  
-  # Sum delivered SSC accross tidal cycles
-  totalDeliveredSSC <- sum(tidalCycles$deliveredSSC) 
-  
-  return(totalDeliveredSSC)
-}
-
-# Function decides which sediment module to use based on available inputs
-deliverSedimentFlexibly <- function(z, ssc, MSL, MHW, MHHW=NA, MHHWS=NA, settlingVelocity) {
-  # If the user does not include detailed tidal datums
-  if (any(is.na(c(MHHW, MHHWS)))) {
-    # run the simple SSC module
-    deliveredSSC <- deliveredSedimentSimple(z=z, ssc=ssc, MSL=MSL, MHW=MHW, settlingVelocity=settlingVelocity)
-  } else {
-    # If they do include them, run the 3 tide stage module
-    deliveredSSC <- deliveredSediment3TidalCycle(z=z, ssc=ssc, MSL=MSL, MHW=MHW, settlingVelocity=settlingVelocity,
-                                                 MHHW=MHHW, MHHWS=MHHWS)
-  }
-  return(deliveredSSC)
-}
-
-```
 
 Let's see how the simple vs two tidal cycle modules compare. 
 
@@ -319,94 +205,6 @@ grid.arrange(totalRange,zoomedIn, ncol=2)
 
 ```
 
-## Build Mean-Sea Level Curve
-
-``` {r build sea-level curve}
-
-buildScenarioCurve <- function(startYear, endYear=startYear+99, MSL, rslr0=0.3, rslrTotal=100, ssc) {
-  
-  # Create a sequence of the number of years
-  years <- startYear:endYear
-  nYearsOfSim <- length(years) # Put this in args. Replace this with yearEnd.
-  
-  scenario <- data.frame(index = 1:nYearsOfSim, years = years,
-                         MSL = rep(NA, nYearsOfSim),
-                         ssc = rep(NA, nYearsOfSim))
-  
-  # Build the Mean Sea Level Scenario
-  # If the input only specifies an initial Mean Sea Level at time = 0 ... 
-  if (length(MSL) == 1) {
-    # ... create a sea-level rise scenario based on total sea-level rise and inital relative sea-level rise rate
-    # Probably could use a stop here in case there are invalid entries of rslr0 and slrTotal
-    scenario$MSL[1] <- MSL
-    
-    # IPCC, 2013 and Sweet et al., 2017
-    # MSL(t) = MSL(0) + At + Bt^2 - where t is years from time zero
-    # A=[MSL(1)-MSL(0)] – B  
-    # Where [MSL(1)-MSL(0)] is the SLR at the start as determined from NOAA trend analyses 
-    # Coefficient B is the acceleration term 
-    # B = {[MSL(T)-MSL(0)] / T - [MSL(1)-MSL0] } / (T-1) where T - length of the simulation
-    
-    B <- ((rslrTotal)/nYearsOfSim - rslr0) / (nYearsOfSim-1)
-    A <- rslr0 - B
-    
-    scenario$MSL[2:nYearsOfSim] <- scenario$MSL[1] + A*scenario$index[2:nYearsOfSim] + B*scenario$index[2:nYearsOfSim]^2
-    
-  } else if (length(MSL) == length(years)) {
-    
-    # If the user enters in a vector of MSL that is equal to the number of years in the simulation.
-    scenario$MSL <- MSL
-    
-  } else {
-    stop("RSLR input is incorrect. Either enter a value at for the beginning and ending of the scenario, or a vector of RSLR one for each year of the scenario.")
-  }
-
-  # Add suspended sediment concentration
-  if (length(ssc) == 1) {
-    # If ssc is a single value.
-    scenario$ssc <- rep(ssc, nYearsOfSim)
-  } else if (length(ssc) == nYearsOfSim) {
-    # If ssc is a vector in equal length to the number of years of the simulation.
-    scenario$ssc <- ssc
-  } else {
-    stop("SSC input is incorrect. Either enter a single average value, or a vector equal in length to the number of years in the scenario.")
-  }
-  return(scenario)
-  # This is a start. We could also allow flexibility to change biomass and sediment addition functions later on to incorporate things like conversions of emergent to forested wetland.
-}
-
-```
-
-## Build MHW Lines
-
-``` {r build tidal range scenario}
-
-predictLunarNodalCyle <- function(year, floodElv, MSL0, MSL, lunarNodalAmp) {
-  # Build MHW lines based on MSL, long-term tidal range and lunar nodal amplitude
-  MHW <- MSL + (floodElv-MSL0) + (lunarNodalAmp * (sin(2*pi*(year-1983)/18.61)))
-  return(MHW)
-}
-
-buildHighTideScenario <- function(scenarioCurve, MHW0, MHHW0, MHHWS0, lunarNodalAmp) {
-  
-  # In create a MHW and add it to the scenario
-  scenarioCurve$MHW <- predictLunarNodalCyle(year = scenarioCurve$years, MSL= scenarioCurve$MSL, 
-                                             MSL0 = scenarioCurve$MSL[1], floodElv=MHW0, 
-                                             lunarNodalAmp=lunarNodalAmp)
-  
-  # If MHHW and MHHWS are arguements add them to the scenario table too
-  if (!missing(MHHW0) & !missing(MHHWS0)) {
-    scenarioCurve$MHHW <- predictLunarNodalCyle(year = scenarioCurve$years, MSL=scenarioCurve$MSL,
-                                                MSL0 = scenarioCurve$MSL[1], floodElv=MHHW0, 
-                                                lunarNodalAmp=lunarNodalAmp)
-    scenarioCurve$MHHWS <- predictLunarNodalCyle(year = scenarioCurve$years, MSL= scenarioCurve$MSL, 
-                                                 MSL0 = scenarioCurve$MSL[1], floodElv=MHHWS0, 
-                                                 lunarNodalAmp=lunarNodalAmp)
-  }
-  return(scenarioCurve)
-}
-```
-
 ### High Tide Scenario Curve Example
 ```{r build scenario}
 exScenarioCurve <- buildScenarioCurve(startYear = 2015, MSL = MSL, rslr0=0.3, 
@@ -440,189 +238,7 @@ ggplot(data=exScenarioCurve) +
 
 ```
 
-
 ## Run all functions together
-
-```{r linked MEM CTM } 
-
-trimCohorts <- function(cohorts) {
-  cohorts <- cohorts %>%
-    dplyr::filter(cumCohortVol!=0)
-  return(cohorts)
-}
-
-runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal, initElv,
-                              MSL, MHW, MHHW=NA, MHHWS=NA, ssc, lunarNodalAmp,
-                              bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
-                              rootToShoot, rootTurnover, rootDepthMax, shape="linear",
-                              omDecayRate, recalcitrantFrac, settlingVelocity,
-                              omPackingDensity=0.085, mineralPackingDensity=1.99,
-                              rootPackingDensity=omPackingDensity,
-                              coreYear=NA, coreDepth=100, coreMaxs=1:coreDepth, coreMins=coreMaxs-1,
-                              ...) {
-  
-  # Run checks on input and trigger warnings if units seem off
-  # Need to develop this
-  
-  # Build scenario curve
-  scenario <- buildScenarioCurve(startYear=startYear, endYear=endYear, MSL=MSL, 
-                                 rslr0=rslr0, rslrTotal=rslrTotal, ssc=ssc)
-  
-  # add high tides
-  scenario <- buildHighTideScenario(scenario, MHW0=MHW, MHHW0=MHHW, MHHWS0=MHHWS, 
-                                    lunarNodalAmp = lunarNodalAmp)
-  
-  # Add blank colums for attributes we will add later
-  scenario$surfaceElevation <- rep(NA, nrow(scenario))
-  scenario$biomass <- rep(NA, nrow(scenario))
-  scenario$mineral <- rep(NA, nrow(scenario))
-  scenario$cumulativeTotalOm <- rep(NA, nrow(scenario)) 
-  
-  # Convert dimensionless plant growing elevations to real growing elevations
-  if (! plantElevationType %in% c("dimensionless", "zStar", "Z*", "zstar")) {
-    zStarVegMin <- zToZstar(zVegMin, MHW, MSL[1])
-    zStarVegMax <- zToZstar(zVegMax, MHW, MSL[1])
-    zStarVegPeak <- zToZstar(zVegPeak, MHW, MSL[1])
-  } else {
-    zStarVegMin <- zVegMin
-    zStarVegMax <- zVegMax
-    zStarVegPeak <- zVegPeak
-  }
-
-  # Set initial conditions
-  # Calculate initial z star
-  initElvStar <- zToZstar(z=initElv, MSL=scenario$MSL[1], MHW=scenario$MHW[1])
-  
-  # Initial Above Ground Biomass
-  initAgb <- predictedBiomass(z=initElvStar, bMax = bMax, zVegMax = zStarVegMax, 
-                              zVegMin = zStarVegMin, zVegPeak = zStarVegPeak)
-  
-  # Initial Below Ground Biomass
-  initBgb <- initAgb * rootToShoot
-  
-  # Initial Sediment
-  initSediment <- deliverSedimentFlexibly(z=initElv, ssc=scenario$ssc[1], 
-                                          MSL=scenario$MSL[1], MHW=scenario$MHW[1], 
-                                          MHHW = scenario$MHHW[1], MHHWS = scenario$MHHWS[1],
-                                          settlingVelocity=settlingVelocity)
-  
-  depositInitSediment <- function(...){return(initSediment)}
-  
-  # Run initial conditions to equilibrium
-  cohorts <- runToEquilibrium(totalRootMass_per_area=initBgb, rootDepthMax=rootDepthMax,
-                              rootTurnover=rootTurnover, omDecayRate = list(fast=omDecayRate, slow=0),
-                              rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
-                              packing=list(organic=omPackingDensity, mineral=mineralPackingDensity),
-                              rootDensity=rootPackingDensity, shape=shape, 
-                              mineralInput_g_per_yr.fn = depositInitSediment)
-  
-  # Add initial conditions to annual time step tracker
-  scenario$surfaceElevation[1] <- initElv
-  scenario$mineral[1] <- initSediment
-  scenario$biomass[1] <- initBgb
-  scenario$cumulativeTotalOm[1] <- sum(cohorts$fast_OM, cohorts$root_mass, cohorts$slow_OM, na.rm=T) 
-  
-  # Trim NA rows from eq cohorts
-  cohorts <- trimCohorts(cohorts)
-  cohorts$year <- rep(scenario$years[1], nrow(cohorts))
-  
-  # Preallocate memory for cohort tracking
-  nInitialCohorts <- nrow(cohorts)
-  nScenarioYears <- nrow(scenario)
-  initCohortRows <- nInitialCohorts * nScenarioYears
-  newCohortRows <- sum(1:nScenarioYears)
-  totalRows <- initCohortRows+newCohortRows
-  
-  trackCohorts <- data.frame(age=rep(rep(NA, totalRows)),
-                             fast_OM=rep(NA, totalRows), slow_OM=rep(NA, totalRows), 
-                             mineral=rep(NA, totalRows), root_mass=rep(NA, totalRows), 
-                             layer_top=rep(NA, totalRows), layer_bottom=rep(NA, totalRows),
-                             cumCohortVol=rep(NA, totalRows),
-                             year=rep(NA, totalRows))
-  
-  # add initial set of cohorts
-  trackCohorts[0:nInitialCohorts,] <- cohorts
-  
-  # create variables to keep track of cohorts added to the full cohort tracker
-  cohortsNewRowMin <- length(trackCohorts$age[!is.na(trackCohorts$age)]) + 1
-  
-  # Calculate the unmoving bottom of the profile as a consistent reference datum
-  profileBottomElv <- initElv - max(cohorts$layer_bottom)
-  
-  # Fourth, add one cohort for each year in the scenario
-  # Iterate through scenario table
-  for (i in 2:nrow(scenario)) {
-    
-    # Calculate surface elevation relative to datum
-    surfaceElvZStar <- zToZstar(z=scenario$surfaceElevation[i-1], MHW=scenario$MHW[i], MSL=scenario$MSL[i])
-    
-    # Caluclate dynamic root biomass
-    dynamicAgb <- predictedBiomass(z=surfaceElvZStar, bMax = bMax, zVegMax = zStarVegMax, zVegMin = zStarVegMin, zVegPeak = zStarVegPeak)
-  
-  # Initial Below Ground Biomass
-  dynamicBgb <- dynamicAgb * rootToShoot
-  
-  dynamicMineralPool <- deliverSedimentFlexibly(z=scenario$surfaceElevation[i-1], ssc=scenario$ssc[i], 
-                                          MSL=scenario$MSL[i], MHW=scenario$MHW[i], MHHW = scenario$MHHW[i], 
-                                          MHHWS = scenario$MHHWS[i], settlingVelocity=settlingVelocity)
-  
-  depositMineralPool <- function(...){return(dynamicMineralPool)}
-    
-  # Calculate dynamic sediment deliver
-  cohorts <- addCohort(cohorts, totalRootMass_per_area=dynamicBgb, rootDepthMax=rootDepthMax, 
-                       rootTurnover = rootTurnover, omDecayRate = list(fast=omDecayRate, slow=0),
-                       rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
-                       packing=list(organic=omPackingDensity, mineral=mineralPackingDensity), 
-                                       rootDensity=rootPackingDensity, shape=shape,
-                       mineralInput_g_per_yr.fn = depositMineralPool)
-    
-    cohorts <- trimCohorts(cohorts)
-    cohorts$year <- rep(scenario$years[i], nrow(cohorts))
-    
-    scenario$surfaceElevation[i] <- profileBottomElv + max(cohorts$layer_bottom, na.rm=T)
-    scenario$biomass[i] <- dynamicBgb
-    scenario$mineral[i] <- dynamicMineralPool
-    scenario$cumulativeTotalOm[i] <- sum(cohorts$fast_OM, cohorts$root_mass, cohorts$slow_OM, na.rm=T) 
-    
-    # add initial set of cohorts
-    cohortsNewRowMax <- cohortsNewRowMin + nrow(cohorts)-1
-    trackCohorts[cohortsNewRowMin:cohortsNewRowMax,] <- cohorts
-  
-    # create variables to keep track of cohorts added to the full cohort tracker
-    cohortsNewRowMin <- length(trackCohorts$age[!is.na(trackCohorts$age)]) + 1
-  }
-  
-  # Return annual time steps and full set of cohorts
-  outputsList <- list(annualTimeSteps = scenario, cohorts = trackCohorts)
-  
-  # If a core year is specificed return a core too.
-  if (! is.na(coreYear)) {
-    # Filter only to cohorts in the core year
-    cohortsInCoreYear <- trackCohorts %>% 
-      filter(year==coreYear) %>%
-      select(-year)
-    
-    # Convert cohorts to age-depth profile
-    coreYearAgeDepth <- convertProfile_AgeToDepth(ageCohort=cohortsInCoreYear,
-                                                  layerTop=coreMins,
-                                                  layerBottom=coreMaxs)
-    coreYearAgeDepth <- coreYearAgeDepth %>%  filter(complete.cases(.)) %>%
-      mutate(om_fraction = (fast_OM+slow_OM+root_mass)/(fast_OM+slow_OM+root_mass+mineral),
-             dry_bulk_density = (1/(
-                               (om_fraction/omPackingDensity) +
-                               ((1-om_fraction)/mineralPackingDensity)
-                              )
-                             )
-             )
-    
-    # Add to the list of outputs
-    outputsList$core <- coreYearAgeDepth
-  }
-  
-  return(outputsList)
-}
-
-```
 
 ``` {r graph MEM-CTM output}
 # First we'll profile the script
@@ -642,6 +258,7 @@ head(scenario)
 
 cohorts <- memCohortExample$cohorts
 head(cohorts)
+tail(cohorts)
 
 core <- memCohortExample$core
 head(core)
@@ -664,7 +281,12 @@ plot3 <- ggplot(data=scenario, aes(x=years, y=mineral)) +
   geom_line() +
   ggtitle("Mineral Deposition Over Time")
 
-plot4 <- ggplot(data=scenario, aes(x=years, y=cumulativeTotalOm)) +
+cumulativeTotalOmTab <- cohorts %>%
+  mutate(total_om_perCoh = fast_OM + slow_OM) %>%
+  group_by(year) %>%
+  summarise(cumulativeTotalOm = sum(total_om_perCoh))
+
+plot4 <- ggplot(data=cumulativeTotalOmTab, aes(x=year, y=cumulativeTotalOm)) +
   geom_line() +
   ggtitle("Cumulative OM deposited over time")
 
@@ -675,12 +297,12 @@ grid.arrange(plot1, plot2, plot3, plot4, ncol=2)
 __Here is an example of something you can't do with simple MEM.__
 
 ``` {r fullBlownMem exampl}
-scenarioFlux <- scenario %>%
+scenarioFlux <- cumulativeTotalOmTab %>%
   mutate(omFlux = cumulativeTotalOm - lag(cumulativeTotalOm),
          fluxDirection = ifelse(omFlux>0, "positive", "negative")) %>%
   filter(complete.cases(.))
 
-fluxPlot <- ggplot(data=scenarioFlux, aes(x=years, y=omFlux)) +
+fluxPlot <- ggplot(data=scenarioFlux, aes(x=year, y=omFlux)) +
   geom_hline(aes(yintercept=0), lwd=1.25) +
   geom_step() +
   geom_point(aes(color=fluxDirection)) +
@@ -726,88 +348,11 @@ grid.arrange(accretionPlot, loiPlot, bdPlot, nrow=1)
 
 ```
 
-## Animate Depth Profile Formation
-
-``` {r animate cohorts code }
-
-library(gganimate)
-
-animateCohorts <- function(cohorts, scenario,
-                           savePath="MEM-CTM-animated.gif",
-                           chPalette = c("#56B4E9", "#999999", "#E69F00", "#009E73"), 
-                           trackThresholds = c("MSL", "MHW"), duration = 30,
-                            width = 4, height = 8) {
-  
-  surface_elv <- scenario %>%
-    select(years, surfaceElevation) %>%
-    rename(year=years)
-  
-  # First reshape the mass cohorts so that they're in long form
-  mass_cohorts <- cohorts %>%
-    select(-cumCohortVol) %>% 
-    gather(key = "mass_pool", value = "mass_fraction", 
-           -age, -year, -layer_top, -layer_bottom) %>%
-    group_by(year, age) %>%
-    mutate(mass_pool = factor(mass_pool, 
-                              levels=c("mineral", 
-                                       "slow_OM", 
-                                       "fast_OM", 
-                                       "root_mass"))) %>%
-    arrange(year, age, mass_pool) %>%
-    mutate(max_mass = cumsum(mass_fraction),
-           min_mass = ifelse(mass_pool==first(mass_pool),0,lag(max_mass)),
-           mass_pool = as.character(mass_pool)) %>%
-    # Join mass cohorts with scenario table to convert depths to referenced elevations
-    ungroup() %>%
-    left_join(surface_elv) %>%
-    mutate(layer_top=surfaceElevation-layer_top, 
-           layer_bottom=surfaceElevation-layer_bottom)
-
-  # Reshape the scenario table
-  tides <- scenario %>%
-    # Track any elevation threholds in the animation speciefied.
-    # MSL and MHW are the defaults
-    select(years, trackThresholds) %>%
-    gather(value="WaterLevel", key="datum", -years) %>%
-    rename(year=years) %>%
-    arrange(year) %>%
-    filter(complete.cases(.))
-                           
-  # get rid of any NA values.               
-  mass_cohorts_almostAll <- mass_cohorts %>%  filter(complete.cases(.))
-    
-  # gganimate stuff
-  animate_mass_cohorts <- ggplot(data = mass_cohorts_almostAll, 
-       aes(xmin = min_mass, xmax = max_mass, 
-           ymin = layer_top, ymax = layer_bottom, 
-                                frame = year
-                                )) +
-    geom_rect(aes(fill = mass_pool), color = rgb(0,0,0, alpha = 0.1)) +
-    theme_minimal() +
-    scale_fill_manual(values=chPalette) +
-    geom_hline(data=tides, aes(yintercept=WaterLevel, lty=datum), color="blue") +
-    theme(text = element_text(size=14)) +
-    ylab("Depth (cm)") +
-    xlab("Mass Accumulated Per Cohort (g)") +
-    labs(title = 'Year: {round(frame_time,0)}',
-       fill = "Mass Pools") +
-    transition_time(year) +
-    ease_aes('linear')
-  
-  animate(animate_mass_cohorts, duration = duration)
-  
-  # save gif to filepath
-  anim_save(savePath, width = width, height = height, units = "in", dpi = 300)
-  
-}
-
-```
-
 ## Try out Animate Cohorts Function
 
 ``` {r try out animate cohorts}
-animateCohorts(scenario = scenario, cohorts = cohorts,
-               savePath="../temp/MEM-CTM-example-191026.gif")
+#animateCohorts(scenario = scenario, cohorts = cohorts,
+#               savePath="../temp/MEM-CTM-example-191026.gif")
 
 knitr::include_graphics("../temp/MEM-CTM-example-191026.gif")
 
