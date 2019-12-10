@@ -13,7 +13,7 @@
 #'
 #'
 #' @return a numeric, the sediment delivered over the course of a year
-#' @export
+#' @export 
 deliveredSedimentSimple <- function(z, ssc, MSL, MHW, MLW = MSL-MHW, settlingVelocity, 
                                     k=1, nTides=704) {
   

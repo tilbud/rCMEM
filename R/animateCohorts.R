@@ -18,47 +18,47 @@ animateCohorts <- function(cohorts, scenario,
                            width = 4, height = 8) {
   
   surface_elv <- scenario %>%
-    plyr::select(years, surfaceElevation) %>%
-    plyr::rename(year=years)
+    dplyr::select(years, surfaceElevation) %>%
+    dplyr::rename(year=years)
   
   # First reshape the mass cohorts so that they're in long form
   mass_cohorts <- cohorts %>%
-    plyr::select(-cumCohortVol) %>% 
-    plyr::gather(key = "mass_pool", value = "mass_fraction", 
+    dplyr::select(-cumCohortVol, -respired_OM) %>% 
+    tidyr::gather(key = "mass_pool", value = "mass_fraction", 
            -age, -year, -layer_top, -layer_bottom) %>%
-    plyr::group_by(year, age) %>%
-    plyr::mutate(mass_pool = factor(mass_pool, 
+    dplyr::group_by(year, age) %>%
+    dplyr::mutate(mass_pool = factor(mass_pool, 
                               levels=c("mineral", 
                                        "slow_OM", 
                                        "fast_OM", 
                                        "root_mass"))) %>%
-    plyr::arrange(year, age, mass_pool) %>%
-    plyr::mutate(max_mass = cumsum(mass_fraction),
+    dplyr::arrange(year, age, mass_pool) %>%
+    dplyr::mutate(max_mass = cumsum(mass_fraction),
            min_mass = ifelse(mass_pool==first(mass_pool),0,lag(max_mass)),
            mass_pool = as.character(mass_pool)) %>%
     # Join mass cohorts with scenario table to convert depths to referenced elevations
-    plyr::ungroup() %>%
-    plyr::left_join(surface_elv) %>%
-    plyr::mutate(layer_top=surfaceElevation-layer_top, 
+    dplyr::ungroup() %>%
+    dplyr::left_join(surface_elv) %>%
+    dplyr::mutate(layer_top=surfaceElevation-layer_top, 
            layer_bottom=surfaceElevation-layer_bottom)
   
   # Reshape the scenario table
   tides <- scenario %>%
     # Track any elevation threholds in the animation speciefied.
     # MSL and MHW are the defaults
-    plyr::select(years, trackThresholds) %>%
-    plyr::gather(value="WaterLevel", key="datum", -years) %>%
-    plyr::rename(year=years) %>%
-    plyr::arrange(year) %>%
-    plyr::filter(complete.cases(.))
+    dplyr::select(years, trackThresholds) %>%
+    tidyr::gather(value="WaterLevel", key="datum", -years) %>%
+    dplyr::rename(year=years) %>%
+    dplyr::arrange(year) %>%
+    dplyr::filter(complete.cases(.))
   
   # get rid of any NA values.               
-  mass_cohorts_almostAll <- mass_cohorts %>%  plyr::filter(complete.cases(.))
+  mass_cohorts_almostAll <- mass_cohorts %>%  dplyr::filter(complete.cases(.))
   
   # gganimate stuff
   animate_mass_cohorts <- ggplot2::ggplot(data = mass_cohorts_almostAll, 
                                  aes(xmin = min_mass, xmax = max_mass, 
-                                     ymin = layer_top, ymax = layer_bottom, 
+                                     ymin = layer_top, ymax = layer_bottom , 
                                      frame = year
                                  )) +
     ggplot2::geom_rect(aes(fill = mass_pool), color = rgb(0,0,0, alpha = 0.1)) +
