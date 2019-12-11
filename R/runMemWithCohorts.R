@@ -46,8 +46,14 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
                               coreYear=NA, coreDepth=100, coreMaxs=1:coreDepth, coreMins=coreMaxs-1,
                               ...) {
   
-  # Run checks on input and trigger warnings if units seem off
-  # Need to develop this
+  # Ideas for inputs, 
+  # Make biomass and sediment function options
+  # Make tidal-datum inputs an list of inputs
+  # Change MSL0 to MSL_t1
+  # Allow for cohorts to be an input
+  
+  # Run checks on input and warnings if units seem off
+  # Need to develop this ...
   
   # Build scenario curve
   # !!! Could build a data.table or tibble if it's more optomized for memory
