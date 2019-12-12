@@ -56,6 +56,11 @@ addCohort <- function(massPools,
   
   ans$age <- ans$age + dt_yr #age the cohorts
   
+  # track respiration
+  # !!! this is probably wrong
+  ans$respired_OM <- ((ans$fast_OM * omDecayRate$fast * dt_yr) +  # Fast Pool Lost
+                        (ans$slow_OM * omDecayRate$slow * dt_yr)) # Slow Pool Lost
+  
   #add and decay the organic matter
   ans$fast_OM <- ans$fast_OM + 
              ans$root_mass * rootOmFrac$fast * rootTurnover * dt_yr -
@@ -65,9 +70,7 @@ addCohort <- function(massPools,
              ans$root_mass * rootOmFrac$slow * rootTurnover * dt_yr -
              ans$slow_OM * omDecayRate$slow * dt_yr
   
-  # track respiration
-  ans$respired_OM <- ((ans$fast_OM * omDecayRate$fast * dt_yr) +  # Fast Pool Lost
-    (ans$slow_OM * omDecayRate$slow * dt_yr)) # Slow Pool Lost
+
   
   # Check to see if mineral input is a static value or a function
   if (is.na(mineralInput_g_per_yr)) {
