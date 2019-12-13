@@ -3,7 +3,7 @@
 #' This function takes an initial elevation, average annual suspended sediment concentrtion and tidal properties, plant traits, and decay rates, then builds a scenario, and runs the marsh equilibrium model over that scenario tracking individual sediment mass cohorts including minderal, live root, slow decay organic mater pool and a fast organic matter pool.
 #' @param startYear an integer, year in form YYYY, the start year of the scenario 
 #' @param endYear an integer, year in form YYYY, the end year of the scenario  
-#' @param rslr0 a numeric, initial rate of relative sea-level rise
+#' @param rslrT1 a numeric, initial rate of relative sea-level rise
 #' @param rslrTotal a numeric, total relative sea-level rise over the course of the scanario
 #' @param initElv a numeric, the initial elevation of the marsh at the start of the scenario
 #' @param MSL a numeric or a vector, Mean Sea Level at the start of the scenario, or a vector of Mean Sea Levels the same length as the number of years in a scenario
@@ -36,7 +36,7 @@
 #' 
 #' @return a list of data frames, including the annualized summaries, mapped cohorts tracked for every years, and if core year is specified, a core.
 #' @export
-runMemWithCohorts <- function(startYear, endYear=startYear+99, rslr0, rslrTotal, initElv,
+runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal, initElv,
                               MSL, MSL0=MSL[1], MHW, MHHW=NA, MHHWS=NA, ssc, lunarNodalAmp,
                               bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
                               rootToShoot, rootTurnover, rootDepthMax, shape="linear",
@@ -58,7 +58,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslr0, rslrTotal,
   # Build scenario curve
   # !!! Could build a data.table or tibble if it's more optomized for memory
   scenario <- buildScenarioCurve(startYear=startYear, endYear=endYear, MSL=MSL, 
-                                 rslr0=rslr0, rslrTotal=rslrTotal, ssc=ssc)
+                                 rslr0=rslrT1, rslrTotal=rslrTotal, ssc=ssc)
   
   # add high tides
   scenario <- buildHighTideScenario(scenario, MSL0=MSL0, 
