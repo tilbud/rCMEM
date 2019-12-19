@@ -46,17 +46,10 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
                               coreYear=NA, coreDepth=100, coreMaxs=1:coreDepth, coreMins=coreMaxs-1,
                               ...) {
   
-  # Ideas for inputs, 
-  # Make biomass and sediment function options
-  # Make tidal-datum inputs an list of inputs
-  # Change MSL0 to MSL_t1
-  # Allow for cohorts to be an input
-  
-  # Run checks on input and warnings if units seem off
-  # Need to develop this ...
+  # Make sure tidyverse is there
+  require(tidyverse, quietly = TRUE)
   
   # Build scenario curve
-  # !!! Could build a data.table or tibble if it's more optomized for memory
   scenario <- buildScenarioCurve(startYear=startYear, endYear=endYear, MSL=MSL, 
                                  rslr0=rslrT1, rslrTotal=rslrTotal, ssc=ssc)
   
@@ -93,7 +86,6 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   initBgb <- initAgb * rootToShoot
   
   # Initial Sediment
-  # !!! would be great if deposited sediment was either a single input or a function, not only a function
   initSediment <- deliverSedimentFlexibly(z=initElv, ssc=scenario$ssc[1], 
                                           MSL=scenario$MSL[1], MHW=scenario$MHW[1], 
                                           MHHW = scenario$MHHW[1], MHHWS = scenario$MHHWS[1],
@@ -111,8 +103,6 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   scenario$surfaceElevation[1] <- initElv
   scenario$mineral[1] <- initSediment
   scenario$biomass[1] <- initBgb
-  # AGB
-  # BGB Turnover
   
   cohorts$year <- rep(scenario$years[1], nrow(cohorts))
   
@@ -123,7 +113,6 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   newCohortRows <- sum(1:nScenarioYears)
   totalRows <- initCohortRows+newCohortRows
   
-  # !!! could try making this a data.table or a tibble to optimize memory
   trackCohorts <- data.frame(age=as.numeric(rep(NA, totalRows)),
                              fast_OM=as.numeric(rep(NA, totalRows)),
                              slow_OM=as.numeric(rep(NA, totalRows)),
@@ -146,14 +135,12 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   
   # Fourth, add one cohort for each year in the scenario
   # Iterate through scenario table
-  # !!! Try to convert to Apply ?
   for (i in 2:nrow(scenario)) {
     
     # Calculate surface elevation relative to datum
-    # !!! This could be part of the dynamic biomass function
     surfaceElvZStar <- zToZstar(z=scenario$surfaceElevation[i-1], MHW=scenario$MHW[i], MSL=scenario$MSL[i])
     
-    # Caluclate dynamic root biomass
+    # Calculate dynamic above ground
     dynamicAgb <- predictedBiomass(z=surfaceElvZStar, bMax = bMax, zVegMax = zStarVegMax, zVegMin = zStarVegMin, zVegPeak = zStarVegPeak)
     
     # Initial Below Ground Biomass

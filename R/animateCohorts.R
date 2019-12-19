@@ -17,6 +17,9 @@ animateCohorts <- function(cohorts, scenario,
                            trackThresholds = c("MSL", "MHW"), duration = 30,
                            width = 4, height = 8) {
   
+  require(tidyverse, quietly = TRUE)
+  require(gganimate, quietly = TRUE)
+  
   surface_elv <- scenario %>%
     dplyr::select(years, surfaceElevation) %>%
     dplyr::rename(year=years)
