@@ -86,7 +86,7 @@ animateCohorts <- function(cohorts, scenario,
                                       width = width, 
                                       height = height, 
                                       units = "in", 
-                                      dpi = 300)
+                                      res = 300)
   (tempAnimation)
   # save gif to filepath
   gganimate::anim_save(filename=filename,
