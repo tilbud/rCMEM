@@ -22,6 +22,7 @@ animateCohorts <- function(cohorts, scenario,
   require(tidyverse, quietly = TRUE)
   require(gganimate, quietly = TRUE)
   require(gifski, quietly = TRUE)
+  require(png, quietly = TRUE)
   
   surface_elv <- scenario %>%
     dplyr::select(years, surfaceElevation) %>%
