@@ -80,7 +80,7 @@ animateCohorts <- function(cohorts, scenario,
   
   tempAnimation <- gganimate::animate(animate_mass_cohorts, 
                                       duration = duration,
-                                      renderer = gifski_renderer()
+                                      renderer = gifski_renderer(),
                                       width = width, 
                                       height = height, 
                                       units = "in", 
