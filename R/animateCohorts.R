@@ -14,7 +14,7 @@
 #' @export
 animateCohorts <- function(cohorts, scenario,
                            filename = "MEM-CTM-animated.gif",
-                           savePath = "/",
+                           savePath = "",
                            chPalette = c("#56B4E9", "#999999", "#E69F00", "#009E73"), 
                            trackThresholds = c("MSL", "MHW"), duration = 30,
                            width = 4, height = 8) {
