@@ -12,7 +12,8 @@
 #' 
 #' @export
 animateCohorts <- function(cohorts, scenario,
-                           savePath="MEM-CTM-animated.gif",
+                           filename = "MEM-CTM-animated.gif",
+                           savePath = "/",
                            chPalette = c("#56B4E9", "#999999", "#E69F00", "#009E73"), 
                            trackThresholds = c("MSL", "MHW"), duration = 30,
                            width = 4, height = 8) {
@@ -77,12 +78,13 @@ animateCohorts <- function(cohorts, scenario,
     gganimate::ease_aes('linear')
   
   tempAnimation <- gganimate::animate(animate_mass_cohorts, duration = duration)
-  print(tempAnimation)
+  (tempAnimation)
   # save gif to filepath
-  gganimate::anim_save(path=savePath, 
+  gganimate::anim_save(filename=filename,
+                       animation=tempAnimation,
+                       path=savePath,
                        width = width, 
                        height = height, 
                        units = "in", 
-                       dpi = 300,
-                       animation=tempAnimation)
+                       dpi = 300)
 }
