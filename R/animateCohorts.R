@@ -3,6 +3,7 @@
 #' This function takes two MEM outputs, cohorts and scenario tables, as inputs and visualizes soil formation as an animated .gif 
 #' @param cohorts data frame, annually tracked soil mass cohorts output from runMemWithCohorts
 #' @param scenario data frame, annual summaries of inputs and outputs from runMemWithCohorts
+#' @param filename, character, name of the output file
 #' @param savePath character, filepath to save animation to
 #' @param chPallette vector, a vector of colors to use to symbolize the different mass cohorts
 #' @param trackThresholds vector, a vector of characters indicating which water leves in the scenario table to map as horizontal lines
@@ -77,14 +78,16 @@ animateCohorts <- function(cohorts, scenario,
     gganimate::transition_time(year) +
     gganimate::ease_aes('linear')
   
-  tempAnimation <- gganimate::animate(animate_mass_cohorts, duration = duration)
+  tempAnimation <- gganimate::animate(animate_mass_cohorts, 
+                                      duration = duration,
+                                      renderer = gifski_renderer()
+                                      width = width, 
+                                      height = height, 
+                                      units = "in", 
+                                      dpi = 300)
   (tempAnimation)
   # save gif to filepath
   gganimate::anim_save(filename=filename,
                        animation=tempAnimation,
-                       path=savePath,
-                       width = width, 
-                       height = height, 
-                       units = "in", 
-                       dpi = 300)
+                       path=savePath)
 }
