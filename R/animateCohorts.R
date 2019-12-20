@@ -76,13 +76,13 @@ animateCohorts <- function(cohorts, scenario,
     gganimate::transition_time(year) +
     gganimate::ease_aes('linear')
   
-  animation <- gganimate::animate(animate_mass_cohorts, duration = duration)
-  
+  tempAnimation <- gganimate::animate(animate_mass_cohorts, duration = duration)
+  print(tempAnimation)
   # save gif to filepath
-  gganimate::anim_save(savePath, 
+  gganimate::anim_save(filename=savePath, 
                        width = width, 
                        height = height, 
                        units = "in", 
                        dpi = 300,
-                       animation=animation)
+                       animation=tempAnimation)
 }
