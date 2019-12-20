@@ -79,7 +79,7 @@ animateCohorts <- function(cohorts, scenario,
   tempAnimation <- gganimate::animate(animate_mass_cohorts, duration = duration)
   print(tempAnimation)
   # save gif to filepath
-  gganimate::anim_save(filename=savePath, 
+  gganimate::anim_save(path=savePath, 
                        width = width, 
                        height = height, 
                        units = "in", 
