@@ -351,10 +351,11 @@ grid.arrange(accretionPlot, loiPlot, bdPlot, nrow=1)
 ## Try out Animate Cohorts Function
 
 ``` {r try out animate cohorts}
-#animateCohorts(scenario = scenario, cohorts = cohorts,
-#               savePath="../temp/MEM-CTM-example-191026.gif")
+animateCohorts(scenario = scenario, cohorts = cohorts,
+               filename = "MEM-CTM-example-191220.gif",
+               savePath="../temp")
 
-knitr::include_graphics("../temp/MEM-CTM-example-191026.gif")
+knitr::include_graphics("../temp/MEM-CTM-example-191220.gif")
 
 ```
 

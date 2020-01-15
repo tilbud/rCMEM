@@ -24,7 +24,7 @@ runMemWithCohorts(startYear, endYear = startYear + 99, rslrT1, rslrTotal,
 
 \item{initElv}{a numeric, the initial elevation of the marsh at the start of the scenario}
 
-\item{MSL}{a numeric or a vector, Mean Sea Level at the start of the scenario, or a vector of Mean Sea Levels the same lenght as the number of years in a scenario}
+\item{MSL}{a numeric or a vector, Mean Sea Level at the start of the scenario, or a vector of Mean Sea Levels the same length as the number of years in a scenario}
 
 \item{MSL0}{a numeric, Mean Sea level over the last datum period}
 

@@ -6,7 +6,7 @@
 \usage{
 addCohort(massPools, rootTurnover, rootOmFrac, omDecayRate, packing,
   mineralInput_g_per_yr.fn = sedimentInputs,
-  massLiveRoots.fn = massLiveRoots,
+  mineralInput_g_per_yr = NA, massLiveRoots.fn = massLiveRoots,
   depthOfNotRootVolume.fn = depthOfNotRootVolume, dt_yr = 1, ...)
 }
 \arguments{
