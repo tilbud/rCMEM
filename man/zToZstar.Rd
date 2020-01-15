@@ -14,7 +14,7 @@ zToZstar(z, MHW, MSL)
 \item{MSL}{a numeric, mean sea level}
 }
 \value{
-a normalized
+elevation normalized to the tidal range
 }
 \description{
 (z-MSL)/(MHW-MSL)

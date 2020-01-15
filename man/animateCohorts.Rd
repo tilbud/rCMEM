@@ -4,15 +4,17 @@
 \alias{animateCohorts}
 \title{Animate sediment cohorts}
 \usage{
-animateCohorts(cohorts, scenario, savePath = "MEM-CTM-animated.gif",
-  chPalette = c("#56B4E9", "#999999", "#E69F00", "#009E73"),
-  trackThresholds = c("MSL", "MHW"), duration = 30, width = 4,
-  height = 8)
+animateCohorts(cohorts, scenario, filename = "MEM-CTM-animated.gif",
+  savePath = getwd(), chPalette = c("#56B4E9", "#999999", "#E69F00",
+  "#009E73"), trackThresholds = c("MSL", "MHW"), duration = 30,
+  width = 4.5, height = 4.5)
 }
 \arguments{
 \item{cohorts}{data frame, annually tracked soil mass cohorts output from runMemWithCohorts}
 
 \item{scenario}{data frame, annual summaries of inputs and outputs from runMemWithCohorts}
+
+\item{filename, }{character, name of the output file}
 
 \item{savePath}{character, filepath to save animation to}
 
