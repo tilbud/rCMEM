@@ -45,7 +45,7 @@ animateCohorts <- function(cohorts, scenario,
            mass_pool = as.character(mass_pool)) %>%
     # Join mass cohorts with scenario table to convert depths to referenced elevations
     dplyr::ungroup() %>%
-    dplyr::left_join(surface_elv, by=year) %>%
+    dplyr::left_join(surface_elv, by="year") %>%
     dplyr::mutate(layer_top=surfaceElevation-layer_top, 
            layer_bottom=surfaceElevation-layer_bottom)
   
