@@ -1,6 +1,6 @@
 # Cohort Theory and Marsh Equilibrium Models
 
-This repository corresponds to the R package in development for use of the Cohort Theory Model (CTM) which is a simple method for accounting for volume and mass changes in tidal systems. This package also contains a special implementation of CTM which uses the Marsh Equilibrium Model (MEM) to drive inorganic surface sedimentation and below ground organic matter addtion, dynamically as a function of sea-level.
+This repository corresponds to the R package in development for use of the Cohort Theory Model (CTM) which is a simple method for accounting for volume and mass changes in tidal systems. This package also contains a special implementation of CTM which uses the Marsh Equilibrium Model (MEM) to drive inorganic surface sedimentation and below ground organic matter addition, dynamically as a function of sea-level.
 
 # To Download This Developer's Branch
 
@@ -77,6 +77,7 @@ head(memCohortExample$cohorts)
 head(memCohortExample$core)
 
 # run the animate cohorts function
+# This will take a few minutes to run and then save an animation of accumulating cohorts
 animateCohorts(cohorts=memCohortExample$cohorts,
                scenario=memCohortExample$annualTimeSteps,
                filename="MEM-Try_191212.gif")
@@ -100,8 +101,8 @@ Guiding princples:
     
 ### Ideal Mixing Model
 
-A lot of what underpins current versions of the Marsh Equilibrium Model and the Cohort Theory Model is the ideal mixing model, see [@morris2016contributions] and [@holmquist2018accuracy]. This describes the density of a soil as the summation of the soils' relative organic and inorganic fractions, as well as the _self-packing density_ of the organic (k1) and inorganic (k2) matter.
+A lot of what underpins current versions of the Marsh Equilibrium Model and the Cohort Theory Model is the ideal mixing model, see [Morris et al. 2016](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2015EF000334) and (Holmquist et al 2018](https://www.nature.com/articles/s41598-018-26948-7). This describes the density of a soil as the summation of the soils' relative organic and inorganic fractions, as well as the _self-packing density_ of the organic (k1) and inorganic (k2) matter.
 
 $$BD = {1 \over {{OM\over k1}+ {(1−OM) \over k2}}}$$
 
-If you hold area constant, and you assume you know the input rates of organic and inorganic matter, you can use the ideal mixing model to calculate accretion rate [@morris2016contributions, @morris2006competition, @morris2007ecological].
+If you hold area constant, and you assume you know the input rates of organic and inorganic matter, you can use the ideal mixing model to calculate accretion rate ([Morris et al. 2016](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2015EF000334), [Morris 2006](https://www.sciencedirect.com/science/article/pii/S0272771406001776),  [Morris 2007](https://link.springer.com/chapter/10.1007/978-1-4020-6008-3_14)).
