@@ -4,8 +4,14 @@
 \alias{buildScenarioCurve}
 \title{Build scenario sea-level curve}
 \usage{
-buildScenarioCurve(startYear, endYear = startYear + 99, MSL,
-  rslr0 = 0.3, rslrTotal = 100, ssc)
+buildScenarioCurve(
+  startYear,
+  endYear = startYear + 99,
+  MSL,
+  rslr0 = 0.3,
+  rslrTotal = 100,
+  ssc
+)
 }
 \arguments{
 \item{startYear}{an integer, year in form YYYY, the start year of the scenario}
