@@ -4,14 +4,40 @@
 \alias{runMemWithCohorts}
 \title{Run Marsh Equilibrium Model with Cohorts}
 \usage{
-runMemWithCohorts(startYear, endYear = startYear + 99, rslrT1, rslrTotal,
-  initElv, MSL, MSL0 = MSL[1], MHW, MHHW = NA, MHHWS = NA, ssc,
-  lunarNodalAmp, bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
-  rootToShoot, rootTurnover, rootDepthMax, shape = "linear", omDecayRate,
-  recalcitrantFrac, settlingVelocity, omPackingDensity = 0.085,
-  mineralPackingDensity = 1.99, rootPackingDensity = omPackingDensity,
-  coreYear = NA, coreDepth = 100, coreMaxs = 1:coreDepth,
-  coreMins = coreMaxs - 1, ...)
+runMemWithCohorts(
+  startYear,
+  endYear = startYear + 99,
+  rslrT1,
+  rslrTotal,
+  initElv,
+  MSL,
+  MSL0 = MSL[1],
+  MHW,
+  MHHW = NA,
+  MHHWS = NA,
+  ssc,
+  lunarNodalAmp,
+  bMax,
+  zVegMin,
+  zVegMax,
+  zVegPeak,
+  plantElevationType,
+  rootToShoot,
+  rootTurnover,
+  rootDepthMax,
+  shape = "linear",
+  omDecayRate,
+  recalcitrantFrac,
+  settlingVelocity,
+  omPackingDensity = 0.085,
+  mineralPackingDensity = 1.99,
+  rootPackingDensity = omPackingDensity,
+  coreYear = NA,
+  coreDepth = 100,
+  coreMaxs = 1:coreDepth,
+  coreMins = coreMaxs - 1,
+  ...
+)
 }
 \arguments{
 \item{startYear}{an integer, year in form YYYY, the start year of the scenario}

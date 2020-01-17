@@ -4,9 +4,19 @@
 \alias{deliveredSediment3TidalCycle}
 \title{Calculate delivered sediment, three tidal cycle method}
 \usage{
-deliveredSediment3TidalCycle(z, ssc, MSL, MHW, MHHW, MHHWS, MLW = MSL -
-  MHW, MLLW = MSL - MHHW, MLLWS = MSL - MHHWS, settlingVelocity,
-  k = 1)
+deliveredSediment3TidalCycle(
+  z,
+  ssc,
+  MSL,
+  MHW,
+  MHHW,
+  MHHWS,
+  MLW = MSL - MHW,
+  MLLW = MSL - MHHW,
+  MLLWS = MSL - MHHWS,
+  settlingVelocity,
+  k = 1
+)
 }
 \arguments{
 \item{z}{a numeric, elevation of the marsh}
