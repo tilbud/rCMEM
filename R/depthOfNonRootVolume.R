@@ -17,7 +17,7 @@
 #' @return A numeric corresponding to the depth of the specificed non root volume
 #' 
 #' @export
-depthOfNotRootVolume <- function(nonRootVolume.arr, 
+depthOfNonRootVolume <- function(nonRootVolume.arr, 
                                  massLiveRoots.fn = NULL,
                                  totalRootMass_per_area, 
                                  rootDepthMax, 

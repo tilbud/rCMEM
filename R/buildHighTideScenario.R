@@ -13,16 +13,16 @@
 buildHighTideScenario <- function(scenarioCurve, MSL0=scenarioCurve$MSL[1], MHW0, MHHW0, MHHWS0, lunarNodalAmp) {
   
   # In create a MHW and add it to the scenario
-  scenarioCurve$MHW <- predictLunarNodalCyle(year = scenarioCurve$years, MSL= scenarioCurve$MSL, 
+  scenarioCurve$MHW <- predictLunarNodalCycle(year = scenarioCurve$years, MSL= scenarioCurve$MSL, 
                                              MSL0 = MSL0, floodElv=MHW0, 
                                              lunarNodalAmp=lunarNodalAmp)
   
   # If MHHW and MHHWS are arguements add them to the scenario table too
   if (!missing(MHHW0) & !missing(MHHWS0)) {
-    scenarioCurve$MHHW <- predictLunarNodalCyle(year = scenarioCurve$years, MSL=scenarioCurve$MSL,
+    scenarioCurve$MHHW <- predictLunarNodalCycle(year = scenarioCurve$years, MSL=scenarioCurve$MSL,
                                                 MSL0 = MSL0, floodElv=MHHW0, 
                                                 lunarNodalAmp=lunarNodalAmp)
-    scenarioCurve$MHHWS <- predictLunarNodalCyle(year = scenarioCurve$years, MSL= scenarioCurve$MSL, 
+    scenarioCurve$MHHWS <- predictLunarNodalCycle(year = scenarioCurve$years, MSL= scenarioCurve$MSL, 
                                                  MSL0 = MSL0, floodElv=MHHWS0, 
                                                  lunarNodalAmp=lunarNodalAmp)
   }
