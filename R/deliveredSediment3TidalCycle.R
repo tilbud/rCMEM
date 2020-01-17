@@ -39,7 +39,7 @@ deliveredSediment3TidalCycle <- function(z, ssc, MSL, MHW, MHHW, MHHWS,
                                                                         datumLow=datumLow)), 
                   floodPct = ifelse(z>datumHigh, 0, floodTime / hoursInTidalCycle), # Convert hours to fraction
                   # Call available sediment function
-                  availableSSC = avaliableSediment(floodPct=floodPct, ssc=ssc, 
+                  availableSSC = availableSediment(floodPct=floodPct, ssc=ssc, 
                                                    settlingVelocity=settlingVelocity, k=k),
                   deliveredSSC = availableSSC * nTides * tidalHeight) # Calculated delivered SSC
   

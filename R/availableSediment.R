@@ -9,7 +9,7 @@
 #'
 #' @return numeric, the available sediment given a set of sediment and flooding conditions 
 #' @export
-avaliableSediment <- function(floodPct, ssc, settlingVelocity, k=1) {
+availableSediment <- function(floodPct, ssc, settlingVelocity, k=1) {
   
   availableSSC <- ifelse(floodPct < 1/settlingVelocity, # if the sediment column IS NOT able to clear
                          # available ssc is total possible caputre 
