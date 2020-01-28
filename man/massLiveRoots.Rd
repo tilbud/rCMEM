@@ -4,17 +4,9 @@
 \alias{massLiveRoots}
 \title{Mass of living roots}
 \usage{
-massLiveRoots(
-  layerBottom,
-  layerTop,
-  totalRootMass_per_area,
-  rootDepthMax,
-  soilLength = 1,
-  soilWidth = 1,
-  shape,
-  expDecayRate_perMaxDepth = log(0.05),
-  ...
-)
+massLiveRoots(layerBottom, layerTop, totalRootMass_per_area, rootDepthMax,
+  soilLength = 1, soilWidth = 1, shape,
+  expDecayRate_perMaxDepth = log(0.05), ...)
 }
 \arguments{
 \item{layerBottom}{an array of depths from soil top to the bottom of the layer, generally in cm}

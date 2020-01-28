@@ -4,19 +4,10 @@
 \alias{addCohort}
 \title{Add another cohort to the soil profile}
 \usage{
-addCohort(
-  massPools,
-  rootTurnover,
-  rootOmFrac,
-  omDecayRate,
-  packing,
+addCohort(massPools, rootTurnover, rootOmFrac, omDecayRate, packing,
   mineralInput_g_per_yr.fn = sedimentInputs,
-  mineralInput_g_per_yr = NA,
-  massLiveRoots.fn = massLiveRoots,
-  depthOfNotRootVolume.fn = depthOfNotRootVolume,
-  dt_yr = 1,
-  ...
-)
+  mineralInput_g_per_yr = NA, massLiveRoots.fn = massLiveRoots,
+  depthOfNonRootVolume.fn = depthOfNonRootVolume, dt_yr = 1, ...)
 }
 \arguments{
 \item{massPools}{A data frame containing the following colums: age, fast_OM, slow_OM, mineral, layer_top, layer_bottom, root_mass. Each row of this data frame represents a single cohort. To increase runtime in simulations, the profile is buffered with NA's at the top of the data frame, see code comments for details.}
@@ -33,7 +24,7 @@ addCohort(
 
 \item{massLiveRoots.fn}{A function that returns the mass of live roots for specified depth layers, must accept \code{layerBottom} and \code{layerTop} as arguments.}
 
-\item{depthOfNotRootVolume.fn}{A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.}
+\item{depthOfNonRootVolume.fn}{A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.}
 
 \item{dt_yr}{A numeric of the time step in years. Typically set to 1 year.}
 
