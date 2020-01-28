@@ -4,19 +4,10 @@
 \alias{depthOfNonRootVolume}
 \title{Depth of the given soil volume}
 \usage{
-depthOfNonRootVolume(
-  nonRootVolume.arr,
-  massLiveRoots.fn = NULL,
-  totalRootMass_per_area,
-  rootDepthMax,
-  rootDensity,
-  shape = "linear",
-  soilLength = 1,
-  soilWidth = 1,
-  relTol = 1e-04,
-  verbose = FALSE,
-  ...
-)
+depthOfNonRootVolume(nonRootVolume.arr, massLiveRoots.fn = NULL,
+  totalRootMass_per_area, rootDepthMax, rootDensity, shape = "linear",
+  soilLength = 1, soilWidth = 1, relTol = 1e-04, verbose = FALSE,
+  ...)
 }
 \arguments{
 \item{nonRootVolume.arr}{a numerical array of the cumulative non-rooting volume, assumed to be monotonically increasing}

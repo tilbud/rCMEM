@@ -4,16 +4,8 @@
 \alias{deliveredSedimentSimple}
 \title{Calculate delivered sediment, simple method}
 \usage{
-deliveredSedimentSimple(
-  z,
-  ssc,
-  MSL,
-  MHW,
-  MLW = MSL - MHW,
-  settlingVelocity,
-  k = 1,
-  nTides = 704
-)
+deliveredSedimentSimple(z, ssc, MSL, MHW, MLW = MSL - MHW,
+  settlingVelocity, k = 1, nTides = 704)
 }
 \arguments{
 \item{z}{a numeric, elevation of the marsh}
