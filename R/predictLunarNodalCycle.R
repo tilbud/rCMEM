@@ -9,7 +9,7 @@
 #' @references Morris, J. T., Sundberg, K., & Hopkinson, C. S. (2013). Salt marsh primary production and its responses to relative sea level and nutrients in estuaries at Plum Island, Massachusetts, and North Inlet, South Carolina, USA. Oceanography, 26(3), 78-84.
 #' @references Rochlin, I., & Morris, J. T. (2017). Regulation of salt marsh mosquito populations by the 18.6‐yr lunar‐nodal cycle. Ecology, 98(8), 2059-2068.
 #' 
-predictLunarNodalCyle <- function(year, floodElv, MSL0, MSL, lunarNodalAmp) {
+predictLunarNodalCycle <- function(year, floodElv, MSL0, MSL, lunarNodalAmp) {
   # Build MHW lines based on MSL, long-term tidal range and lunar nodal amplitude
   MHW <- MSL + (floodElv-MSL0) + (lunarNodalAmp * (sin(2*pi*(year-1983)/18.61)))
   return(MHW)
