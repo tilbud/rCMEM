@@ -23,7 +23,7 @@ deliveredSedimentSimple <- function(z, ssc, MSL, MHW, MLW = MSL-MHW, settlingVel
   # Mean flood percent is a line, relative position of elevation between MHW and MLW.
   floodPct <- ifelse(z >= MHW, 0, ifelse(z <= MLW, 1, (MHW-z)/(MHW-MLW)))
   
-  availableSSC <- avaliableSediment(ssc=ssc, floodPct=floodPct, settlingVelocity=settlingVelocity, k=k)
+  availableSSC <- availableSediment(ssc=ssc, floodPct=floodPct, settlingVelocity=settlingVelocity, k=k)
   
   # Mean flood depth is depth below MHW. If above MHW the marsh does not flood.
   # delivered sediment is the ssc available to the surface (g/m3) multiplied by 

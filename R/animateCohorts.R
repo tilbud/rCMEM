@@ -14,10 +14,10 @@
 #' @export
 animateCohorts <- function(cohorts, scenario,
                            filename = "MEM-CTM-animated.gif",
-                           savePath = "",
+                           savePath = getwd(),
                            chPalette = c("#56B4E9", "#999999", "#E69F00", "#009E73"), 
                            trackThresholds = c("MSL", "MHW"), duration = 30,
-                           width = 4, height = 8) {
+                           width = 4.5, height = 4.5) {
   
   require(tidyverse, quietly = TRUE)
   require(gganimate, quietly = TRUE)
@@ -45,7 +45,7 @@ animateCohorts <- function(cohorts, scenario,
            mass_pool = as.character(mass_pool)) %>%
     # Join mass cohorts with scenario table to convert depths to referenced elevations
     dplyr::ungroup() %>%
-    dplyr::left_join(surface_elv) %>%
+    dplyr::left_join(surface_elv, by="year") %>%
     dplyr::mutate(layer_top=surfaceElevation-layer_top, 
            layer_bottom=surfaceElevation-layer_bottom)
   
