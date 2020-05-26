@@ -25,11 +25,11 @@ New optionalities include
 The first thing we will do is load the cohort theory model and it's dependencies.
 
 ```{r setup, include=TRUE}
-
 require(rCTM)
 require(tidyverse)
 require(gridExtra)
-
+require(gganimate)
+require(gifski)
 ```
 
 ## Define Some Inputs
