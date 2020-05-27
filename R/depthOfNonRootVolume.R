@@ -17,7 +17,8 @@
 #' @return A numeric corresponding to the depth of the specificed non root volume
 #' 
 #' @export
-depthOfNotRootVolume <- function(nonRootVolume.arr, 
+
+depthOfNonRootVolume <- function(nonRootVolume.arr, 
                                  massLiveRoots.fn = NULL,
                                  totalRootMass_per_area, 
                                  rootDepthMax, 
@@ -30,14 +31,24 @@ depthOfNotRootVolume <- function(nonRootVolume.arr,
   
   ####
   totalRootMass <- soilLength*soilWidth*totalRootMass_per_area
+
+  if(verbose) print(paste('totalRootMass = ', totalRootMass))
+  
   totalRootVolume <- totalRootMass/rootDensity
+  if(verbose) print(paste('totalRootVolume = ', totalRootVolume))
   
   if(totalRootVolume > soilLength*soilWidth*rootDepthMax){
     stop('Bad root volume')
   }
   
+
+  if(totalRootMass_per_area == 0){
+    return(nonRootVolume.arr*soilLength*soilWidth)
+  }
+  
   ##If the shape is linear then solve the non-root volume depth explicitly 
   if(shape == 'linear'){
+    if(verbose) print('We are linear.')
     rootWidth <- totalRootVolume*2/(rootDepthMax*soilLength)
     
     #nonRootVolume = ((rootWidth/rootDepthMax*depth^2)/2 + depth*(soilWidth-rootWidth))*soilLength
@@ -50,6 +61,12 @@ depthOfNotRootVolume <- function(nonRootVolume.arr,
     
     #correct for beyond root zone
     behondRootZone <- nonRootVolume.arr > soilLength*soilWidth*rootDepthMax - totalRootVolume
+
+    
+    if(verbose) print(paste0('nonRootVolume.arr: [', paste0(nonRootVolume.arr, collapse = ', '), ']'))
+    if(verbose) print(paste0('nrv comparison: [', paste0(soilLength*soilWidth*rootDepthMax - totalRootVolume, collapse = ', '), ']'))
+    if(verbose) print(paste0('beyondRootZon: [', paste0(behondRootZone, collapse = ', '), ']'))
+
     ansDepth[behondRootZone] <- (rootDepthMax +
                                    (nonRootVolume.arr - soilLength*soilWidth*rootDepthMax + totalRootVolume ) /
                                    (soilLength*soilWidth)) [behondRootZone] #treat as a square

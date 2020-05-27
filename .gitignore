@@ -41,3 +41,6 @@ rsconnect/
 
 # ignore temp files
 /temp
+
+# ignore R project file
+*.Rproj
