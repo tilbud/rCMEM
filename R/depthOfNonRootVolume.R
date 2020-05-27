@@ -17,6 +17,7 @@
 #' @return A numeric corresponding to the depth of the specificed non root volume
 #' 
 #' @export
+
 depthOfNonRootVolume <- function(nonRootVolume.arr, 
                                  massLiveRoots.fn = NULL,
                                  totalRootMass_per_area, 
@@ -40,6 +41,7 @@ depthOfNonRootVolume <- function(nonRootVolume.arr,
     stop('Bad root volume')
   }
   
+
   if(totalRootMass_per_area == 0){
     return(nonRootVolume.arr*soilLength*soilWidth)
   }
@@ -59,10 +61,12 @@ depthOfNonRootVolume <- function(nonRootVolume.arr,
     
     #correct for beyond root zone
     behondRootZone <- nonRootVolume.arr > soilLength*soilWidth*rootDepthMax - totalRootVolume
+
     
     if(verbose) print(paste0('nonRootVolume.arr: [', paste0(nonRootVolume.arr, collapse = ', '), ']'))
     if(verbose) print(paste0('nrv comparison: [', paste0(soilLength*soilWidth*rootDepthMax - totalRootVolume, collapse = ', '), ']'))
     if(verbose) print(paste0('beyondRootZon: [', paste0(behondRootZone, collapse = ', '), ']'))
+
     ansDepth[behondRootZone] <- (rootDepthMax +
                                    (nonRootVolume.arr - soilLength*soilWidth*rootDepthMax + totalRootVolume ) /
                                    (soilLength*soilWidth)) [behondRootZone] #treat as a square
