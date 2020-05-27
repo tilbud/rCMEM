@@ -16,7 +16,7 @@
 #' @param rootOmFrac A list of numerics called fast and slow which is the allocation fraction between fast and slow organic matter pool respectively for dead roots.
 #' @param omDecayRate A list of numerics called fast and slow which is the decay rate for the fast and slow organic matter pool in fraction per year.
 #' @param massLiveRoots.fn A function that returns the mass of live roots for specified depth layers, must accept \code{layerBottom} and \code{layerTop} as arguments.
-#' @param depthOfNotRootVolume.fn A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.
+#' @param depthOfNonRootVolume.fn A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.
 #' @param mineralInput_g_per_yr.fn A function that returns the mineral input in grams per year (numeric)
 #' @param ... arguments to be passed to the specified functions
 #'
@@ -27,9 +27,10 @@
 addCohort <- function(massPools,
                       rootTurnover, rootOmFrac, omDecayRate, #decay paraemters
                       packing, #packing densities
+                      mineralInput_g_per_yr = NA,
                       mineralInput_g_per_yr.fn = sedimentInputs, 
                       massLiveRoots.fn = massLiveRoots,
-                      depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                      depthOfNonRootVolume.fn = depthOfNonRootVolume,
                       dt_yr=1, ...){
   
   #Sanity check the inputs
