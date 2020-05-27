@@ -224,8 +224,7 @@ ggplot(data=exScenarioCurve) +
 
 highTideScenarios <- exScenarioCurve %>%
   select(-ssc, -index) %>%
-  gather(value="elevation", key="high tide", -years, -MSL) %>%
-  arrange()
+  gather(value="elevation", key="high tide", -years, -MSL) 
 
 ggplot(data=exScenarioCurve) + 
   geom_line(aes(x=years, y=MSL), color="black") +
@@ -284,7 +283,7 @@ plot3 <- ggplot(data=scenario, aes(x=years, y=mineral)) +
 cumulativeTotalOmTab <- cohorts %>%
   mutate(total_om_perCoh = fast_OM + slow_OM) %>%
   group_by(year) %>%
-  summarise(cumulativeTotalOm = sum(total_om_perCoh))
+  dplyr::summarise(cumulativeTotalOm = sum(total_om_perCoh))
 
 plot4 <- ggplot(data=cumulativeTotalOmTab, aes(x=year, y=cumulativeTotalOm)) +
   geom_line() +

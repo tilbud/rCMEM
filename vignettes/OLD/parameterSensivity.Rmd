@@ -8,12 +8,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(plyr)
 library(tidyverse)
-
-purrr::walk(list.files('../R', full.names = TRUE), source)
-#source('R/runToEquilibrium.R')
-#source('R/addCohort.R')
-#source('R/convertProfile_AgeToDepth.R')
-#source('R/depthOfNonRootVolume.R')
+library(rCTM)
 
 ```
 
@@ -40,7 +35,7 @@ parms.df <- expand_grid(rootDepthMax = seq(from = 15, to = 45, length.out = 3), 
                      totalRootBiomass = seq(from = .15, to = .45, length.out = 3)) # 0.3 Total Root Biomass, g/cm2
 
 runs.df <- plyr::ddply(parms.df, c('rootDepthMax', 'totalRootBiomass'), function(xx){
-  xx <- runs.df[1,]
+  #xx <- runs.df[1,]
   ans <- runToEquilibrium(rootTurnover = defaultConsts$rootTurnover, 
                    rootOmFrac = defaultConsts$rootOmFrac,
                    omDecayRate = defaultConsts$omDecayRate,
@@ -82,7 +77,7 @@ runs.df <- plyr::ddply(parms.df, c('rootDepthMax', 'totalRootBiomass'), function
 ```{r Age to Depth}
 #dont use tidyverse; plyr package, use ddply. wrap run to equilibrium in a function that accepts a signle list as a variable, call runtoequilibrium, referencing those lists, ddply will append the outputs from that to each other. 
 
-temp.df <- ddply(defaultParms2.0, c('totalRootBiomass', 'rootDepthMax'), as.factor(runToEquilibrium(rootTurnover = defaultConsts2.0$rootTurnover, 
+temp.df <- ddply(parms.df, c('totalRootBiomass', 'rootDepthMax'), as.factor(runToEquilibrium(rootTurnover = defaultConsts2.0$rootTurnover, 
                                rootOmFrac = defaultConsts2.0$rootOmFrac,
                                omDecayRate = defaultConsts2.0$omDecayRate,
                                packing = defaultConsts2.0$packing,
