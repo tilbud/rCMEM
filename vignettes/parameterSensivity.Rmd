@@ -1,0 +1,174 @@
+---
+title: "Parameter Models"
+author: "Farah Aryan"
+date: "3/29/2020"
+output: html_document
+---
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+library(plyr)
+library(tidyverse)
+
+purrr::walk(list.files('../R', full.names = TRUE), source)
+#source('R/runToEquilibrium.R')
+#source('R/addCohort.R')
+#source('R/convertProfile_AgeToDepth.R')
+#source('R/depthOfNonRootVolume.R')
+
+```
+
+```{r parameters}
+defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
+                      shape='linear', #root mass distribution
+                      packing = list(root = 0.085, #density of roots g-C/cm3
+                                     organic = 0.085 ,  # Organic Self Packing Densities: k1 g-C/cm3
+                                     mineral = 1.99), # Inorganic Self Packing Densities  k2 g-C/cm3
+                      nTidesPerYear = 704, #number of high tides per year
+                      sedimentInputType = c('constant', 'relative', 'dynamic')[1],
+                      modernAge = NA,  #max age in modern soil profile
+                      rootTurnover = .5,  # Below Ground Turnover Rate of roots, 1/yr
+                      rootOmFrac = list(fast=0.8, slow=0.2), # root allocation to om pools (labile, slow), g/g
+                      omDecayRate = list(fast=0.8, slow=0), # organic matter decay rate (labile, slow), 1/yr
+                      ssc = 20, # Suspended Sediment Concentration, mg per liter
+                      depthBelowMHW = 10) # Depth of Marsh Surface Below Mean High Water
+```
+```{r runs}
+                    
+#use expand grid to create parameter matrix, be careful of how big, use group by for each individual parameter
+#make a list with just rootdepthmax and total root biomass, put the rest of the variables in the constants list
+parms.df <- expand_grid(rootDepthMax = seq(from = 15, to = 45, length.out = 3), # Depth of the root zone in cm below surface
+                     totalRootBiomass = seq(from = .15, to = .45, length.out = 3)) # 0.3 Total Root Biomass, g/cm2
+
+runs.df <- plyr::ddply(parms.df, c('rootDepthMax', 'totalRootBiomass'), function(xx){
+  xx <- runs.df[1,]
+  ans <- runToEquilibrium(rootTurnover = defaultConsts$rootTurnover, 
+                   rootOmFrac = defaultConsts$rootOmFrac,
+                   omDecayRate = defaultConsts$omDecayRate,
+                   packing = defaultConsts$packing,
+                   mineralInput_g_per_yr.fn = sedimentInputs,
+                   ssc = defaultConsts$ssc,
+                   meanTidalHeight = defaultConsts$depthBelowMHW, 
+                   massLiveRoots.fn = massLiveRoots,
+                   totalRootMass_per_area = xx$totalRootBiomass, #parameter we are changing
+                   rootDepthMax=xx$rootDepthMax, #parameter we are changing
+                   shape=defaultConsts$shape,
+                   depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                   rootDensity = defaultConsts$packing$root)
+  ans <- ans[is.finite(ans$age),] #trim the extra NA's
+  
+  #add layers until we get down to 1m
+  lastLayer <- ans[nrow(ans),]#reset the depth
+  lastLayer$layer_thickness <- lastLayer$layer_bottom - lastLayer$layer_top
+  lastLayer$cohortVol <- ans$cumCohortVol[nrow(ans)] - ans$cumCohortVol[nrow(ans)-1]
+  numLayers <- ceiling((100 - lastLayer$layer_bottom)/lastLayer$layer_thickness)
+  if(numLayers > 0){
+    stableLayer <- data.frame(age = lastLayer$age + 1:numLayers,
+                              fast_OM = lastLayer$fast_OM,
+                              slow_OM = lastLayer$slow_OM,
+                              respired_OM = lastLayer$respired_OM,
+                              mineral = lastLayer$mineral,
+                              root_mass = lastLayer$root_mass,
+                              layer_top = lastLayer$layer_top + (1:numLayers)*lastLayer$layer_thickness,
+                              layer_bottom = lastLayer$layer_bottom + (1:numLayers)*lastLayer$layer_thickness,
+                              cumCohortVol = lastLayer$cumCohortVol + (1:numLayers)*lastLayer$cohortVol)
+    ans <- rbind(ans, stableLayer)
+  }
+  
+  return(ans)
+})
+
+```
+
+```{r Age to Depth}
+#dont use tidyverse; plyr package, use ddply. wrap run to equilibrium in a function that accepts a signle list as a variable, call runtoequilibrium, referencing those lists, ddply will append the outputs from that to each other. 
+
+temp.df <- ddply(defaultParms2.0, c('totalRootBiomass', 'rootDepthMax'), as.factor(runToEquilibrium(rootTurnover = defaultConsts2.0$rootTurnover, 
+                               rootOmFrac = defaultConsts2.0$rootOmFrac,
+                               omDecayRate = defaultConsts2.0$omDecayRate,
+                               packing = defaultConsts2.0$packing,
+                               
+                               mineralInput_g_per_yr.fn = sedimentInputs,
+                               ssc = defaultConsts2.0$ssc, 
+                               meanTidalHeight = defaultConsts2.0$depthBelowMHW, 
+                               
+                               massLiveRoots.fn = massLiveRoots,
+                               totalRootMass_per_area = defaultParms2.df$totalRootBiomass,
+                               rootDepthMax = defaultParms2.df$rootDepthMax,
+                               
+                               depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                               rootDensity = defaultConsts2.0$packing$root)))
+
+
+exampleR2.0 <-  runToEquilibrium(rootTurnover = defaultConsts2.0$rootTurnover, 
+                               rootOmFrac = defaultConsts2.0$rootOmFrac,
+                               omDecayRate = defaultConsts2.0$omDecayRate,
+                               packing = defaultConsts2.0$packing,
+                               
+                               mineralInput_g_per_yr.fn = sedimentInputs,
+                               ssc = defaultConsts2.0$ssc, 
+                               meanTidalHeight = defaultConsts2.0$depthBelowMHW, 
+                               
+                               massLiveRoots.fn = massLiveRoots,
+                               totalRootMass_per_area = defaultParms2.df$totalRootBiomass,
+                               rootDepthMax = defaultParms2.df$rootDepthMax,
+                               
+                               depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                               rootDensity = defaultConsts2.0$packing$root)
+  
+exampleRun2.0 <- na.omit(exampleR2.0)
+
+stable.layer <- data.frame(fast_om = 0, slow_om = exampleRun2.0$slow_OM[length(exampleRun2.0$slow_OM)], mineral = exampleRun2.0$mineral[length(exampleRun2.0$mineral)])
+#Creates a data frame with age, input years, fast Organic Matter decay rate, slow organic matter decay rate, mineral content, and root mass
+print(short.data <- convertProfile_AgeToDepth(example.Run2.0, layerTop = c(0,10), layerBottom = c(10, 100)))
+
+```
+
+
+```{r DrySoilWeight}
+#calculate dry soil weight use packing densites of organic and mineral packing densities and fast_om and slow_om
+
+dry_soil_weight2.0 <- function(packing = defaultConsts$packing$organic, #or DefaultCOnsts$packing$mineral
+                            length = defaultConsts$soilLength,
+                            width = defaultConsts$soilWidth,
+                            height = short.data$layer_bottom - short.data$layer_top){
+  ans <- packing*length*width*height
+  return(ans)
+}
+
+
+```
+
+```{r BulkDensity}
+
+Bulk_Density2.0 <- function(height = short.data$layer_bottom - short.data$layer_top,
+                         length = defaultConsts$soilLength, 
+                         width = defaultConsts$soilWidth, 
+                         dry_soil_weight = dry_soil_weight2.0()){
+  BD <- (dry_soil_weight/(length*height*width))
+  print(BD)
+}
+
+```
+
+```{r SOCstock}
+SOCstock2.0 <- function(Organic_Carbon_Content = short.data$fast_OM + short.data$slow_OM, 
+                     width = defaultConsts$soilWidth, 
+                     height = short.data$layer_bottom - short.data$layer_top,
+                     length = defaultConsts$soilLength){
+  Stock_Cont <- Organic_Carbon_Content/(length*width*height)
+  return(Stock_Cont)
+}
+```
+
+```{r CO2 Flux}
+CO2Flux2.0 <- function(k_f,
+                    C_f = short.data$fast_OM, 
+                    length = defaultConsts$soilLength, 
+                    width = defaultConsts$soilWidth, 
+                    height = short.data$layer_bottom - short.data$layer_top){
+  
+  dcdt <- ((k_f*C_f)*(1/length*width*height))
+
+  print(dcdt)
+}
+```
