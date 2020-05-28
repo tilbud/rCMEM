@@ -65,7 +65,12 @@ as.tibble(inputVariable)
 ```
 ```{r}
 nodeList <- paste0(sprintf('%s [label = %s]', packageFunctionName, packageFunctionName), collapse ='; ')
-edgeList <- paste(allfunctions$child_name, allfunctions$parent_name, sep='->', collapse = ' ')
+edgeListSuggested <- paste( 
+                  allfunctions$parent_name[allfunctions$type == 'suggested'],
+                  allfunctions$child_name[allfunctions$type == 'suggested'], sep='->', collapse = ' ')
+edgeListCalled <- paste( 
+                  allfunctions$parent_name[allfunctions$type == 'called'],
+                  allfunctions$child_name[allfunctions$type == 'called'], sep='->', collapse = ' ')
 
 grViz(sprintf("
               digraph function_dependencies{
@@ -75,10 +80,16 @@ grViz(sprintf("
               node [shape = 'box']
               %s
               
-              #edges
+              
+              edge [color = grey]
               %s
               
-              }", nodeList, edgeList))
+              #edges
+              edge [color = black]
+              %s
+              
+              
+              }", nodeList, edgeListSuggested, edgeListCalled))
 ```
 
 ```{r}
