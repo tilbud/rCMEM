@@ -4,8 +4,14 @@
 \alias{sedimentInputs}
 \title{Annual mineral inputs into marsh surface}
 \usage{
-sedimentInputs(ssc, meanTidalHeight, nTidesPerYear = 704,
-  soilLength = 1, soilWidth = 1, ...)
+sedimentInputs(
+  ssc,
+  meanTidalHeight,
+  nTidesPerYear = 704,
+  soilLength = 1,
+  soilWidth = 1,
+  ...
+)
 }
 \arguments{
 \item{ssc}{a numeric representing suspended sediment concentration in (mg per liter)}

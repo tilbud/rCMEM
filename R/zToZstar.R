@@ -9,7 +9,6 @@
 #' @return elevation normalized to the tidal range
 #' @export
 #'
-#' @examples
 zToZstar <- function(z, MHW, MSL) { 
   
   (z-MSL)/(MHW-MSL) 

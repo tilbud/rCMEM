@@ -7,7 +7,6 @@
 #' @return a numerical describing the marsh elevation
 #' @export
 #'
-#' @examples
 zStarToZ <- function(zStar, MHW, MSL) { 
   (zStar * ((MHW-MSL))) + MSL 
   }

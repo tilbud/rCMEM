@@ -62,7 +62,7 @@ testNonRootVolume <- nonRootVolParams %>%
     ans$rootVol_cm3 <- ans$rootMass_g/.$k1
     ans$nonRootVol_cm3 <- (ans$bottom_cm - ans$top_cm)*1*1 - ans$rootVol_cm3
     ans$cumNonRootVol_cm3 <- cumsum( ans$nonRootVol_cm3)
-    ans$calcBottom_cm <- depthOfNotRootVolume(nonRootVolume.arr =  ans$cumNonRootVol_cm3,
+    ans$calcBottom_cm <- depthOfNonRootVolume(nonRootVolume.arr =  ans$cumNonRootVol_cm3,
                                               massLiveRoots.fn = massLiveRoots,
                                               rootDensity = .$k1,
                                               totalRootMass_per_area = .$RT*1e-4, 

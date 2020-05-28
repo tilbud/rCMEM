@@ -8,6 +8,7 @@ output: html_document
 ``` {r setup annapolis inputs, include = F}
 library(tidyverse)
 library(zoo)
+library(rCTM)
 
 elvNAVD88 <- 0.2
 MHWtoNAVD88 <- 0.25
@@ -49,7 +50,7 @@ plot(testParabolaZ, testAGB)
 elvRandomEffect <- 1.1
 elvYear <- 2013
 
-annapolisTideGauge <- read_csv("vignettes/sampleData/annapolisTideGauge.csv")
+annapolisTideGauge <- read_csv("sampleData/annapolisTideGauge.csv")
 
 annapolisTideGaugeTimeSeries <- annapolisTideGauge %>%
   group_by(Year) %>%
@@ -93,12 +94,12 @@ defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
                       sedimentInputType = c('constant', 'relative', 'dynamic')[1],
                       modernAge = NA) #max age in modern soil profile
 
-source('R/massLiveRoots.R')
-source('R/depthOfNonRootVolume.R')
-source('R/addCohort.R')
-source('R/sedimentInputs.R')
-source('R/addCohort.R')
-source('R/runToEquilibrium.R')
+#source('R/massLiveRoots.R')
+#source('R/depthOfNonRootVolume.R')
+##source('R/addCohort.R')
+#source('R/sedimentInputs.R')
+#source('R/addCohort.R')
+#source('R/runToEquilibrium.R')
 
 ```
 
