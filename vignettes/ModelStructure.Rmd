@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(plyr)
 library(dplyr)
 library(rCTM)
+library(readr)
+library(tidyverse)
 library(DiagrammeR)
 ```
 
@@ -19,7 +21,7 @@ packageFunctionName <- ls(getNamespace("rCTM"))
 functionRegExp <- paste0('(', packageFunctionName, ')', collapse = '|')
 
 allfunctions <- plyr::adply(packageFunctionName, c(1), function(xx){
-  ##print(xx)
+  print(xx)
   fileLines <- read_lines(file=list.files(path = '../R', pattern = xx, full.names = TRUE))
   functionLines <- body(xx)
   calledFunctions <- unique(unlist(regmatches(paste0(functionLines, collapse= ';'), 
