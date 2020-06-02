@@ -125,7 +125,7 @@ for(runName in c('Run1', 'Run2', 'Run3', 'Run4', 'Run5', 'Run6')){
                                                organic = parm$k1,  # Organic Self Packing Densities: k1 g-C/cm3
                                                mineral = parm$k2),
                                 
-                                mineralInput_g_per_yr.fn = sedimentInputs,
+                                mineralInput.fn = sedimentInputs,
                                 suspendedSediment = parm$SSC,
                                 meanTidalHeight = parm$D, 
                                 
@@ -147,7 +147,7 @@ for(runName in c('Run1', 'Run2', 'Run3', 'Run4', 'Run5', 'Run6')){
                                                organic = parm$k1,  # Organic Self Packing Densities: k1 g-C/cm3
                                                mineral = parm$k2),
                                 
-                                mineralInput_g_per_yr.fn = sedimentInputs,
+                                mineralInput.fn = sedimentInputs,
                                 suspendedSediment = parm$SSC,
                                 meanTidalHeight = parm$D, 
                                 

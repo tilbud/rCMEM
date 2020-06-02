@@ -75,6 +75,6 @@ coreYear,runMemWithCohorts,,,"an integer, year in form YYYY, (optional) specify 
 coreDepth,runMemWithCohorts,,,"an integer, depth, (optional) specify a depth to simulate coring to and assume 1 cm sampling intervals",
 coreMins,runMemWithCohorts,,,"a vector of sampling depth minimums (optional) to simulate coring subsables, this is an alternative to depth, and 1cm increments",
 coreMaxs,runMemWithCohorts,,,"a vector of sampling depth maximums (optional) to simulate coring subsables, this is an alternative to depth, and 1cm increments",
-mineralInput_g_per_yr,addCohort,,,undocumented,
-expDecayRate_perMaxDepth,massLiveRoots,,,undocumented,
+mineralInput,addCohort,,,undocumented,
+expDecayRatePerMaxDepth,massLiveRoots,,,undocumented,
 year,predictLunarNodalCycle,,,undocumented,

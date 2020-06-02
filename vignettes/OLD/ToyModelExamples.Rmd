@@ -92,7 +92,7 @@ for(ii in 1:100){
                                omDecayRate = defaultParms$omDecayRate,
                                packing = defaultConsts$packing,
                                
-                               mineralInput_g_per_yr.fn = sedimentInputs,
+                               mineralInput.fn = sedimentInputs,
                                suspendedSediment = defaultParms$suspendedSediment, 
                                meanTidalHeight = defaultParms$depthBelowMHW, 
                                
@@ -118,7 +118,7 @@ equProfile <- runToEquilibrium(rootTurnover = defaultParms$rootTurnover,
                                omDecayRate = defaultParms$omDecayRate,
                                packing = defaultConsts$packing,
                                
-                               mineralInput_g_per_yr.fn = sedimentInputs,
+                               mineralInput.fn = sedimentInputs,
                                suspendedSediment = defaultParms$suspendedSediment, 
                                meanTidalHeight = defaultParms$depthBelowMHW, 
                                
@@ -151,7 +151,7 @@ for(ii in 1:100){
                                omDecayRate = defaultParms$omDecayRate,
                                packing = defaultConsts$packing,
                                
-                               mineralInput_g_per_yr.fn = (function(...)0), #set 0 inputs
+                               mineralInput.fn = (function(...)0), #set 0 inputs
                                
                                massLiveRoots.fn = massLiveRoots,
                                totalRootMassPerArea = defaultParms$totalRootBiomass,
@@ -192,7 +192,7 @@ for(ii in 1:100){
                                omDecayRate = defaultParms$omDecayRate,
                                packing = defaultConsts$packing,
                                
-                               mineralInput_g_per_yr.fn = sedimentInputs,
+                               mineralInput.fn = sedimentInputs,
                                suspendedSediment = defaultParms$suspendedSediment, 
                                meanTidalHeight = defaultParms$depthBelowMHW + startingElevation -
                                  max(steadySeaProfile$layer_bottom, na.rm=TRUE),
@@ -210,7 +210,7 @@ for(ii in 1:100){
                                omDecayRate = defaultParms$omDecayRate,
                                packing = defaultConsts$packing,
                                
-                               mineralInput_g_per_yr.fn = sedimentInputs,
+                               mineralInput.fn = sedimentInputs,
                                suspendedSediment = defaultParms$suspendedSediment, 
                                meanTidalHeight = defaultParms$depthBelowMHW+0.03*ii + 
                                  startingElevation -
@@ -308,7 +308,7 @@ parametersToRun <- expand.grid(rootDepthMax=c(15, 30, 60),
                             omDecayRate = newParms$omDecayRate,
                             packing = defaultConsts$packing,
                             
-                            mineralInput_g_per_yr.fn = sedimentInputs,
+                            mineralInput.fn = sedimentInputs,
                             suspendedSediment = newParms$suspendedSediment, 
                             meanTidalHeight = newParms$depthBelowMHW, 
                             

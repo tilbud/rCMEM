@@ -10,8 +10,8 @@ addCohort(
   rootOmFrac,
   omDecayRate,
   packing,
-  mineralInput_g_per_yr = NA,
-  mineralInput_g_per_yr.fn = sedimentInputs,
+  mineralInput = NA,
+  mineralInput.fn = sedimentInputs,
   massLiveRoots.fn = massLiveRoots,
   depthOfNonRootVolume.fn = depthOfNonRootVolume,
   timeStep = 1,
@@ -29,7 +29,7 @@ addCohort(
 
 \item{packing}{A list of numerics with mineral and organic arguments representing their respective packing densities.}
 
-\item{mineralInput_g_per_yr.fn}{A function that returns the mineral input in grams per year (numeric)}
+\item{mineralInput.fn}{A function that returns the mineral input in grams per year (numeric)}
 
 \item{massLiveRoots.fn}{A function that returns the mass of live roots for specified depth layers, must accept \code{layerBottom} and \code{layerTop} as arguments.}
 

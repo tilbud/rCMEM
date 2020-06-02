@@ -97,7 +97,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
                               rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
                               packing=list(organic=omPackingDensity, mineral=mineralPackingDensity),
                               rootDensity=rootPackingDensity, shape=shape, 
-                              mineralInput_g_per_yr = initSediment)
+                              mineralInput = initSediment)
   
   # Add initial conditions to annual time step tracker
   scenario$surfaceElevation[1] <- initElv
@@ -158,7 +158,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
                          rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
                          packing=list(organic=omPackingDensity, mineral=mineralPackingDensity), 
                          rootDensity=rootPackingDensity, shape=shape,
-                         mineralInput_g_per_yr = dynamicMineralPool)
+                         mineralInput = dynamicMineralPool)
     
     cohorts$year <- rep(scenario$years[i], nrow(cohorts))
     

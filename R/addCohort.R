@@ -17,7 +17,8 @@
 #' @param omDecayRate A list of numerics called fast and slow which is the decay rate for the fast and slow organic matter pool in fraction per year.
 #' @param massLiveRoots.fn A function that returns the mass of live roots for specified depth layers, must accept \code{layerBottom} and \code{layerTop} as arguments.
 #' @param depthOfNonRootVolume.fn A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.
-#' @param mineralInput_g_per_yr.fn A function that returns the mineral input in grams per year (numeric)
+#' @param mineralInput An optional value for mineral input in grams per year (numeric) if mineralInput.fn is not used
+#' @param mineralInput.fn A function that returns the mineral input in grams per year (numeric)
 #' @param ... arguments to be passed to the specified functions
 #'
 #' @return A new data frame similar to massPool with the added cohort and simulated change in the cohort pools.
@@ -27,8 +28,8 @@
 addCohort <- function(massPools,
                       rootTurnover, rootOmFrac, omDecayRate, #decay paraemters
                       packing, #packing densities
-                      mineralInput_g_per_yr = NA,
-                      mineralInput_g_per_yr.fn = sedimentInputs, 
+                      mineralInput = NA,
+                      mineralInput.fn = sedimentInputs, 
                       massLiveRoots.fn = massLiveRoots,
                       depthOfNonRootVolume.fn = depthOfNonRootVolume,
                       timeStep=1, ...){
@@ -72,12 +73,12 @@ addCohort <- function(massPools,
              ans$slow_OM * omDecayRate$slow * timeStep
     
   # Check to see if mineral input is a static value or a function
-  if (is.na(mineralInput_g_per_yr)) {
-    mineralInput_g_per_yr <- mineralInput_g_per_yr.fn(...)
+  if (is.na(mineralInput)) {
+    mineralInput <- mineralInput.fn(...)
   }
   
   #if we are laying down a new cohort
-  if(mineralInput_g_per_yr > 0){
+  if(mineralInput > 0){
     if(!any(is.na(ans$age))){ #if there aren't any empty cohort slots
       bufferAns <- ans
       bufferAns[TRUE] <- NA
@@ -98,7 +99,7 @@ addCohort <- function(massPools,
     ans$respired_OM[newCohortIndex] <- 0
     
     #lay down the new mineral inputs
-    ans$mineral[newCohortIndex] <- mineralInput_g_per_yr * timeStep
+    ans$mineral[newCohortIndex] <- mineralInput * timeStep
     
   }
   

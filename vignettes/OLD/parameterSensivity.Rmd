@@ -40,7 +40,7 @@ runs.df <- plyr::ddply(parms.df, c('rootDepthMax', 'totalRootBiomass'), function
                    rootOmFrac = defaultConsts$rootOmFrac,
                    omDecayRate = defaultConsts$omDecayRate,
                    packing = defaultConsts$packing,
-                   mineralInput_g_per_yr.fn = sedimentInputs,
+                   mineralInput.fn = sedimentInputs,
                    suspendedSediment = defaultConsts$suspendedSediment,
                    meanTidalHeight = defaultConsts$depthBelowMHW, 
                    massLiveRoots.fn = massLiveRoots,
@@ -82,7 +82,7 @@ temp.df <- ddply(parms.df, c('totalRootBiomass', 'rootDepthMax'), as.factor(runT
                                omDecayRate = defaultConsts2.0$omDecayRate,
                                packing = defaultConsts2.0$packing,
                                
-                               mineralInput_g_per_yr.fn = sedimentInputs,
+                               mineralInput.fn = sedimentInputs,
                                suspendedSediment = defaultConsts2.0$suspendedSediment, 
                                meanTidalHeight = defaultConsts2.0$depthBelowMHW, 
                                
@@ -99,7 +99,7 @@ exampleR2.0 <-  runToEquilibrium(rootTurnover = defaultConsts2.0$rootTurnover,
                                omDecayRate = defaultConsts2.0$omDecayRate,
                                packing = defaultConsts2.0$packing,
                                
-                               mineralInput_g_per_yr.fn = sedimentInputs,
+                               mineralInput.fn = sedimentInputs,
                                suspendedSediment = defaultConsts2.0$suspendedSediment, 
                                meanTidalHeight = defaultConsts2.0$depthBelowMHW, 
                                

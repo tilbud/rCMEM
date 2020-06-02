@@ -12,7 +12,7 @@ massLiveRoots(
   soilLength = 1,
   soilWidth = 1,
   shape,
-  expDecayRate_perMaxDepth = log(0.05),
+  expDecayRatePerMaxDepth = log(0.05),
   ...
 )
 }
