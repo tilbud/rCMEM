@@ -6,7 +6,7 @@ test_that("test zero root mass", {
   
   expect_equal(depthOfNotRootVolume(nonRootVolume.arr = 1:4, 
                        massLiveRoots.fn = NULL,
-                       totalRootMass_per_area = 0, 
+                       totalRootMassPerArea = 0, 
                        rootDepthMax = 2, 
                        rootDensity = 1.3,
                        shape = 'linear',

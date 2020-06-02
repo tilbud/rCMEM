@@ -89,9 +89,9 @@ for (i in 1:iterations) {
   
   # Add to a table
   try({
-  memCohortIteration <- runMemWithCohorts(startYear=2015, rslr0=0.3, rslrTotal=100,
-                                        initElv=21.9, MSL=7.4, MHW=16.9, MHHW=25.4, MHHWS=31.2, 
-                                        ssc=3e-05, lunarNodalAmp=2.5, bMax=total_iterations$bMax[i], 
+  memCohortIteration <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, rslrTotal=100,
+                                        initElv=21.9, meanSeaLevel=7.4, meanHighWater=16.9, meanHighHighWater=25.4, meanHighHighWaterSpring=31.2, 
+                                        suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=total_iterations$bMax[i], 
                                         zVegMin=total_iterations$zVegMin[i], zVegMax=total_iterations$zVegMax[i], zVegPeak=total_iterations$zVegPeak[i],
                                         plantElevationType="dimensionless", rootToShoot=total_iterations$rootToShoot[i],
                                         rootTurnover=total_iterations$rootTurnover[i], rootDepthMax=total_iterations$rootDepthMax[i], omDecayRate=total_iterations$omDecayRate[i],
@@ -144,9 +144,9 @@ for (j in 1:length(parameter_names)) {
     }
   }
   # Run on high setting
-  memCohortIteration_min <- runMemWithCohorts(startYear=2015, rslr0=0.3, rslrTotal=100,
-                                          initElv=21.9, MSL=7.4, MHW=16.9, MHHW=25.4, MHHWS=31.2, 
-                                          ssc=3e-05, lunarNodalAmp=2.5, bMax=temp_min_bMax, 
+  memCohortIteration_min <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, rslrTotal=100,
+                                          initElv=21.9, meanSeaLevel=7.4, meanHighWater=16.9, meanHighHighWater=25.4, meanHighHighWaterSpring=31.2, 
+                                          suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=temp_min_bMax, 
                                           zVegMin=temp_min_zVegMin, zVegMax=temp_min_zVegMax, zVegPeak=temp_min_zVegPeak,
                                           plantElevationType="dimensionless", rootToShoot=temp_min_rootToShoot,
                                           rootTurnover=temp_min_rootTurnover, rootDepthMax=temp_min_rootDepthMax, omDecayRate=temp_min_omDecayRate,
@@ -156,9 +156,9 @@ for (j in 1:length(parameter_names)) {
                                      memCohortIteration_min$core$input_yrs, 
                                    na.rm=T) * 10000
   # Run on low setting
-  memCohortIteration_max <- runMemWithCohorts(startYear=2015, rslr0=0.3, rslrTotal=100,
-                                              initElv=21.9, MSL=7.4, MHW=16.9, MHHW=25.4, MHHWS=31.2, 
-                                              ssc=3e-05, lunarNodalAmp=2.5, bMax=temp_max_bMax, 
+  memCohortIteration_max <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, rslrTotal=100,
+                                              initElv=21.9, meanSeaLevel=7.4, meanHighWater=16.9, meanHighHighWater=25.4, meanHighHighWaterSpring=31.2, 
+                                              suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=temp_max_bMax, 
                                               zVegMin=temp_max_zVegMin, zVegMax=temp_max_zVegMax, zVegPeak=temp_max_zVegPeak,
                                               plantElevationType="dimensionless", rootToShoot=temp_max_rootToShoot,
                                               rootTurnover=temp_max_rootTurnover, rootDepthMax=temp_max_rootDepthMax, omDecayRate=temp_max_omDecayRate,

@@ -7,10 +7,10 @@ annapolisTideGauge <- read_csv("vignettes/sampleData/annapolisTideGauge.csv")
 
 annapolisTideGaugeTimeSeries <- annapolisTideGauge %>%
   group_by(Year) %>%
-  summarise(MHW = mean(MHW, na.rm = F), 
-         MSL = mean(MSL, na.rm = F)) %>%
-  select(Year, MHW, MSL) %>%
-  mutate(TidalRange = MHW-MSL)
+  summarise(meanHighWater = mean(meanHighWater, na.rm = F), 
+         meanSeaLevel = mean(meanSeaLevel, na.rm = F)) %>%
+  select(Year, meanHighWater, meanSeaLevel) %>%
+  mutate(TidalRange = meanHighWater-meanSeaLevel)
 
 #tideRangeLastDatum <- annapolisTideGaugeTimeSeries %>%
 #  filter(Year >= 1983 & Year <= 2001)
@@ -24,8 +24,8 @@ annapolisTideGaugeTimeSeries <- annapolisTideGauge %>%
 
 #TargetYear <- 1920:2019
 
-#TidalRangeAtTime <- function(MHW, MSL, lunarNodalAmp, Year) {
-#  TidalRange <- (MHW-MSL) + (lunarNodalAmp * (sin(2*pi*(Year-1983)/18.61)))
+#TidalRangeAtTime <- function(meanHighWater, meanSeaLevel, lunarNodalAmp, Year) {
+#  TidalRange <- (meanHighWater-meanSeaLevel) + (lunarNodalAmp * (sin(2*pi*(Year-1983)/18.61)))
 #  return(TidalRange)
 
 #}

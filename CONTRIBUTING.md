@@ -79,7 +79,7 @@ This is where functions are placed in order to be documented (i.e. have document
   + Description : builds a high tide level based on the 18.1 year lunar nodal cycle
   + Dependencies : NA
   + Inputs : mean sea-level over the last complete 18 year datum period, mean sea-level for each scenario, high tide level over the last complete 18 year datum period, amplitude of the 18 year lunar nodal cycle
-  + Outputs : MHW
+  + Outputs : meanHighWater
  
  13) predictedBiomass
   + Description : predict aboveground biomass given elevation

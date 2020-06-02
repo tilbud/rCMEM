@@ -14,7 +14,7 @@ addCohort(
   mineralInput_g_per_yr.fn = sedimentInputs,
   massLiveRoots.fn = massLiveRoots,
   depthOfNonRootVolume.fn = depthOfNonRootVolume,
-  dt_yr = 1,
+  timeStep = 1,
   ...
 )
 }
@@ -35,7 +35,7 @@ addCohort(
 
 \item{depthOfNonRootVolume.fn}{A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.}
 
-\item{dt_yr}{A numeric of the time step in years. Typically set to 1 year.}
+\item{timeStep}{A numeric of the time step in years. Typically set to 1 year.}
 
 \item{...}{arguments to be passed to the specified functions}
 }
@@ -45,7 +45,7 @@ A new data frame similar to massPool with the added cohort and simulated change 
 \description{
 This function adds a new cohort to a soil profile. Cohorts are constructed as follows:
 \enumerate{
-       \item Cohorts are aged by dt_yr incrament.
+       \item Cohorts are aged by timeStep incrament.
        \item Organic matter pools decay
        \item If there are non-zero mineral inputs, they are added to the top of the soil profile as a new cohort.
        \item The top and bottom of the cohort layer is recalculated.

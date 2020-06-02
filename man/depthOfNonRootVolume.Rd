@@ -7,7 +7,7 @@
 depthOfNonRootVolume(
   nonRootVolume.arr,
   massLiveRoots.fn = NULL,
-  totalRootMass_per_area,
+  totalRootMassPerArea,
   rootDepthMax,
   rootDensity,
   shape = "linear",
@@ -23,7 +23,7 @@ depthOfNonRootVolume(
 
 \item{massLiveRoots.fn}{a function defining the mass of the live roots, if shape is not linear then this must be defined.}
 
-\item{totalRootMass_per_area}{an integer that is the total mass per area of the roots, generally in g cm-3}
+\item{totalRootMassPerArea}{an integer that is the total mass per area of the roots, generally in g cm-3}
 
 \item{rootDepthMax}{an integer that is the maximum root depth, generally in cm}
 

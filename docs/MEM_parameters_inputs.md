@@ -26,9 +26,9 @@ Accretion rate | if available can calibrate to
 
 **Biological Inputs** | **Units**
 ------------- | -------------
-max growth limit (rel MSL)| cm
-min growth limit (rel MSL) | cm
-opt growth elev. (rel MSL) | cm
+max growth limit (rel meanSeaLevel)| cm
+min growth limit (rel meanSeaLevel) | cm
+opt growth elev. (rel meanSeaLevel) | cm
 Max Peak Biomass | g/m2
 %OM below root zone | %
 OM Decay rate | 1/time

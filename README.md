@@ -59,9 +59,9 @@ for (i in 1:length(dependencies)) {
 
 ```
 # Run rMEM with Cohorts example
-memCohortExample <- runMemWithCohorts(startYear=2015, rslrT1=0.3, rslrTotal=100,
-                                      initElv=21.9, MSL=7.4, MHW=16.9, MHHW=25.4, MHHWS=31.2, 
-                                      ssc=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
+memCohortExample <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, rslrTotal=100,
+                                      initElv=21.9, meanSeaLevel=7.4, meanHighWater=16.9, meanHighHighWater=25.4, meanHighHighWaterSpring=31.2, 
+                                      suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,

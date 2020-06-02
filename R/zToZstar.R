@@ -1,16 +1,16 @@
 #' Convert elevation to Z*
 #'
-#'  (z-MSL)/(MHW-MSL) 
+#'  (z-meanSeaLevel)/(meanHighWater-meanSeaLevel) 
 #'
 #' @param z a numeric elevation
-#' @param MHW a numeric, mean high water tide
-#' @param MSL a numeric, mean sea level
+#' @param meanHighWater a numeric, mean high water tide
+#' @param meanSeaLevel a numeric, mean sea level
 #'
 #' @return elevation normalized to the tidal range
 #' @export
 #'
-zToZstar <- function(z, MHW, MSL) { 
+zToZstar <- function(z, meanHighWater, meanSeaLevel) { 
   
-  (z-MSL)/(MHW-MSL) 
+  (z-meanSeaLevel)/(meanHighWater-meanSeaLevel) 
   
 }

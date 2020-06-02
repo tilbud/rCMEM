@@ -4,14 +4,14 @@
 \alias{zStarToZ}
 \title{Convert from Z* to elevation}
 \usage{
-zStarToZ(zStar, MHW, MSL)
+zStarToZ(zStar, meanHighWater, meanSeaLevel)
 }
 \arguments{
 \item{zStar}{a numeric describing the normalized Z* elevation}
 
-\item{MHW}{a numeric, mean high water tide}
+\item{meanHighWater}{a numeric, mean high water tide}
 
-\item{MSL}{a numeric, mean sea level}
+\item{meanSeaLevel}{a numeric, mean sea level}
 }
 \value{
 a numerical describing the marsh elevation

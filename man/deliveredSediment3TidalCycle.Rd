@@ -6,40 +6,40 @@
 \usage{
 deliveredSediment3TidalCycle(
   z,
-  ssc,
-  MSL,
-  MHW,
-  MHHW,
-  MHHWS,
-  MLW = MSL - MHW,
-  MLLW = MSL - MHHW,
-  MLLWS = MSL - MHHWS,
+  suspendedSediment,
+  meanSeaLevel,
+  meanHighWater,
+  meanHighHighWater,
+  meanHighHighWaterSpring,
+  meanLowWater = meanSeaLevel - meanHighWater,
+  meanLowLowWater = meanSeaLevel - meanHighHighWater,
+  meanLowLowWaterSpring = meanSeaLevel - meanHighHighWaterSpring,
   settlingVelocity,
-  k = 1
+  capturedSediment = 1
 )
 }
 \arguments{
 \item{z}{a numeric, elevation of the marsh}
 
-\item{ssc}{a numeric, suspended sediment concentration of the water column}
+\item{suspendedSediment}{a numeric, suspended sediment concentration of the water column}
 
-\item{MSL}{a numeric, Mean Sea Level}
+\item{meanSeaLevel}{a numeric, Mean Sea Level}
 
-\item{MHW}{a numeric, Mean High Water level}
+\item{meanHighWater}{a numeric, Mean High Water level}
 
-\item{MHHW}{a numeric, Mean Higher High Water level}
+\item{meanHighHighWater}{a numeric, Mean Higher High Water level}
 
-\item{MHHWS}{a numeric, Mean Higher High Spring Tide Water level}
+\item{meanHighHighWaterSpring}{a numeric, Mean Higher High Spring Tide Water level}
 
-\item{MLW}{a numeric, Mean Low Water level}
+\item{meanLowWater}{a numeric, Mean Low Water level}
 
-\item{MLLW}{a numeric, Mean Lower Low Water level}
+\item{meanLowLowWater}{a numeric, Mean Lower Low Water level}
 
-\item{MLLWS}{a numeric, Mean Low Lower Spring Tide Water level}
+\item{meanLowLowWaterSpring}{a numeric, Mean Low Lower Spring Tide Water level}
 
 \item{settlingVelocity}{a numeric, the number of times a water column will clear per tidal cycle}
 
-\item{k}{a numeric, the fraction of available sediment captured by the marsh}
+\item{capturedSediment}{a numeric, the fraction of available sediment captured by the marsh}
 }
 \value{
 a numeric, the sediment delivered over the course of a year

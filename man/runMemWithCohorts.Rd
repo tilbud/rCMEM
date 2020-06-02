@@ -7,15 +7,15 @@
 runMemWithCohorts(
   startYear,
   endYear = startYear + 99,
-  rslrT1,
+  relSeaLevelRiseInit,
   rslrTotal,
   initElv,
-  MSL,
-  MSL0 = MSL[1],
-  MHW,
-  MHHW = NA,
-  MHHWS = NA,
-  ssc,
+  meanSeaLevel,
+  meanSeaLevelDatum = meanSeaLevel[1],
+  meanHighWater,
+  meanHighHighWater = NA,
+  meanHighHighWaterSpring = NA,
+  suspendedSediment,
   lunarNodalAmp,
   bMax,
   zVegMin,
@@ -44,23 +44,23 @@ runMemWithCohorts(
 
 \item{endYear}{an integer, year in form YYYY, the end year of the scenario}
 
-\item{rslrT1}{a numeric, initial rate of relative sea-level rise}
+\item{relSeaLevelRiseInit}{a numeric, initial rate of relative sea-level rise}
 
 \item{rslrTotal}{a numeric, total relative sea-level rise over the course of the scanario}
 
 \item{initElv}{a numeric, the initial elevation of the marsh at the start of the scenario}
 
-\item{MSL}{a numeric or a vector, Mean Sea Level at the start of the scenario, or a vector of Mean Sea Levels the same length as the number of years in a scenario}
+\item{meanSeaLevel}{a numeric or a vector, Mean Sea Level at the start of the scenario, or a vector of Mean Sea Levels the same length as the number of years in a scenario}
 
-\item{MSL0}{a numeric, Mean Sea level over the last datum period}
+\item{meanSeaLevelDatum}{a numeric, Mean Sea level over the last datum period}
 
-\item{MHW}{a numeric, Mean High Water level over the last datum period}
+\item{meanHighWater}{a numeric, Mean High Water level over the last datum period}
 
-\item{MHHW}{a numeric (optional), Mean Higher High Water level over the last datum period}
+\item{meanHighHighWater}{a numeric (optional), Mean Higher High Water level over the last datum period}
 
-\item{MHHWS}{a numeric (optional), Mean Higher High Spring Tide Water level over the last datum period}
+\item{meanHighHighWaterSpring}{a numeric (optional), Mean Higher High Spring Tide Water level over the last datum period}
 
-\item{ssc}{a numeric, suspended sediment concentration of the water column}
+\item{suspendedSediment}{a numeric, suspended sediment concentration of the water column}
 
 \item{lunarNodalAmp}{a numeric, the amplitude of the 18-year lunar nodal cycle}
 

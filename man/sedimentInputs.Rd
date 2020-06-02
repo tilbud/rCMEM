@@ -5,7 +5,7 @@
 \title{Annual mineral inputs into marsh surface}
 \usage{
 sedimentInputs(
-  ssc,
+  suspendedSediment,
   meanTidalHeight,
   nTidesPerYear = 704,
   soilLength = 1,
@@ -14,7 +14,7 @@ sedimentInputs(
 )
 }
 \arguments{
-\item{ssc}{a numeric representing suspended sediment concentration in (mg per liter)}
+\item{suspendedSediment}{a numeric representing suspended sediment concentration in (mg per liter)}
 
 \item{meanTidalHeight}{annual mean tide above marsh elevation}
 

@@ -2,7 +2,7 @@
 #'
 #' This function adds a new cohort to a soil profile. Cohorts are constructed as follows:
 #' \enumerate{
-#'        \item Cohorts are aged by dt_yr incrament.
+#'        \item Cohorts are aged by timeStep incrament.
 #'        \item Organic matter pools decay
 #'        \item If there are non-zero mineral inputs, they are added to the top of the soil profile as a new cohort.
 #'        \item The top and bottom of the cohort layer is recalculated.
@@ -11,7 +11,7 @@
 #'
 #' @param massPools A data frame containing the following colums: age, fast_OM, slow_OM, mineral, layer_top, layer_bottom, root_mass. Each row of this data frame represents a single cohort. To increase runtime in simulations, the profile is buffered with NA's at the top of the data frame, see code comments for details.
 #' @param packing A list of numerics with mineral and organic arguments representing their respective packing densities. 
-#' @param dt_yr A numeric of the time step in years. Typically set to 1 year.
+#' @param timeStep A numeric of the time step in years. Typically set to 1 year.
 #' @param rootTurnover A numeric as the root turnover time in faction per year.
 #' @param rootOmFrac A list of numerics called fast and slow which is the allocation fraction between fast and slow organic matter pool respectively for dead roots.
 #' @param omDecayRate A list of numerics called fast and slow which is the decay rate for the fast and slow organic matter pool in fraction per year.
@@ -31,7 +31,7 @@ addCohort <- function(massPools,
                       mineralInput_g_per_yr.fn = sedimentInputs, 
                       massLiveRoots.fn = massLiveRoots,
                       depthOfNonRootVolume.fn = depthOfNonRootVolume,
-                      dt_yr=1, ...){
+                      timeStep=1, ...){
   
   #Sanity check the inputs
   if(!all(c('age', 'fast_OM', 'slow_OM', 'mineral', 'layer_top', 'layer_bottom', 'root_mass') %in% 
@@ -54,22 +54,22 @@ addCohort <- function(massPools,
   #copy over to an answer data frame
   ans <- massPools
   
-  ans$age <- ans$age + dt_yr #age the cohorts
+  ans$age <- ans$age + timeStep #age the cohorts
   
 
   # track respiration
   ans$respired_OM <- ans$fast_OM +
-    (ans$root_mass * rootOmFrac$fast * rootTurnover * dt_yr) -
-    ans$fast_OM * omDecayRate$fast * dt_yr
+    (ans$root_mass * rootOmFrac$fast * rootTurnover * timeStep) -
+    ans$fast_OM * omDecayRate$fast * timeStep
 
   #add and decay the organic matter
   ans$fast_OM <- ans$fast_OM + 
-             ans$root_mass * rootOmFrac$fast * rootTurnover * dt_yr -
-             ans$fast_OM * omDecayRate$fast * dt_yr
+             ans$root_mass * rootOmFrac$fast * rootTurnover * timeStep -
+             ans$fast_OM * omDecayRate$fast * timeStep
   
   ans$slow_OM <- ans$slow_OM + 
-             ans$root_mass * rootOmFrac$slow * rootTurnover * dt_yr -
-             ans$slow_OM * omDecayRate$slow * dt_yr
+             ans$root_mass * rootOmFrac$slow * rootTurnover * timeStep -
+             ans$slow_OM * omDecayRate$slow * timeStep
     
   # Check to see if mineral input is a static value or a function
   if (is.na(mineralInput_g_per_yr)) {
@@ -98,7 +98,7 @@ addCohort <- function(massPools,
     ans$respired_OM[newCohortIndex] <- 0
     
     #lay down the new mineral inputs
-    ans$mineral[newCohortIndex] <- mineralInput_g_per_yr * dt_yr
+    ans$mineral[newCohortIndex] <- mineralInput_g_per_yr * timeStep
     
   }
   

@@ -4,18 +4,18 @@
 \alias{zToZstar}
 \title{Convert elevation to Z*}
 \usage{
-zToZstar(z, MHW, MSL)
+zToZstar(z, meanHighWater, meanSeaLevel)
 }
 \arguments{
 \item{z}{a numeric elevation}
 
-\item{MHW}{a numeric, mean high water tide}
+\item{meanHighWater}{a numeric, mean high water tide}
 
-\item{MSL}{a numeric, mean sea level}
+\item{meanSeaLevel}{a numeric, mean sea level}
 }
 \value{
 elevation normalized to the tidal range
 }
 \description{
-(z-MSL)/(MHW-MSL)
+(z-meanSeaLevel)/(meanHighWater-meanSeaLevel)
 }

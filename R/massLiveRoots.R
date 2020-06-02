@@ -11,7 +11,7 @@
 #' 
 #' @param layerBottom an array of depths from soil top to the bottom of the layer, generally in cm
 #' @param layerTop an array of depths from soil top to the top of the layer, generally in cm
-#' @param totalRootMass_per_area an integer that is the total mass per area of the roots, generally in g cm-3
+#' @param totalRootMassPerArea an integer that is the total mass per area of the roots, generally in g cm-3
 #' @param soilLength unit length of soil area, generally 1
 #' @param soilWidth unit width of soil area, generally 1.
 #' @param shape flag of root shape, only \code{linear} is implimented.
@@ -23,17 +23,17 @@
 #'
 #' @examples
 #' massLiveRoots(layerBottom = 1:10, layerTop = 0:9, 
-#'               totalRootMass_per_area = 0.3, rootDepthMax=5,
+#'               totalRootMassPerArea = 0.3, rootDepthMax=5,
 #'               soilLength=1, soilWidth=1, shape='linear')
 massLiveRoots <- function(layerBottom, layerTop, 
-                          totalRootMass_per_area, 
+                          totalRootMassPerArea, 
                           rootDepthMax,
                           soilLength=1, soilWidth=1, 
                           shape,
                           expDecayRate_perMaxDepth = log(0.05),
                           ...){
   
-  totalRootMass <- soilLength*soilWidth*totalRootMass_per_area
+  totalRootMass <- soilLength*soilWidth*totalRootMassPerArea
   
   if (totalRootMass == 0) {
     rootMass <- rep(0, length(layerBottom))
