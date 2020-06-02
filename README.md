@@ -83,6 +83,9 @@ animateCohorts(cohorts=memCohortExample$cohorts,
                filename="MEM-Try_191212.gif")
 ```
 
+#File descriptions
+
+  
 **Citation:**
 
 _Suggested acknowledgments:_
@@ -106,3 +109,4 @@ A lot of what underpins current versions of the Marsh Equilibrium Model and the 
 $$BD = {1 \over {{OM\over k1}+ {(1−OM) \over k2}}}$$
 
 If you hold area constant, and you assume you know the input rates of organic and inorganic matter, you can use the ideal mixing model to calculate accretion rate ([Morris et al. 2016](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2015EF000334), [Morris 2006](https://www.sciencedirect.com/science/article/pii/S0272771406001776),  [Morris 2007](https://link.springer.com/chapter/10.1007/978-1-4020-6008-3_14)).
+
