@@ -260,7 +260,7 @@ ggplot(plot.df) +
 ```{r convertToUnifDepth}
 equProfile <- equProfile[is.finite(equProfile$age),]
 sampleStep<- 5
-profile_by_depth <- convertProfile_AgeToDepth(equProfile,
+profile_by_depth <- convertProfileAgeToDepth(equProfile,
   layerTop = seq(0, floor(max(equProfile$layer_top) - sampleStep),by=sampleStep), 
   layerBottom = seq(sampleStep, floor(max(equProfile$layer_top)), by=sampleStep))
 

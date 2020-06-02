@@ -95,7 +95,7 @@ defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
                       modernAge = NA) #max age in modern soil profile
 
 #source('R/massLiveRoots.R')
-#source('R/depthOfNonRootVolume.R')
+#source('R/calculateDepthOfNonRootVolume.R')
 ##source('R/addCohort.R')
 #source('R/sedimentInputs.R')
 #source('R/addCohort.R')

@@ -109,7 +109,7 @@ ggplot(data=data.frame(z=targetElevation, zStar = zStarExample), aes(x=z, y=zSta
              aes(yintercept = z, lty=datum), color = "red")
 
 # Convert dimensionless tidal elevation back to regular elevation
-zReconstructExample <- zStarToZ(zStar = zStarExample, meanSeaLevel = meanSeaLevel, meanHighWater = meanHighWater)
+zReconstructExample <- convertZStarToZ(zStar = zStarExample, meanSeaLevel = meanSeaLevel, meanHighWater = meanHighWater)
 
 # See they're the same
 head(targetElevation)

@@ -18,7 +18,7 @@
 #' 
 #' @export
 
-depthOfNonRootVolume <- function(nonRootVolume.arr, 
+calculateDepthOfNonRootVolume <- function(nonRootVolume.arr, 
                                  massLiveRoots.fn = NULL,
                                  totalRootMassPerArea, 
                                  rootDepthMax, 

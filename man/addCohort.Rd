@@ -13,7 +13,7 @@ addCohort(
   mineralInput = NA,
   mineralInput.fn = sedimentInputs,
   massLiveRoots.fn = massLiveRoots,
-  depthOfNonRootVolume.fn = depthOfNonRootVolume,
+  calculateDepthOfNonRootVolume.fn = calculateDepthOfNonRootVolume,
   timeStep = 1,
   ...
 )
@@ -33,7 +33,7 @@ addCohort(
 
 \item{massLiveRoots.fn}{A function that returns the mass of live roots for specified depth layers, must accept \code{layerBottom} and \code{layerTop} as arguments.}
 
-\item{depthOfNonRootVolume.fn}{A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.}
+\item{calculateDepthOfNonRootVolume.fn}{A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.}
 
 \item{timeStep}{A numeric of the time step in years. Typically set to 1 year.}
 

@@ -114,7 +114,7 @@ exampleRun2.0 <- na.omit(exampleR2.0)
 
 stable.layer <- data.frame(fast_om = 0, slow_om = exampleRun2.0$slow_OM[length(exampleRun2.0$slow_OM)], mineral = exampleRun2.0$mineral[length(exampleRun2.0$mineral)])
 #Creates a data frame with age, input years, fast Organic Matter decay rate, slow organic matter decay rate, mineral content, and root mass
-print(short.data <- convertProfile_AgeToDepth(example.Run2.0, layerTop = c(0,10), layerBottom = c(10, 100)))
+print(short.data <- convertProfileAgeToDepth(example.Run2.0, layerTop = c(0,10), layerBottom = c(10, 100)))
 
 ```
 

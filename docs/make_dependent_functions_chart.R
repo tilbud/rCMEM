@@ -13,11 +13,11 @@ digraph boxes_and_circles {
   # add function names
   node [shape = box,
         fontname = Helvetica]
-  addCohort;animateCohorts; availableSediment; buildHighTideScenario; buildScenarioCurve;   convertProfile_AgeToDepth; deliveredSediment3TidalCycle; deliveredSedimentSimple; deliverSedimentFlexibly; depthOfNonRootVolume; floodTimeFromDatum; massLiveRoots; predictedBiomass; predictLunarNodalCycle; runMemWithCohorts; runToEquilibrium; sedimentInputs; trimCohorts; zStarToZ; zToZstar
+  addCohort;animateCohorts; availableSediment; buildHighTideScenario; buildScenarioCurve;   convertProfileAgeToDepth; deliveredSediment3TidalCycle; deliveredSedimentSimple; deliverSedimentFlexibly; calculateDepthOfNonRootVolume; floodTimeFromDatum; massLiveRoots; predictedBiomass; predictLunarNodalCycle; runMemWithCohorts; runToEquilibrium; sedimentInputs; trimCohorts; convertZStarToZ; zToZstar
 
 
   # 'edge' statements connect function tree
-  depthOfNonRootVolume->addCohort; 
+  calculateDepthOfNonRootVolume->addCohort; 
   massLiveRoots->addCohort; 
   sedimentInputs->addCohort;
   runMemWithCohorts->animateCohorts; 
@@ -27,11 +27,11 @@ digraph boxes_and_circles {
   availableSediment->deliveredSediment3TidalCycle;
   floodTimeFromDatum->deliveredSediment3TidalCycle;
   availableSediment->deliveredSedimentSimple;
-  massLiveRoots->depthOfNonRootVolume;
+  massLiveRoots->calculateDepthOfNonRootVolume;
   addCohort->runMemWithCohorts;
   buildHighTideScenario->runMemWithCohorts;
 	buildScenarioCurve->runMemWithCohorts; 
-	convertProfile_AgeToDepth->runMemWithCohorts;
+	convertProfileAgeToDepth->runMemWithCohorts;
 	deliverSedimentFlexibly->runMemWithCohorts; 
 	predictedBiomass->runMemWithCohorts; 
 	runToEquilibrium->runMemWithCohorts; 

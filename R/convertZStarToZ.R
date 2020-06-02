@@ -7,6 +7,6 @@
 #' @return a numerical describing the marsh elevation
 #' @export
 #'
-zStarToZ <- function(zStar, meanHighWater, meanSeaLevel) { 
+convertZStarToZ <- function(zStar, meanHighWater, meanSeaLevel) { 
   (zStar * ((meanHighWater-meanSeaLevel))) + meanSeaLevel 
   }

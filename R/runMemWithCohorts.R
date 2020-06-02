@@ -188,7 +188,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
       dplyr::select(-year)
     
     # Convert cohorts to age-depth profile
-    coreYearAgeDepth <- convertProfile_AgeToDepth(ageCohort=cohortsInCoreYear,
+    coreYearAgeDepth <- convertProfileAgeToDepth(ageCohort=cohortsInCoreYear,
                                                   layerTop=coreMins,
                                                   layerBottom=coreMaxs)
     coreYearAgeDepth <- coreYearAgeDepth %>%  dplyr::filter(complete.cases(.)) %>%
