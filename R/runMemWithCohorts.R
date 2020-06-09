@@ -65,9 +65,9 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
   
   # Convert dimensionless plant growing elevations to real growing elevations
   if (! plantElevationType %in% c("dimensionless", "zStar", "Z*", "zstar")) {
-    zStarVegMin <- zToZstar(zVegMin, meanHighWater, meanSeaLevel[1])
-    zStarVegMax <- zToZstar(zVegMax, meanHighWater, meanSeaLevel[1])
-    zStarVegPeak <- zToZstar(zVegPeak, meanHighWater, meanSeaLevel[1])
+    zStarVegMin <- convertZToZstar(zVegMin, meanHighWater, meanSeaLevel[1])
+    zStarVegMax <- convertZToZstar(zVegMax, meanHighWater, meanSeaLevel[1])
+    zStarVegPeak <- convertZToZstar(zVegPeak, meanHighWater, meanSeaLevel[1])
   } else {
     zStarVegMin <- zVegMin
     zStarVegMax <- zVegMax
@@ -76,7 +76,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
   
   # Set initial conditions
   # Calculate initial z star
-  initElvStar <- zToZstar(z=initElv, meanSeaLevel=scenario$meanSeaLevel[1], meanHighWater=scenario$meanHighWater[1])
+  initElvStar <- convertZToZstar(z=initElv, meanSeaLevel=scenario$meanSeaLevel[1], meanHighWater=scenario$meanHighWater[1])
   
   # Initial Above Ground Biomass
   initAgb <- predictedBiomass(z=initElvStar, bMax = bMax, zVegMax = zStarVegMax, 
@@ -138,7 +138,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
   for (i in 2:nrow(scenario)) {
     
     # Calculate surface elevation relative to datum
-    surfaceElvZStar <- zToZstar(z=scenario$surfaceElevation[i-1], meanHighWater=scenario$meanHighWater[i], meanSeaLevel=scenario$meanSeaLevel[i])
+    surfaceElvZStar <- convertZToZstar(z=scenario$surfaceElevation[i-1], meanHighWater=scenario$meanHighWater[i], meanSeaLevel=scenario$meanSeaLevel[i])
     
     # Calculate dynamic above ground
     dynamicAgb <- predictedBiomass(z=surfaceElvZStar, bMax = bMax, zVegMax = zStarVegMax, zVegMin = zStarVegMin, zVegPeak = zStarVegPeak)
