@@ -1,0 +1,17 @@
+---
+title: "List of Parameters and Priors"
+author: "James R Holmquist"
+date: "12/11/2019"
+output: html_document
+---
+
+
+|:-------|:---------|:---------|:-------|:-------|
+| Variable | Description | Unit | Distribution | Parameters | 
+
+# BioParameters
+emin[1] ~ dnorm(mu_emin, tau_emin) T(emin_low, )
+  epeak[1] ~ dnorm(mu_epeak, tau_epeak) T(emin[1], emax[1])
+  emax[1] ~ dnorm(mu_emax, tau_emax) T(, emax_high)
+  bmax[1] ~ dnorm(mu_bmax, tau_bmax) T(0, )
+  

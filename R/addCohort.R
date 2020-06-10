@@ -16,7 +16,7 @@
 #' @param rootOmFrac A list of numerics called fast and slow which is the allocation fraction between fast and slow organic matter pool respectively for dead roots.
 #' @param omDecayRate A list of numerics called fast and slow which is the decay rate for the fast and slow organic matter pool in fraction per year.
 #' @param massLiveRoots.fn A function that returns the mass of live roots for specified depth layers, must accept \code{layerBottom} and \code{layerTop} as arguments.
-#' @param depthOfNotRootVolume.fn A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.
+#' @param depthOfNonRootVolume.fn A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.
 #' @param mineralInput_g_per_yr.fn A function that returns the mineral input in grams per year (numeric)
 #' @param ... arguments to be passed to the specified functions
 #'
@@ -27,9 +27,10 @@
 addCohort <- function(massPools,
                       rootTurnover, rootOmFrac, omDecayRate, #decay paraemters
                       packing, #packing densities
+                      mineralInput_g_per_yr = NA,
                       mineralInput_g_per_yr.fn = sedimentInputs, 
                       massLiveRoots.fn = massLiveRoots,
-                      depthOfNotRootVolume.fn = depthOfNotRootVolume,
+                      depthOfNonRootVolume.fn = depthOfNonRootVolume,
                       dt_yr=1, ...){
   
   #Sanity check the inputs
@@ -55,6 +56,12 @@ addCohort <- function(massPools,
   
   ans$age <- ans$age + dt_yr #age the cohorts
   
+
+  # track respiration
+  ans$respired_OM <- ans$fast_OM +
+    (ans$root_mass * rootOmFrac$fast * rootTurnover * dt_yr) -
+    ans$fast_OM * omDecayRate$fast * dt_yr
+
   #add and decay the organic matter
   ans$fast_OM <- ans$fast_OM + 
              ans$root_mass * rootOmFrac$fast * rootTurnover * dt_yr -
@@ -63,9 +70,14 @@ addCohort <- function(massPools,
   ans$slow_OM <- ans$slow_OM + 
              ans$root_mass * rootOmFrac$slow * rootTurnover * dt_yr -
              ans$slow_OM * omDecayRate$slow * dt_yr
+    
+  # Check to see if mineral input is a static value or a function
+  if (is.na(mineralInput_g_per_yr)) {
+    mineralInput_g_per_yr <- mineralInput_g_per_yr.fn(...)
+  }
   
   #if we are laying down a new cohort
-  if(mineralInput_g_per_yr.fn(...) > 0){
+  if(mineralInput_g_per_yr > 0){
     if(!any(is.na(ans$age))){ #if there aren't any empty cohort slots
       bufferAns <- ans
       bufferAns[TRUE] <- NA
@@ -82,9 +94,11 @@ addCohort <- function(massPools,
     ans$age[newCohortIndex] <- 0
     ans$fast_OM[newCohortIndex] <- 0
     ans$slow_OM[newCohortIndex] <- 0
+
+    ans$respired_OM[newCohortIndex] <- 0
     
     #lay down the new mineral inputs
-    ans$mineral[newCohortIndex] <- mineralInput_g_per_yr.fn(...) * dt_yr
+    ans$mineral[newCohortIndex] <- mineralInput_g_per_yr * dt_yr
     
   }
   
@@ -94,7 +108,7 @@ addCohort <- function(massPools,
   ans$cumCohortVol <- cumsum(temp_Vol)
   
   #calculate depth profile
-  ans$layer_bottom <- depthOfNotRootVolume.fn(nonRootVolume = ans$cumCohortVol,
+  ans$layer_bottom <- depthOfNonRootVolume.fn(nonRootVolume = ans$cumCohortVol,
                                               massLiveRoots.fn=massLiveRoots.fn,
                                               soilLength=1, soilWidth=1,
                                               relTol = 1e-6,
