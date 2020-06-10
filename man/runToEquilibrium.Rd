@@ -4,8 +4,19 @@
 \alias{runToEquilibrium}
 \title{Run to equilbrium with proscribed surface mineral input}
 \usage{
+<<<<<<< HEAD
 runToEquilibrium(minAge = 50, maxAge = 500, recordEvolution = FALSE,
   relTol = 1e-06, absTol = 1e-08, ...)
+=======
+runToEquilibrium(
+  minAge = 50,
+  maxAge = 200,
+  recordEvolution = FALSE,
+  relTol = 1e-06,
+  absTol = 1e-08,
+  ...
+)
+>>>>>>> 031664c3668fe73ae68149a96f98ba7d6e4ff5c9
 }
 \arguments{
 \item{minAge}{run the model for atleast these many years}
