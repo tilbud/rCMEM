@@ -2,7 +2,7 @@
 #' 
 #' Given a shape and mass for the roots, calculate the depth of a specific non-root volume. A specific solution is implimented for linear root volumes, and a general solution otherwise requires the \code{massLiveRoots.fn} to be specified. The general solution is a bineary search algorithm. 
 #'
-#' @param totalRootMass_per_area an integer that is the total mass per area of the roots, generally in g cm-3
+#' @param totalRootMassPerArea an integer that is the total mass per area of the roots, generally in g cm-3
 #' @param rootDepthMax an integer that is the maximum root depth, generally in cm
 #' @param rootDensity a numeric that is the root density in g per cm3
 #' @param soilLength a numeric of the unit length of soil volume, generally 1 cm
@@ -18,9 +18,9 @@
 #' 
 #' @export
 
-depthOfNonRootVolume <- function(nonRootVolume.arr, 
+calculateDepthOfNonRootVolume <- function(nonRootVolume.arr, 
                                  massLiveRoots.fn = NULL,
-                                 totalRootMass_per_area, 
+                                 totalRootMassPerArea, 
                                  rootDepthMax, 
                                  rootDensity,
                                  shape = 'linear',
@@ -30,7 +30,7 @@ depthOfNonRootVolume <- function(nonRootVolume.arr,
                                  ...){
   
   ####
-  totalRootMass <- soilLength*soilWidth*totalRootMass_per_area
+  totalRootMass <- soilLength*soilWidth*totalRootMassPerArea
 
   if(verbose) print(paste('totalRootMass = ', totalRootMass))
   
@@ -42,7 +42,7 @@ depthOfNonRootVolume <- function(nonRootVolume.arr,
   }
   
 
-  if(totalRootMass_per_area == 0){
+  if(totalRootMassPerArea == 0){
     return(nonRootVolume.arr*soilLength*soilWidth)
   }
   
@@ -107,7 +107,7 @@ depthOfNonRootVolume <- function(nonRootVolume.arr,
       for(ii in 1:maxSearchDepth){
         if(verbose)cat(paste('ii=', ii, '\n\tincrament=', incrament, '\n\tpossibleDepth=', possibleDepth))
         rootVolume <- massLiveRoots.fn(layerTop = 0, layerBottom = possibleDepth,
-                                       totalRootMass_per_area = totalRootMass_per_area, 
+                                       totalRootMassPerArea = totalRootMassPerArea, 
                                        rootDepthMax=rootDepthMax, 
                                        soilLength=soilLength, soilWidth=soilWidth, shape=shape 
         ) / rootDensity

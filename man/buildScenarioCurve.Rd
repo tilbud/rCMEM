@@ -7,10 +7,10 @@
 buildScenarioCurve(
   startYear,
   endYear = startYear + 99,
-  MSL,
-  rslr0 = 0.3,
+  meanSeaLevel,
+  relSeaLevelRiseInit = 0.3,
   rslrTotal = 100,
-  ssc
+  suspendedSediment
 )
 }
 \arguments{
@@ -18,13 +18,13 @@ buildScenarioCurve(
 
 \item{endYear}{an integer, year in form YYYY, the end year of the scenario}
 
-\item{MSL}{a numeric or a vector of numbers, either indicating mean sea-level at the start of scenario, or mean sea-level at each year of the sceanrio}
+\item{meanSeaLevel}{a numeric or a vector of numbers, either indicating mean sea-level at the start of scenario, or mean sea-level at each year of the sceanrio}
 
-\item{rslr0}{a numeric, initial rate of relative sea-level rise}
+\item{relSeaLevelRiseInit}{a numeric, initial rate of relative sea-level rise}
 
 \item{rslrTotal}{a numeric, total relative sea-level rise over the course of the scanario}
 
-\item{ssc}{a numeric or a vector of numbers, either average annual suspended sediment concentration, or a vector of annual suspended sediment concentration for each year of the scenario}
+\item{suspendedSediment}{a numeric or a vector of numbers, either average annual suspended sediment concentration, or a vector of annual suspended sediment concentration for each year of the scenario}
 }
 \value{
 a data frame including columns for year, sea-level, and suspended sediment concentration, and rows for each year in the scenario

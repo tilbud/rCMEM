@@ -10,7 +10,7 @@ animateCohorts(
   filename = "MEM-CTM-animated.gif",
   savePath = getwd(),
   chPalette = c("#56B4E9", "#999999", "#E69F00", "#009E73"),
-  trackThresholds = c("MSL", "MHW"),
+  trackThresholds = c("meanSeaLevel", "meanHighWater"),
   duration = 30,
   width = 4.5,
   height = 4.5
@@ -33,7 +33,7 @@ animateCohorts(
 
 \item{height}{numeric, height in inches of the .gif}
 
-\item{chPallette}{vector, a vector of colors to use to symbolize the different mass cohorts}
+\item{chPalette}{vector, a vector of colors to use to symbolize the different mass cohorts}
 }
 \description{
 This function takes two MEM outputs, cohorts and scenario tables, as inputs and visualizes soil formation as an animated .gif

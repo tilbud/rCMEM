@@ -24,7 +24,7 @@ defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
                       rootTurnover = .5,  # Below Ground Turnover Rate of roots, 1/yr
                       rootOmFrac = list(fast=0.8, slow=0.2), # root allocation to om pools (labile, slow), g/g
                       omDecayRate = list(fast=0.8, slow=0), # organic matter decay rate (labile, slow), 1/yr
-                      ssc = 20, # Suspended Sediment Concentration, mg per liter
+                      suspendedSediment = 20, # Suspended Sediment Concentration, mg per liter
                       depthBelowMHW = 10) # Depth of Marsh Surface Below Mean High Water
 ```
 ```{r runs}
@@ -40,11 +40,11 @@ runs.df <- plyr::ddply(parms.df, c('rootDepthMax', 'totalRootBiomass'), function
                    rootOmFrac = defaultConsts$rootOmFrac,
                    omDecayRate = defaultConsts$omDecayRate,
                    packing = defaultConsts$packing,
-                   mineralInput_g_per_yr.fn = sedimentInputs,
-                   ssc = defaultConsts$ssc,
+                   mineralInput.fn = sedimentInputs,
+                   suspendedSediment = defaultConsts$suspendedSediment,
                    meanTidalHeight = defaultConsts$depthBelowMHW, 
                    massLiveRoots.fn = massLiveRoots,
-                   totalRootMass_per_area = xx$totalRootBiomass, #parameter we are changing
+                   totalRootMassPerArea = xx$totalRootBiomass, #parameter we are changing
                    rootDepthMax=xx$rootDepthMax, #parameter we are changing
                    shape=defaultConsts$shape,
                    depthOfNotRootVolume.fn = depthOfNotRootVolume,
@@ -82,12 +82,12 @@ temp.df <- ddply(parms.df, c('totalRootBiomass', 'rootDepthMax'), as.factor(runT
                                omDecayRate = defaultConsts2.0$omDecayRate,
                                packing = defaultConsts2.0$packing,
                                
-                               mineralInput_g_per_yr.fn = sedimentInputs,
-                               ssc = defaultConsts2.0$ssc, 
+                               mineralInput.fn = sedimentInputs,
+                               suspendedSediment = defaultConsts2.0$suspendedSediment, 
                                meanTidalHeight = defaultConsts2.0$depthBelowMHW, 
                                
                                massLiveRoots.fn = massLiveRoots,
-                               totalRootMass_per_area = defaultParms2.df$totalRootBiomass,
+                               totalRootMassPerArea = defaultParms2.df$totalRootBiomass,
                                rootDepthMax = defaultParms2.df$rootDepthMax,
                                
                                depthOfNotRootVolume.fn = depthOfNotRootVolume,
@@ -99,12 +99,12 @@ exampleR2.0 <-  runToEquilibrium(rootTurnover = defaultConsts2.0$rootTurnover,
                                omDecayRate = defaultConsts2.0$omDecayRate,
                                packing = defaultConsts2.0$packing,
                                
-                               mineralInput_g_per_yr.fn = sedimentInputs,
-                               ssc = defaultConsts2.0$ssc, 
+                               mineralInput.fn = sedimentInputs,
+                               suspendedSediment = defaultConsts2.0$suspendedSediment, 
                                meanTidalHeight = defaultConsts2.0$depthBelowMHW, 
                                
                                massLiveRoots.fn = massLiveRoots,
-                               totalRootMass_per_area = defaultParms2.df$totalRootBiomass,
+                               totalRootMassPerArea = defaultParms2.df$totalRootBiomass,
                                rootDepthMax = defaultParms2.df$rootDepthMax,
                                
                                depthOfNotRootVolume.fn = depthOfNotRootVolume,
@@ -114,7 +114,7 @@ exampleRun2.0 <- na.omit(exampleR2.0)
 
 stable.layer <- data.frame(fast_om = 0, slow_om = exampleRun2.0$slow_OM[length(exampleRun2.0$slow_OM)], mineral = exampleRun2.0$mineral[length(exampleRun2.0$mineral)])
 #Creates a data frame with age, input years, fast Organic Matter decay rate, slow organic matter decay rate, mineral content, and root mass
-print(short.data <- convertProfile_AgeToDepth(example.Run2.0, layerTop = c(0,10), layerBottom = c(10, 100)))
+print(short.data <- convertProfileAgeToDepth(example.Run2.0, layerTop = c(0,10), layerBottom = c(10, 100)))
 
 ```
 

@@ -5,7 +5,7 @@
 #' @param scenario data frame, annual summaries of inputs and outputs from runMemWithCohorts
 #' @param filename, character, name of the output file
 #' @param savePath character, filepath to save animation to
-#' @param chPallette vector, a vector of colors to use to symbolize the different mass cohorts
+#' @param chPalette vector, a vector of colors to use to symbolize the different mass cohorts
 #' @param trackThresholds vector, a vector of characters indicating which water leves in the scenario table to map as horizontal lines
 #' @param duration numeric, length in seconds of the animation
 #' @param width numeric, width in inches of the .gif
@@ -16,7 +16,7 @@ animateCohorts <- function(cohorts, scenario,
                            filename = "MEM-CTM-animated.gif",
                            savePath = getwd(),
                            chPalette = c("#56B4E9", "#999999", "#E69F00", "#009E73"), 
-                           trackThresholds = c("MSL", "MHW"), duration = 30,
+                           trackThresholds = c("meanSeaLevel", "meanHighWater"), duration = 30,
                            width = 4.5, height = 4.5) {
   
   require(tidyverse, quietly = TRUE)
@@ -52,7 +52,7 @@ animateCohorts <- function(cohorts, scenario,
   # Reshape the scenario table
   tides <- scenario %>%
     # Track any elevation threholds in the animation speciefied.
-    # MSL and MHW are the defaults
+    # meanSeaLevel and meanHighWater are the defaults
     dplyr::select(years, trackThresholds) %>%
     tidyr::gather(value="WaterLevel", key="datum", -years) %>%
     dplyr::rename(year=years) %>%

@@ -6,29 +6,29 @@
 \usage{
 deliveredSedimentSimple(
   z,
-  ssc,
-  MSL,
-  MHW,
-  MLW = MSL - MHW,
+  suspendedSediment,
+  meanSeaLevel,
+  meanHighWater,
+  meanLowWater = meanSeaLevel - meanHighWater,
   settlingVelocity,
-  k = 1,
+  capturedSediment = 1,
   nTides = 704
 )
 }
 \arguments{
 \item{z}{a numeric, elevation of the marsh}
 
-\item{ssc}{a numeric, suspended sediment concentration of the water column}
+\item{suspendedSediment}{a numeric, suspended sediment concentration of the water column}
 
-\item{MSL}{a numeric, Mean Sea Level}
+\item{meanSeaLevel}{a numeric, Mean Sea Level}
 
-\item{MHW}{a numeric, Mean High Water level}
+\item{meanHighWater}{a numeric, Mean High Water level}
 
-\item{MLW}{a numeric, Mean Low Water level}
+\item{meanLowWater}{a numeric, Mean Low Water level}
 
 \item{settlingVelocity}{a numeric, the number of times a water column will clear per tidal cycle}
 
-\item{k}{a numeric, the fraction of available sediment captured by the marsh}
+\item{capturedSediment}{a numeric, the fraction of available sediment captured by the marsh}
 
 \item{nTides}{an integer, the number of flooding events in a year}
 

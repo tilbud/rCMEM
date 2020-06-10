@@ -6,11 +6,11 @@
 \usage{
 deliverSedimentFlexibly(
   z,
-  ssc,
-  MSL,
-  MHW,
-  MHHW = NA,
-  MHHWS = NA,
+  suspendedSediment,
+  meanSeaLevel,
+  meanHighWater,
+  meanHighHighWater = NA,
+  meanHighHighWaterSpring = NA,
   settlingVelocity,
   ...
 )
@@ -18,15 +18,15 @@ deliverSedimentFlexibly(
 \arguments{
 \item{z}{a numeric, elevation of the marsh}
 
-\item{ssc}{a numeric, suspended sediment concentration of the water column}
+\item{suspendedSediment}{a numeric, suspended sediment concentration of the water column}
 
-\item{MSL}{a numeric, Mean Sea Level}
+\item{meanSeaLevel}{a numeric, Mean Sea Level}
 
-\item{MHW}{a numeric, Mean High Water level}
+\item{meanHighWater}{a numeric, Mean High Water level}
 
-\item{MHHW}{a numeric, Mean Higher High Water level}
+\item{meanHighHighWater}{a numeric, Mean Higher High Water level}
 
-\item{MHHWS}{a numeric, Mean Higher High Spring Tide Water level}
+\item{meanHighHighWaterSpring}{a numeric, Mean Higher High Spring Tide Water level}
 
 \item{settlingVelocity}{a numeric, the number of times a water column will clear per tidal cycle}
 

@@ -6,23 +6,23 @@
 \usage{
 buildHighTideScenario(
   scenarioCurve,
-  MSL0 = scenarioCurve$MSL[1],
-  MHW0,
-  MHHW0,
-  MHHWS0,
+  meanSeaLevelDatum = scenarioCurve$meanSeaLevel[1],
+  meanHighWaterDatum,
+  meanHighHighWaterDatum,
+  meanHighHighWaterSpringDatum,
   lunarNodalAmp
 )
 }
 \arguments{
 \item{scenarioCurve}{a data frame, including year, mean sea level, and suspended sediment concentration, with each row being a year in the scenario}
 
-\item{MSL0}{a numeric, Mean Sea Level over a tidal datum period}
+\item{meanSeaLevelDatum}{a numeric, Mean Sea Level over a tidal datum period}
 
-\item{MHW0}{a numeric, Mean High Water level over the last datum period}
+\item{meanHighWaterDatum}{a numeric, Mean High Water level over the last datum period}
 
-\item{MHHW0}{a numeric, Mean Higher High Water level over the last datum period}
+\item{meanHighHighWaterDatum}{a numeric, Mean Higher High Water level over the last datum period}
 
-\item{MHHWS0}{a numeric, Mean Higher High Spring Tide Water level over the last datum period}
+\item{meanHighHighWaterSpringDatum}{a numeric, Mean Higher High Spring Tide Water level over the last datum period}
 
 \item{lunarNodalAmp}{the amplitude of the 18-year lunar nodal cycle}
 }

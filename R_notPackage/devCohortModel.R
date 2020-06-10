@@ -6,7 +6,7 @@ defaultParms <- list(rootDepthMax = 30, # Depth of the root zone in cm below sur
                      rootTurnover = 0.5,  # Below Ground Turnover Rate of roots, 1/yr
                      rootOmFrac = list(fast=0.8, slow=0.2), # root allocation to om pools (labile, slow), g/g
                      omDecayRate = list(fast=0.8, slow=0), # organic matter decay rate (labile, slow), 1/yr
-                     ssc = 20, # Suspended Sediment Concentration, mg per liter
+                     suspendedSediment = 20, # Suspended Sediment Concentration, mg per liter
                      depthBelowMHW = 10) # Depth of Marsh Surface Below Mean High Water
 
 defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
@@ -122,10 +122,10 @@ sedimentInputs <- function(yrForward=NA, #time currently ignored
   }
   inputType <- consts$sedimentInputType # c('constant', 'relative', 'dynamic')[1]
   
-  if(!all(c('ssc') %in% names(parms))){
+  if(!all(c('suspendedSediment') %in% names(parms))){
     stop('Can not find expected parameter names')
   }
-  ssc <- parms$ssc # Suspended Sediment Concentration, mg per liter
+  suspendedSediment <- parms$suspendedSediment # Suspended Sediment Concentration, mg per liter
   
   ##Pull the depth below mean high water
   depthBelowMHW <- NA
@@ -148,13 +148,13 @@ sedimentInputs <- function(yrForward=NA, #time currently ignored
   }
   
   if(is.na(depthBelowMHW)){
-    stop('Bad depth below MHW defined.')
+    stop('Bad depth below meanHighWater defined.')
   }
  
   #print(depthBelowMHW)
   
   meanTidalHeight <- depthBelowMHW
-  ssc_gPerCm2 <- ssc * 0.000001 # convert mg/l to grams/cm^2
+  ssc_gPerCm2 <- suspendedSediment * 0.000001 # convert mg/l to grams/cm^2
   cumAnnWaterVol <- consts$nTidesPerYear * meanTidalHeight # Cumulative water volume
   annSediment <- ssc_gPerCm2 * cumAnnWaterVol #g-sediment per year
   
@@ -183,7 +183,7 @@ nextCohort <- function(massPools=data.frame(age=0, fast_OM=0, slow_OM=0, mineral
                        topInputs_gPerYr = sedimentInputs,
                        rootProfile_g = massLiveRoots,
                        parms,
-                       consts, dt_yr=1 ){
+                       consts, timeStep=1 ){
   if(!all(c('age', 'fast_OM', 'slow_OM', 'mineral') %in% names(massPools))){
     stop('Badly named massPools')
   }
@@ -216,23 +216,23 @@ nextCohort <- function(massPools=data.frame(age=0, fast_OM=0, slow_OM=0, mineral
   #decay the OM pools and add dead roots
   ans <- massPools %>% 
     dplyr::select(age, fast_OM, slow_OM, mineral, layer_top, layer_bottom) %>%
-    mutate(age = age + dt_yr,
+    mutate(age = age + timeStep,
            root_mass = rootProfile_g(layerTop = layer_top, layerBottom = layer_bottom,
                                      parms = parms,
                                      consts = consts)) %>%
     mutate(fast_OM = fast_OM + 
-             root_mass * rootOmFrac$fast * rootTurnover * dt_yr -
-             fast_OM * omDecayRate$fast * dt_yr,
+             root_mass * rootOmFrac$fast * rootTurnover * timeStep -
+             fast_OM * omDecayRate$fast * timeStep,
            slow_OM = slow_OM + 
-             root_mass * rootOmFrac$slow * rootTurnover * dt_yr -
-             slow_OM * omDecayRate$slow * dt_yr)
+             root_mass * rootOmFrac$slow * rootTurnover * timeStep -
+             slow_OM * omDecayRate$slow * timeStep)
   
   
   ans <- bind_rows(data.frame(age = 0, fast_OM= 0, slow_OM = 0, 
                               mineral = topInputs_gPerYr(yrForward = max(massPools$age) - consts$modernAge,
                                 marshElevation = max(massPools$layer_bottom),
                                                          parms = parms, 
-                                                         consts = consts) * dt_yr),
+                                                         consts = consts) * timeStep),
                    ans) %>% #add sediments to the top
     arrange(age) %>% #make sure things are sorted by age
     #calculate cumulative volumne of each pool
@@ -336,7 +336,7 @@ parametersToRun <- expand.grid(rootDepthMax=c(15, 30, 60),
             rootTurnover=c(0.25, 0.5, 0.9),
             rootOmFrac_fast=c(0.2, 0.4, 0.8),
             omDecayRate_fast=c(0.2, 0.4, 0.8),
-            ssc=c(10, 20, 40),
+            suspendedSediment=c(10, 20, 40),
             depthBelowMHW=c(5, 10, 20)) %>%
   filter(rootDepthMax*defaultConsts$packing$root/2 >
            totalRootBiomass) %>% #check that we don't have above a max biomass per area
@@ -351,7 +351,7 @@ parametersToRun <- expand.grid(rootDepthMax=c(15, 30, 60),
                      rootOmFrac = list(fast=xx$rootOmFrac_fast, 
                                        slow=1-xx$rootOmFrac_fast), # root allocation to om pools (labile, slow), g/g
                      omDecayRate = list(fast=xx$omDecayRate_fast, slow=0), # organic matter decay rate (labile, slow), 1/yr
-                     ssc = xx$ssc, # Suspended Sediment Concentration, mg per liter
+                     suspendedSediment = xx$suspendedSediment, # Suspended Sediment Concentration, mg per liter
                      depthBelowMHW = xx$depthBelowMHW)
     return(runToMEM(parms = newParms, consts = defaultConsts, maxAge=1000))
   })(.)) %>%

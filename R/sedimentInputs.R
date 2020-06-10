@@ -8,13 +8,13 @@
 #' @param soilLength unit length of interest
 #' @param soilWidth unit width of interest
 #' @param ... 
-#' @param ssc a numeric representing suspended sediment concentration in (mg per liter)
+#' @param suspendedSediment a numeric representing suspended sediment concentration in (mg per liter)
 #'
 #' @return a numeric that is the mass of mineral added in one year to the top of the marsh
 #' @export
 #' 
 #'
-sedimentInputs <- function(ssc, # Suspended Sediment Concentration, mg per liter
+sedimentInputs <- function(suspendedSediment, # Suspended Sediment Concentration, mg per liter
                            meanTidalHeight, #mean tide height above marsh
                            nTidesPerYear = 704,
                            soilLength=1, soilWidth=1, ...){ 
@@ -22,7 +22,7 @@ sedimentInputs <- function(ssc, # Suspended Sediment Concentration, mg per liter
     return(0) #only add sediment to the marsh if the mean high water is above the marsh elevation
   }
 
-  annSediment <- (ssc * 1e-6)  * # convert mg/l to grams/cm^3
+  annSediment <- (suspendedSediment * 1e-6)  * # convert mg/l to grams/cm^3
     nTidesPerYear * (meanTidalHeight * 0.5 * soilLength * soilWidth) # Cumulative water volume
   
   if (annSediment < 0) {
