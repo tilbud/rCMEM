@@ -10,7 +10,7 @@
 #' @export
 #'
 #' @importFrom plyr ddply
-convertProfile_AgeToDepth <- function(ageCohort, layerTop, layerBottom){
+convertProfileAgeToDepth <- function(ageCohort, layerTop, layerBottom){
   
   ans <- plyr::ddply(data.frame(bottom=layerBottom, top=layerTop), c('top', 'bottom'), function(xx){
     

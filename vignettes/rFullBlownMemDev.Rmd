@@ -39,15 +39,15 @@ require(gridExtra)
 # Settings for the functions we're going to run
 # Inputs
 startYear <- 2015 # yearStart
-rslr0 <- 0.3 # rslr at time 1 (cm/yr)
+relSeaLevelRiseInit <- 0.3 # rslr at time 1 (cm/yr)
 rslrTotal <- 100 # cm of total relative seal level rise
 initElv <- 21.9 # eInit # cm relative to NAVD88
-MSL <- 7.4 # tidal datums, cm relative to NAVD88
-MHW <- 16.9
-MHHW <- 25.4
-MHHWS <- 31.2
-ssc <- 30 # milligrams per liter /  grams per m3
-ssc <- ssc / 1000000 # convert to grams per cubic cm
+meanSeaLevel <- 7.4 # tidal datums, cm relative to NAVD88
+meanHighWater <- 16.9
+meanHighHighWater <- 25.4
+meanHighHighWaterSpring <- 31.2
+suspendedSediment <- 30 # milligrams per liter /  grams per m3
+suspendedSediment <- suspendedSediment / 1000000 # convert to grams per cubic cm
 lunarNodalAmp <- 2.5 # cm
 
 # Parameters
@@ -83,9 +83,9 @@ print(agbFromElv)
 
 ## Create Helper Scripts for Converting Too and From Dimensionless Tidal Elevation
 
-In the biomass functions the units for the elevation can be any thing as long as they are all referenced to the same system. We prefer elevation relative to mean sea level (MSL), normalized to the daily high tide range, mean high water (MHW) This is sometimes referred to as a dimensionless tidal elevation (Z\*). Using Z\* makes biomass curves more comparable accross sites and times, accross which MSL and tidal ranges can vary.  
+In the biomass functions the units for the elevation can be any thing as long as they are all referenced to the same system. We prefer elevation relative to mean sea level (meanSeaLevel), normalized to the daily high tide range, mean high water (meanHighWater) This is sometimes referred to as a dimensionless tidal elevation (Z\*). Using Z\* makes biomass curves more comparable accross sites and times, accross which meanSeaLevel and tidal ranges can vary.  
 
-$$Z^*={E-MSL\over{MHW-MSL}}$$
+$$Z^*={E-meanSeaLevel\over{meanHighWater-meanSeaLevel}}$$
 
 If you use the most basic settings the function will assume median growing biomass is exactly in between min and max. If you specify a median the function will create a piecewise, flexible parabola.
 
@@ -97,19 +97,19 @@ targetElevation<- seq((zVegMin-abs(zVegMin*.1)), (zVegMax+abs(zVegMax*.1)),
                       by = ((zVegMax-zVegMin)/100) )
 
 # Convert elevation to dimensionless tidal elvation
-zStarExample <- zToZstar(z=targetElevation, MSL=MSL, MHW=MHW)
+zStarExample <- zToZstar(z=targetElevation, meanSeaLevel=meanSeaLevel, meanHighWater=meanHighWater)
 
 ggplot(data=data.frame(z=targetElevation, zStar = zStarExample), aes(x=z, y=zStar)) +
   geom_line() +
-  geom_vline(data=(z=data.frame(z=c(MHW, MSL), 
-                                datum=c("MHW", "MSL"))), 
+  geom_vline(data=(z=data.frame(z=c(meanHighWater, meanSeaLevel), 
+                                datum=c("meanHighWater", "meanSeaLevel"))), 
              aes(xintercept = z, lty=datum), color = "blue") +
   geom_hline(data=(z=data.frame(z=c(1, 0), 
-                                datum=c("MHW", "MSL"))), 
+                                datum=c("meanHighWater", "meanSeaLevel"))), 
              aes(yintercept = z, lty=datum), color = "red")
 
 # Convert dimensionless tidal elevation back to regular elevation
-zReconstructExample <- zStarToZ(zStar = zStarExample, MSL = MSL, MHW = MHW)
+zReconstructExample <- convertZStarToZ(zStar = zStarExample, meanSeaLevel = meanSeaLevel, meanHighWater = meanHighWater)
 
 # See they're the same
 head(targetElevation)
@@ -120,7 +120,7 @@ head(zReconstructExample)
 
 ``` {r exampleParabolas, fig.height = 3.54, fig.width=7}
 
-# targetElevations <- seq(min(zVegMin, MSL-MHHWS), max(zVegMax, MHHWS), by = 4)
+# targetElevations <- seq(min(zVegMin, meanSeaLevel-meanHighHighWaterSpring), max(zVegMax, meanHighHighWaterSpring), by = 4)
 
 displayAGB <- data.frame(elevation=targetElevation) %>%
   mutate(`no peak evl.`= predictedBiomass(z=targetElevation, bMax=bMax, zVegMax=zVegMax, 
@@ -142,7 +142,7 @@ ggplot(data=displayAGB, aes(x=elevation, y=agb)) +
 
 Sedimentation in MEM is a function of suspended sediment concentration, and three properties of elevation relative to tidal range, the number of tides a year, the mean flood depth, and the mean flood time per tidal cycle. 
 
-The original version of MEM makes some simplistic assumptions about n tides, and flood time. Original MEM assumes that no sedimentation occurs above the MHW line. Here's an example.
+The original version of MEM makes some simplistic assumptions about n tides, and flood time. Original MEM assumes that no sedimentation occurs above the meanHighWater line. Here's an example.
 
 ```{r simple sediment example, fig.width=3.54, fig.height=3.54}
 
@@ -150,11 +150,11 @@ highTidesPerYear <- 352.657
 higherHighTidesPerYear <- 352.657 - 24.720
 springTidesPerYear <- 24.720
 
-weightedMHW <- sum(MHHWS*springTidesPerYear + MHHW*higherHighTidesPerYear + MHW*highTidesPerYear) /
+weightedMHW <- sum(meanHighHighWaterSpring*springTidesPerYear + meanHighHighWater*higherHighTidesPerYear + meanHighWater*highTidesPerYear) /
   sum(highTidesPerYear, higherHighTidesPerYear, springTidesPerYear)
 
-deliveredSedimentExample <- mapply(deliveredSedimentSimple, z=targetElevation, MSL=MSL, MHW=weightedMHW,
-                                   settlingVelocity = settlingVelocity, ssc=ssc)
+deliveredSedimentExample <- mapply(deliveredSedimentSimple, z=targetElevation, meanSeaLevel=meanSeaLevel, meanHighWater=weightedMHW,
+                                   settlingVelocity = settlingVelocity, suspendedSediment=suspendedSediment)
 
 simpleSedimentPlotData <- data.frame(elevation=targetElevation,
                                      deliveredSediment=deliveredSedimentExample)
@@ -165,14 +165,14 @@ ggplot(data=simpleSedimentPlotData, aes(x=elevation, y=deliveredSediment)) +
 
 ```
 
-_Question? Is there a lower limit on sediment delivery to the marsh in MEM? Is it MLW or the lower vegetation line?_
+_Question? Is there a lower limit on sediment delivery to the marsh in MEM? Is it meanLowWater or the lower vegetation line?_
 
 Let's see how the simple vs two tidal cycle modules compare. 
 
 ```{r example of simple vs complex sedimentation modules, warning=FALSE, fig.height=3.54, fig.width=7}
 
-deliveredSedimentExample2 <- mapply(deliveredSediment3TidalCycle, z=targetElevation, ssc=ssc, MSL=MSL,
-                                    MHW=MHW, MHHW=MHHW, MHHWS=MHHWS, settlingVelocity=settlingVelocity)
+deliveredSedimentExample2 <- mapply(deliveredSediment3TidalCycle, z=targetElevation, suspendedSediment=suspendedSediment, meanSeaLevel=meanSeaLevel,
+                                    meanHighWater=meanHighWater, meanHighHighWater=meanHighHighWater, meanHighHighWaterSpring=meanHighHighWaterSpring, settlingVelocity=settlingVelocity)
 
 threeTideSedimentPlotData <- data.frame(elevation=targetElevation,
                                         deliveredSediment = deliveredSedimentExample2,
@@ -186,19 +186,19 @@ totalRange <- ggplot(data=sedimentComparisonPlot, aes(x=elevation, y=deliveredSe
   geom_line(lwd=1.25, aes(color=moduleType), alpha=0.6) +
   ylab(expression(paste("Delivered Sediment (g cm"^"-2",")", sep=""))) +
   ggtitle("Total Tidal Range") +
-  geom_vline(data=data.frame(elevation=c(MSL, MHW, MHHW, MHHWS),
-                             datum=c("MSL", "MHW", "MHHW", "MHHWS")), aes(xintercept=elevation,
+  geom_vline(data=data.frame(elevation=c(meanSeaLevel, meanHighWater, meanHighHighWater, meanHighHighWaterSpring),
+                             datum=c("meanSeaLevel", "meanHighWater", "meanHighHighWater", "meanHighHighWaterSpring")), aes(xintercept=elevation,
                                                                           lty=datum))
 
-sedimentComparisonPlotZoomedIn <- filter(sedimentComparisonPlot, elevation>MHW)
+sedimentComparisonPlotZoomedIn <- filter(sedimentComparisonPlot, elevation>meanHighWater)
 
 # Zoom In
 zoomedIn <- ggplot(data=sedimentComparisonPlotZoomedIn, aes(x=elevation, y=deliveredSediment)) +
   geom_line(lwd=1.25, aes(color=moduleType), alpha=0.6) +
   ylab(expression(paste("Delivered Sediment (g cm"^"-2",")", sep=""))) +
-  ggtitle("Zoomed in Above MHW")  +
-  geom_vline(data=data.frame(elevation=c(MHW, MHHW, MHHWS),
-                             datum=c("MHW", "MHHW", "MHHWS")), 
+  ggtitle("Zoomed in Above meanHighWater")  +
+  geom_vline(data=data.frame(elevation=c(meanHighWater, meanHighHighWater, meanHighHighWaterSpring),
+                             datum=c("meanHighWater", "meanHighHighWater", "meanHighHighWaterSpring")), 
              aes(xintercept=elevation, lty=datum))
 
 grid.arrange(totalRange,zoomedIn, ncol=2)
@@ -207,29 +207,29 @@ grid.arrange(totalRange,zoomedIn, ncol=2)
 
 ### High Tide Scenario Curve Example
 ```{r build scenario}
-exScenarioCurve <- buildScenarioCurve(startYear = 2015, MSL = MSL, rslr0=0.3, 
-                                      rslrTotal = 100, ssc=30)
+exScenarioCurve <- buildScenarioCurve(startYear = 2015, meanSeaLevel = meanSeaLevel, relSeaLevelRiseInit=0.3, 
+                                      rslrTotal = 100, suspendedSediment=30)
 head(exScenarioCurve)
 
-exScenarioCurve <- buildHighTideScenario(scenarioCurve=exScenarioCurve, MHW0=MHW, MHHW0=MHHW, 
-                                         MHHWS0=MHHWS, lunarNodalAmp = lunarNodalAmp)
+exScenarioCurve <- buildHighTideScenario(scenarioCurve=exScenarioCurve, meanHighWaterDatum=meanHighWater, meanHighHighWaterDatum=meanHighHighWater, 
+                                         meanHighHighWaterSpringDatum=meanHighHighWaterSpring, lunarNodalAmp = lunarNodalAmp)
 head(exScenarioCurve)
 
 ggplot(data=exScenarioCurve) + 
-  geom_ribbon(aes(x=years, ymax=MHW, ymin=MSL-(MHW-MSL)), alpha=0.6) +
-  geom_line(aes(x=years, y=MSL), color="black") +
-  geom_point(aes(x=years, y=MSL), color="black", pch=16) +
+  geom_ribbon(aes(x=years, ymax=meanHighWater, ymin=meanSeaLevel-(meanHighWater-meanSeaLevel)), alpha=0.6) +
+  geom_line(aes(x=years, y=meanSeaLevel), color="black") +
+  geom_point(aes(x=years, y=meanSeaLevel), color="black", pch=16) +
   ylab("Water Level (cm NAVD88)") +
   ggtitle("Sea-Level Rise and Tidal Amplitude Scenario.")
 
 highTideScenarios <- exScenarioCurve %>%
-  select(-ssc, -index) %>%
-  gather(value="elevation", key="high tide", -years, -MSL) 
+  select(-suspendedSediment, -index) %>%
+  gather(value="elevation", key="high tide", -years, -meanSeaLevel) 
 
 ggplot(data=exScenarioCurve) + 
-  geom_line(aes(x=years, y=MSL), color="black") +
-  geom_point(aes(x=years, y=MSL), color="black", pch=16) +
-  geom_ribbon(data = highTideScenarios, aes(x=years, ymax=elevation, ymin=MSL-(elevation-MSL), 
+  geom_line(aes(x=years, y=meanSeaLevel), color="black") +
+  geom_point(aes(x=years, y=meanSeaLevel), color="black", pch=16) +
+  geom_ribbon(data = highTideScenarios, aes(x=years, ymax=elevation, ymin=meanSeaLevel-(elevation-meanSeaLevel), 
                                             color=`high tide`),fill=NA) +
   ylab("Water Level (cm NAVD88)") +
   ggtitle("Sea-Level Rise and Multi-Tide Amplitude Scenario.") +
@@ -242,9 +242,9 @@ ggplot(data=exScenarioCurve) +
 ``` {r graph MEM-CTM output}
 # First we'll profile the script
 start_time <- Sys.time()
-memCohortExample <- runMemWithCohorts(startYear=2015, rslrT1=0.3, rslrTotal=100,
-                                      initElv=21.9, MSL=7.4, MHW=16.9, MHHW=25.4, MHHWS=31.2, 
-                                      ssc=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
+memCohortExample <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, rslrTotal=100,
+                                      initElv=21.9, meanSeaLevel=7.4, meanHighWater=16.9, meanHighHighWater=25.4, meanHighHighWaterSpring=31.2, 
+                                      suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
@@ -263,7 +263,7 @@ core <- memCohortExample$core
 head(core)
 
 scenarioNetElevationChange <- scenario %>%
-  select(years, MSL, surfaceElevation) %>%
+  select(years, meanSeaLevel, surfaceElevation) %>%
   gather(key="Elevation Type", value="Elevation", -years)
 
 plot1 <- ggplot(data=scenarioNetElevationChange, aes(x=years, y=Elevation)) +

@@ -31,7 +31,7 @@ testRootProfiles <- rootParams %>%
     data.frame(top_cm = 0:59, 
                bottom_cm = 1:60,
                rootMass_g = massLiveRoots(layerBottom = 1:60, layerTop=0:59, 
-                                          totalRootMass_per_area = .$RT*1e-4, 
+                                          totalRootMassPerArea = .$RT*1e-4, 
                                           rootDepthMax = .$Dm, shape=.$rootShape))
   ))
 
@@ -57,15 +57,15 @@ testNonRootVolume <- nonRootVolParams %>%
     ans <- data.frame(top_cm = 0:59, 
                bottom_cm = 1:60,
                rootMass_g = massLiveRoots(layerBottom = 1:60, layerTop=0:59, 
-                                          totalRootMass_per_area = .$RT*1e-4, 
+                                          totalRootMassPerArea = .$RT*1e-4, 
                                           rootDepthMax = .$Dm, shape=.$rootShape))
     ans$rootVol_cm3 <- ans$rootMass_g/.$k1
     ans$nonRootVol_cm3 <- (ans$bottom_cm - ans$top_cm)*1*1 - ans$rootVol_cm3
     ans$cumNonRootVol_cm3 <- cumsum( ans$nonRootVol_cm3)
-    ans$calcBottom_cm <- depthOfNonRootVolume(nonRootVolume.arr =  ans$cumNonRootVol_cm3,
+    ans$calcBottom_cm <- calculateDepthOfNonRootVolume(nonRootVolume.arr =  ans$cumNonRootVol_cm3,
                                               massLiveRoots.fn = massLiveRoots,
                                               rootDensity = .$k1,
-                                              totalRootMass_per_area = .$RT*1e-4, 
+                                              totalRootMassPerArea = .$RT*1e-4, 
                                               rootDepthMax = .$Dm, 
                                               shape=.$rootShape)
     ans
@@ -91,7 +91,7 @@ inputParams <- inputParams %>%
 
 testInput <- inputParams %>%
   group_by_all() %>%
-  mutate(input_g_per_yr = sedimentInputs(ssc=SSC, meanTidalHeight = D))
+  mutate(input_g_per_yr = sedimentInputs(suspendedSediment=SSC, meanTidalHeight = D))
 
 knitr::kable(testInput)
 ggplot(testInput) +
@@ -125,12 +125,12 @@ for(runName in c('Run1', 'Run2', 'Run3', 'Run4', 'Run5', 'Run6')){
                                                organic = parm$k1,  # Organic Self Packing Densities: k1 g-C/cm3
                                                mineral = parm$k2),
                                 
-                                mineralInput_g_per_yr.fn = sedimentInputs,
-                                ssc = parm$SSC,
+                                mineralInput.fn = sedimentInputs,
+                                suspendedSediment = parm$SSC,
                                 meanTidalHeight = parm$D, 
                                 
                                 massLiveRoots.fn = massLiveRoots,
-                                totalRootMass_per_area = parm$RT*1e-4,
+                                totalRootMassPerArea = parm$RT*1e-4,
                                 rootDepthMax=parm$Dm,
                                 shape=c('exponential', 'linear')[parm$rootShape],
                                 
@@ -147,12 +147,12 @@ for(runName in c('Run1', 'Run2', 'Run3', 'Run4', 'Run5', 'Run6')){
                                                organic = parm$k1,  # Organic Self Packing Densities: k1 g-C/cm3
                                                mineral = parm$k2),
                                 
-                                mineralInput_g_per_yr.fn = sedimentInputs,
-                                ssc = parm$SSC,
+                                mineralInput.fn = sedimentInputs,
+                                suspendedSediment = parm$SSC,
                                 meanTidalHeight = parm$D, 
                                 
                                 massLiveRoots.fn = massLiveRoots,
-                                totalRootMass_per_area = parm$RT*1e-4,
+                                totalRootMassPerArea = parm$RT*1e-4,
                                 rootDepthMax=parm$Dm,
                                 shape=c('exponential', 'linear')[parm$rootShape],
                                 
@@ -185,7 +185,7 @@ for(runName in c('Run1', 'Run2', 'Run3', 'Run4', 'Run5', 'Run6')){
     filter(is.finite(age), (layer_bottom-layer_top) > 0, age > 0) %>%
     mutate(layer_bottom = layer_bottom - layer_top[1]) %>%
     mutate(layer_top = layer_top -layer_top[1]) %>%
-    convertProfile_AgeToDepth(layerTop = 0:(floor(max(profile_byAge$layer_bottom, na.rm=TRUE))-1),
+    convertProfileAgeToDepth(layerTop = 0:(floor(max(profile_byAge$layer_bottom, na.rm=TRUE))-1),
                               layerBottom =  1:(floor(max(profile_byAge$layer_bottom, na.rm=TRUE)))) %>%
     mutate("Core Section or Depth (cm)" = (layer_bottom+layer_top)/2,
            "years of input" = input_yrs,

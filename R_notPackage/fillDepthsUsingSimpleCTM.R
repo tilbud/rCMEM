@@ -13,7 +13,7 @@
 #' @param totalRootBmass Total Root Biomass, g/m2.
 #' @param refractoryFrac Refractory Portion of organic production, g/g.
 #' @param bgTurnover  Below Ground Turnover Rate, 1/yr.
-#' @param ssc Suspended Sediment Concentration, mg per liter.
+#' @param suspendedSediment Suspended Sediment Concentration, mg per liter.
 #' @param depthBelowMHW Depth of Marsh Surface Below Mean High Water.
 #' @param omDecayRate Labile organic matter decay rate, 1/yr.
 #' @param coreYear Core Collection Year CE.
@@ -34,7 +34,7 @@ fillDepthsUsingSimpleCTM <- function(
   totalRootBmass = 3000, # Total Root Biomass, g/m2
   refractoryFrac = 0.2, # Refractory Portion of organic production, g/g
   bgTurnover = 0.5,  # Below Ground Turnover Rate, 1/yr
-  ssc = 20, # Suspended Sediment Concentration, mg per liter
+  suspendedSediment = 20, # Suspended Sediment Concentration, mg per liter
   depthBelowMHW = 10, # Depth of Marsh Surface Below Mean High Water
   omDecayRate = 0.8, # Labile organic matter decay rate, 1/yr
   coreYear = 2015, # Core Collection Year CE
@@ -48,7 +48,7 @@ fillDepthsUsingSimpleCTM <- function(
   # Conversions and constants
   nTidesPerYear <- 704
   meanTidalHeight <- depthBelowMHW
-  ssc_gPerCm2 <- ssc * 0.000001 # convert mg/l to grams/cm^2
+  ssc_gPerCm2 <- suspendedSediment * 0.000001 # convert mg/l to grams/cm^2
   cumAnnWaterVol <- nTidesPerYear * meanTidalHeight # Cumulative water volume
   annSediment <- ssc_gPerCm2 * cumAnnWaterVol
   Csyr <- coreYear - 1963 # Year relative to peak Cesium-137 deposition
@@ -314,10 +314,10 @@ fillDepthsUsingSimpleCTM <- function(
       
       # Create nice display text tables.
       inputTable <- as_tibble(data.frame(
-        inputName = c("rootDepthMax", "totalRootBmass", "refractoryFrac", "ssc", 
+        inputName = c("rootDepthMax", "totalRootBmass", "refractoryFrac", "suspendedSediment", 
                       "omDecayRate", "bgTurnover", "depthBelowMHW", "coreYear", 
                       "k1", "k2"),
-        inputValue = c(rootDepthMax, totalRootBmass, refractoryFrac, ssc, 
+        inputValue = c(rootDepthMax, totalRootBmass, refractoryFrac, suspendedSediment, 
                        omDecayRate, bgTurnover, depthBelowMHW, coreYear, k1, k2),
         units = c("cm","g/m2","g/g","mg/liter", "1/yr","1/yr","cm3","date",
                   "g/cm3","g/cm3")

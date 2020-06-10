@@ -54,24 +54,24 @@ annapolisTideGauge <- read_csv("sampleData/annapolisTideGauge.csv")
 
 annapolisTideGaugeTimeSeries <- annapolisTideGauge %>%
   group_by(Year) %>%
-  summarise(MHW = mean(MHW, na.rm = F), 
-         MSL = mean(MSL, na.rm = F)) %>%
-  select(Year, MHW, MSL) %>%
-  mutate(MSL = na.approx(MSL),
-    TidalRange = MHW-MSL)
+  summarise(meanHighWater = mean(meanHighWater, na.rm = F), 
+         meanSeaLevel = mean(meanSeaLevel, na.rm = F)) %>%
+  select(Year, meanHighWater, meanSeaLevel) %>%
+  mutate(meanSeaLevel = na.approx(meanSeaLevel),
+    TidalRange = meanHighWater-meanSeaLevel)
 
 annapolisTideGaugeTimeSeriesTall <- annapolisTideGaugeTimeSeries %>%
-  select(Year, MHW, MSL) %>%
-  gather(Datum, WaterLevel, c(MHW, MSL)) %>%
+  select(Year, meanHighWater, meanSeaLevel) %>%
+  gather(Datum, WaterLevel, c(meanHighWater, meanSeaLevel)) %>%
   arrange(Year, Datum)
 
-initElv <- elvNAVD88 - ((annapolisTideGaugeTimeSeries$MSL[annapolisTideGaugeTimeSeries$Year == elvYear] -
-  annapolisTideGaugeTimeSeries$MSL[1]) * elvRandomEffect)
+initElv <- elvNAVD88 - ((annapolisTideGaugeTimeSeries$meanSeaLevel[annapolisTideGaugeTimeSeries$Year == elvYear] -
+  annapolisTideGaugeTimeSeries$meanSeaLevel[1]) * elvRandomEffect)
 
-initDepthBelowMHW <- annapolisTideGaugeTimeSeries$MHW[1] - initElv
+initDepthBelowMHW <- annapolisTideGaugeTimeSeries$meanHighWater[1] - initElv
 
-initBiomass <- predictAgbFromElv(initElv, MHWtoNAVD88=annapolisTideGaugeTimeSeries$MHW[1],
-                                 MSLtoNAVD88=annapolisTideGaugeTimeSeries$MSL[1])*rootToShoot
+initBiomass <- predictAgbFromElv(initElv, MHWtoNAVD88=annapolisTideGaugeTimeSeries$meanHighWater[1],
+                                 MSLtoNAVD88=annapolisTideGaugeTimeSeries$meanSeaLevel[1])*rootToShoot
 
 ```
 
@@ -82,7 +82,7 @@ defaultParms <- list(rootDepthMax = 45, # Depth of the root zone in cm below sur
                      rootTurnover = 2.5,  # Below Ground Turnover Rate of roots, 1/yr
                      rootOmFrac = list(fast=0.6, slow=0.4), # root allocation to om pools (labile, slow), g/g
                      omDecayRate = list(fast=0.8, slow=0), # organic matter decay rate (labile, slow), 1/yr
-                     ssc = 30, # Suspended Sediment Concentration, mg per liter
+                     suspendedSediment = 30, # Suspended Sediment Concentration, mg per liter
                      depthBelowMHW = initDepthBelowMHW*100)  # Depth of Marsh Surface Below Mean High Water
 
 defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
@@ -95,7 +95,7 @@ defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
                       modernAge = NA) #max age in modern soil profile
 
 #source('R/massLiveRoots.R')
-#source('R/depthOfNonRootVolume.R')
+#source('R/calculateDepthOfNonRootVolume.R')
 ##source('R/addCohort.R')
 #source('R/sedimentInputs.R')
 #source('R/addCohort.R')
@@ -117,17 +117,17 @@ defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
 # 
 # for (i in 1:nrow(annapolisTideGaugeTimeSeries)) {
 #   
-#   meanTidalHeightAtTime <- annapolisTideGaugeTimeSeries$MHW[i] - surfaceNavd * 100
-#   agbAtTime <- predictAgbFromElv(surfaceNavd, annapolisTideGaugeTimeSeries$MHW[i],
-#                                  annapolisTideGaugeTimeSeries$MSL[i])*rootToShoot
+#   meanTidalHeightAtTime <- annapolisTideGaugeTimeSeries$meanHighWater[i] - surfaceNavd * 100
+#   agbAtTime <- predictAgbFromElv(surfaceNavd, annapolisTideGaugeTimeSeries$meanHighWater[i],
+#                                  annapolisTideGaugeTimeSeries$meanSeaLevel[i])*rootToShoot
 #   
 #   raisingSeaProfile <- addCohort(massPools = raisingSeaProfile,
-#                                ssc = defaultParms$ssc, 
+#                                suspendedSediment = defaultParms$suspendedSediment, 
 #                                 meanTidalHeight = meanTidalHeightAtTime, 
 #                                 rootTurnover = defaultParms$rootTurnover, 
 #                                 rootOmFrac = defaultParms$rootOmFrac,
 #                                 omDecayRate = defaultParms$omDecayRate,
-#                                 totalRootMass_per_area = agbAtTime, 
+#                                 totalRootMassPerArea = agbAtTime, 
 #                                 rootDepthMax = defaultParms$rootDepthMax,
 #                                 consts = defaultConsts)
 #   
@@ -165,23 +165,23 @@ store_ZstarAndAGB <- data.frame(Zstar = rep(NA, nrow(annapolisTideGaugeTimeSerie
 
 for (i in 1:nrow(annapolisTideGaugeTimeSeries)) {
   
-  meanTidalHeightAtTime <- annapolisTideGaugeTimeSeries$MHW[i] - surfaceNavd * 100
+  meanTidalHeightAtTime <- annapolisTideGaugeTimeSeries$meanHighWater[i] - surfaceNavd * 100
   
-  agbAtTime <- predictAgbFromElv(surfaceNavd, annapolisTideGaugeTimeSeries$MHW[i],
-                                 annapolisTideGaugeTimeSeries$MSL[i])*rootToShoot
+  agbAtTime <- predictAgbFromElv(surfaceNavd, annapolisTideGaugeTimeSeries$meanHighWater[i],
+                                 annapolisTideGaugeTimeSeries$meanSeaLevel[i])*rootToShoot
   
-  store_ZstarAndAGB$Zstar[i] <- (surfaceNavd-annapolisTideGaugeTimeSeries$MSL[i]) /
-    (annapolisTideGaugeTimeSeries$MHW[i]-annapolisTideGaugeTimeSeries$MSL[i])
+  store_ZstarAndAGB$Zstar[i] <- (surfaceNavd-annapolisTideGaugeTimeSeries$meanSeaLevel[i]) /
+    (annapolisTideGaugeTimeSeries$meanHighWater[i]-annapolisTideGaugeTimeSeries$meanSeaLevel[i])
 
   store_ZstarAndAGB$AGB[i]<-agbAtTime
   
   raisingSeaProfile <- addCohort(massPools = raisingSeaProfile,
-                               ssc = defaultParms$ssc, 
+                               suspendedSediment = defaultParms$suspendedSediment, 
                                 meanTidalHeight = meanTidalHeightAtTime, 
                                 rootTurnover = defaultParms$rootTurnover, 
                                 rootOmFrac = defaultParms$rootOmFrac,
                                 omDecayRate = defaultParms$omDecayRate,
-                                totalRootMass_per_area = agbAtTime, 
+                                totalRootMassPerArea = agbAtTime, 
                                 rootDepthMax = defaultParms$rootDepthMax,
                                 consts = defaultConsts)
   

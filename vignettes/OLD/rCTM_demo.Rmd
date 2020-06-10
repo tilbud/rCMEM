@@ -53,7 +53,7 @@ fillDepthsUsingSimpleCTM(rootShape = "exponential", graphingOn = T,
 ```{r extreme inputs, warning=FALSE, message = FALSE, results = 'hide'}
 # Try totally different inputs
 fillDepthsUsingSimpleCTM(totalDepth = 100, rootDepthMax = 45, totalRootBmass = 5000,
-                         refractoryFrac = 0.3, bgTurnover = 1, ssc = 60, depthBelowMHW = 20,
+                         refractoryFrac = 0.3, bgTurnover = 1, suspendedSediment = 60, depthBelowMHW = 20,
                          omDecayRate = 0.1, plotName = "rCTM_extremeInputs", graphingOn = TRUE)
 ```
 

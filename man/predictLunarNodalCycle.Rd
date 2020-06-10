@@ -4,14 +4,14 @@
 \alias{predictLunarNodalCycle}
 \title{Predict lunar nodal cycle}
 \usage{
-predictLunarNodalCycle(year, floodElv, MSL0, MSL, lunarNodalAmp)
+predictLunarNodalCycle(year, floodElv, meanSeaLevelDatum, meanSeaLevel, lunarNodalAmp)
 }
 \arguments{
 \item{floodElv}{a numeric, high tide level over the last complete 18 year datum period}
 
-\item{MSL0}{a numeric, mean sea-level over the last complete 18 year datum period}
+\item{meanSeaLevelDatum}{a numeric, mean sea-level over the last complete 18 year datum period}
 
-\item{MSL}{a vector, mean sea-level for each scenario we are predicting}
+\item{meanSeaLevel}{a vector, mean sea-level for each scenario we are predicting}
 
 \item{lunarNodalAmp}{the amplitude of the 18 year lunar nodal cycle}
 }
