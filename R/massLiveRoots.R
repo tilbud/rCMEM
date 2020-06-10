@@ -11,10 +11,11 @@
 #' 
 #' @param layerBottom an array of depths from soil top to the bottom of the layer, generally in cm
 #' @param layerTop an array of depths from soil top to the top of the layer, generally in cm
-#' @param totalRootMass_per_area an integer that is the total mass per area of the roots, generally in g cm-3
+#' @param totalRootMassPerArea an integer that is the total mass per area of the roots, generally in g cm-3
 #' @param soilLength unit length of soil area, generally 1
 #' @param soilWidth unit width of soil area, generally 1.
 #' @param shape flag of root shape, only \code{linear} is implimented.
+#' @param expDecayRatePerMaxDepth a numeric, value for exponential decay rate per maximum root depth
 #' @param ... 
 #' @param rootDepthMax an integer that is the maximum root depth, generally in cm
 #'
@@ -23,17 +24,17 @@
 #'
 #' @examples
 #' massLiveRoots(layerBottom = 1:10, layerTop = 0:9, 
-#'               totalRootMass_per_area = 0.3, rootDepthMax=5,
+#'               totalRootMassPerArea = 0.3, rootDepthMax=5,
 #'               soilLength=1, soilWidth=1, shape='linear')
 massLiveRoots <- function(layerBottom, layerTop, 
-                          totalRootMass_per_area, 
+                          totalRootMassPerArea, 
                           rootDepthMax,
                           soilLength=1, soilWidth=1, 
                           shape,
-                          expDecayRate_perMaxDepth = log(0.05),
+                          expDecayRatePerMaxDepth = log(0.05),
                           ...){
   
-  totalRootMass <- soilLength*soilWidth*totalRootMass_per_area
+  totalRootMass <- soilLength*soilWidth*totalRootMassPerArea
   
   if (totalRootMass == 0) {
     rootMass <- rep(0, length(layerBottom))
@@ -81,7 +82,7 @@ massLiveRoots <- function(layerBottom, layerTop,
         #         mass = (a / b * exp(b * x2) - m * x2) - (a / b * exp(b * x1) - m * x1)
         #         mass = a / b * (exp(b * x2)-exp(b * x1)) + m *(x1 - x2)
         #layerTop <- 0; layerBottom = 1; expDecayRate_perRootDepthMax <- log(0.05); totalRootMass <- 0.2; rootDepthMax <- 30
-        b <- expDecayRate_perMaxDepth / rootDepthMax #convert from total profile to per cm
+        b <- expDecayRatePerMaxDepth / rootDepthMax #convert from total profile to per cm
         a <- totalRootMass * (1 / b * exp(b * rootDepthMax) -  
                                 exp(b * rootDepthMax) * rootDepthMax - 1 / b)^-1
         m <- a * exp(b * rootDepthMax)

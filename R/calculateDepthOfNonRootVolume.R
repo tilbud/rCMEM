@@ -2,7 +2,7 @@
 #' 
 #' Given a shape and mass for the roots, calculate the depth of a specific non-root volume. A specific solution is implimented for linear root volumes, and a general solution otherwise requires the \code{massLiveRoots.fn} to be specified. The general solution is a bineary search algorithm. 
 #'
-#' @param totalRootMass_per_area an integer that is the total mass per area of the roots, generally in g cm-3
+#' @param totalRootMassPerArea an integer that is the total mass per area of the roots, generally in g cm-3
 #' @param rootDepthMax an integer that is the maximum root depth, generally in cm
 #' @param rootDensity a numeric that is the root density in g per cm3
 #' @param soilLength a numeric of the unit length of soil volume, generally 1 cm
@@ -17,9 +17,10 @@
 #' @return A numeric corresponding to the depth of the specificed non root volume
 #' 
 #' @export
-depthOfNotRootVolume <- function(nonRootVolume.arr, 
+
+calculateDepthOfNonRootVolume <- function(nonRootVolume.arr, 
                                  massLiveRoots.fn = NULL,
-                                 totalRootMass_per_area, 
+                                 totalRootMassPerArea, 
                                  rootDepthMax, 
                                  rootDensity,
                                  shape = 'linear',
@@ -29,15 +30,25 @@ depthOfNotRootVolume <- function(nonRootVolume.arr,
                                  ...){
   
   ####
-  totalRootMass <- soilLength*soilWidth*totalRootMass_per_area
+  totalRootMass <- soilLength*soilWidth*totalRootMassPerArea
+
+  if(verbose) print(paste('totalRootMass = ', totalRootMass))
+  
   totalRootVolume <- totalRootMass/rootDensity
+  if(verbose) print(paste('totalRootVolume = ', totalRootVolume))
   
   if(totalRootVolume > soilLength*soilWidth*rootDepthMax){
     stop('Bad root volume')
   }
   
+
+  if(totalRootMassPerArea == 0){
+    return(nonRootVolume.arr*soilLength*soilWidth)
+  }
+  
   ##If the shape is linear then solve the non-root volume depth explicitly 
   if(shape == 'linear'){
+    if(verbose) print('We are linear.')
     rootWidth <- totalRootVolume*2/(rootDepthMax*soilLength)
     
     #nonRootVolume = ((rootWidth/rootDepthMax*depth^2)/2 + depth*(soilWidth-rootWidth))*soilLength
@@ -50,6 +61,12 @@ depthOfNotRootVolume <- function(nonRootVolume.arr,
     
     #correct for beyond root zone
     behondRootZone <- nonRootVolume.arr > soilLength*soilWidth*rootDepthMax - totalRootVolume
+
+    
+    if(verbose) print(paste0('nonRootVolume.arr: [', paste0(nonRootVolume.arr, collapse = ', '), ']'))
+    if(verbose) print(paste0('nrv comparison: [', paste0(soilLength*soilWidth*rootDepthMax - totalRootVolume, collapse = ', '), ']'))
+    if(verbose) print(paste0('beyondRootZon: [', paste0(behondRootZone, collapse = ', '), ']'))
+
     ansDepth[behondRootZone] <- (rootDepthMax +
                                    (nonRootVolume.arr - soilLength*soilWidth*rootDepthMax + totalRootVolume ) /
                                    (soilLength*soilWidth)) [behondRootZone] #treat as a square
@@ -90,7 +107,7 @@ depthOfNotRootVolume <- function(nonRootVolume.arr,
       for(ii in 1:maxSearchDepth){
         if(verbose)cat(paste('ii=', ii, '\n\tincrament=', incrament, '\n\tpossibleDepth=', possibleDepth))
         rootVolume <- massLiveRoots.fn(layerTop = 0, layerBottom = possibleDepth,
-                                       totalRootMass_per_area = totalRootMass_per_area, 
+                                       totalRootMassPerArea = totalRootMassPerArea, 
                                        rootDepthMax=rootDepthMax, 
                                        soilLength=soilLength, soilWidth=soilWidth, shape=shape 
         ) / rootDensity

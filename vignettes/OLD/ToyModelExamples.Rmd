@@ -15,7 +15,7 @@ library(tidyverse)
 #library(devtools)
 #install_github("tilbud/MEMs")
 
-library(MEMs)
+library(rCTM)
 
 ##Debug option
 #purrr::walk(list.files('../R', full.names = TRUE), source)
@@ -25,7 +25,7 @@ defaultParms <- list(rootDepthMax = 30, # Depth of the root zone in cm below sur
                      rootTurnover = 0.5,  # Below Ground Turnover Rate of roots, 1/yr
                      rootOmFrac = list(fast=0.8, slow=0.2), # root allocation to om pools (labile, slow), g/g
                      omDecayRate = list(fast=0.8, slow=0), # organic matter decay rate (labile, slow), 1/yr
-                     ssc = 20, # Suspended Sediment Concentration, mg per liter
+                     suspendedSediment = 20, # Suspended Sediment Concentration, mg per liter
                      depthBelowMHW = 10) # Depth of Marsh Surface Below Mean High Water
 
 defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
@@ -44,7 +44,7 @@ defaultConsts <- list(soilLength = 1, soilWidth = 1, #assume a 1x1 cm2 area
 
 ##Check liveRoots
 testRoots <- massLiveRoots(layerBottom = seq(5, 40, by=5), layerTop=seq(0, 35, by=5),
-                    totalRootMass_per_area = defaultParms$totalRootBiomass,
+                    totalRootMassPerArea = defaultParms$totalRootBiomass,
                     rootDepthMax=defaultParms$rootDepthMax)
 plot(x=1/2*(seq(5, 40, by=5) + seq(0, 35, by=5)), y=testRoots)
 
@@ -56,7 +56,7 @@ paste('Conservation of mass is: ', sum(testRoots) - defaultParms$totalRootBiomas
 
 ##Check depth of non root volue
 testDepth <- depthOfNotRootVolume(nonRootVolume = 1:100,
-                                  totalRootMass_per_area = defaultParms$totalRootBiomass,
+                                  totalRootMassPerArea = defaultParms$totalRootBiomass,
                                   rootDepthMax=defaultParms$rootDepthMax,
                                   rootDensity = defaultConsts$packing$root)
 plot(testDepth)
@@ -66,7 +66,7 @@ plot(testDepth[1:99] - testDepth[2:100])
 ## Sediment input
 ```{r functionSedIn}
 #constant input of sediment
-defaultSedIn <- sedimentInputs(ssc = defaultParms$ssc, # Suspended Sediment Concentration, mg per liter
+defaultSedIn <- sedimentInputs(suspendedSediment = defaultParms$suspendedSediment, # Suspended Sediment Concentration, mg per liter
                meanTidalHeight = defaultParms$depthBelowMHW #mean tide height above marsh
                )
 
@@ -92,17 +92,17 @@ for(ii in 1:100){
                                omDecayRate = defaultParms$omDecayRate,
                                packing = defaultConsts$packing,
                                
-                               mineralInput_g_per_yr.fn = sedimentInputs,
-                               ssc = defaultParms$ssc, 
+                               mineralInput.fn = sedimentInputs,
+                               suspendedSediment = defaultParms$suspendedSediment, 
                                meanTidalHeight = defaultParms$depthBelowMHW, 
                                
                                massLiveRoots.fn = massLiveRoots,
-                               totalRootMass_per_area = defaultParms$totalRootBiomass,
+                               totalRootMassPerArea = defaultParms$totalRootBiomass,
                                rootDepthMax=defaultParms$rootDepthMax,
                                
                                depthOfNotRootVolume.fn = depthOfNotRootVolume,
                                rootDensity = defaultConsts$packing$root
-                               #totalRootMass_per_area, 
+                               #totalRootMassPerArea, 
                                #  rootDepthMax,
                                )
 }
@@ -118,12 +118,12 @@ equProfile <- runToEquilibrium(rootTurnover = defaultParms$rootTurnover,
                                omDecayRate = defaultParms$omDecayRate,
                                packing = defaultConsts$packing,
                                
-                               mineralInput_g_per_yr.fn = sedimentInputs,
-                               ssc = defaultParms$ssc, 
+                               mineralInput.fn = sedimentInputs,
+                               suspendedSediment = defaultParms$suspendedSediment, 
                                meanTidalHeight = defaultParms$depthBelowMHW, 
                                
                                massLiveRoots.fn = massLiveRoots,
-                               totalRootMass_per_area = defaultParms$totalRootBiomass,
+                               totalRootMassPerArea = defaultParms$totalRootBiomass,
                                rootDepthMax = defaultParms$rootDepthMax,
                                
                                depthOfNotRootVolume.fn = depthOfNotRootVolume,
@@ -151,10 +151,10 @@ for(ii in 1:100){
                                omDecayRate = defaultParms$omDecayRate,
                                packing = defaultConsts$packing,
                                
-                               mineralInput_g_per_yr.fn = (function(...)0), #set 0 inputs
+                               mineralInput.fn = (function(...)0), #set 0 inputs
                                
                                massLiveRoots.fn = massLiveRoots,
-                               totalRootMass_per_area = defaultParms$totalRootBiomass,
+                               totalRootMassPerArea = defaultParms$totalRootBiomass,
                                rootDepthMax=defaultParms$rootDepthMax,
                                
                                depthOfNotRootVolume.fn = depthOfNotRootVolume,
@@ -192,13 +192,13 @@ for(ii in 1:100){
                                omDecayRate = defaultParms$omDecayRate,
                                packing = defaultConsts$packing,
                                
-                               mineralInput_g_per_yr.fn = sedimentInputs,
-                               ssc = defaultParms$ssc, 
+                               mineralInput.fn = sedimentInputs,
+                               suspendedSediment = defaultParms$suspendedSediment, 
                                meanTidalHeight = defaultParms$depthBelowMHW + startingElevation -
                                  max(steadySeaProfile$layer_bottom, na.rm=TRUE),
                                
                                massLiveRoots.fn = massLiveRoots,
-                               totalRootMass_per_area = defaultParms$totalRootBiomass,
+                               totalRootMassPerArea = defaultParms$totalRootBiomass,
                                rootDepthMax=defaultParms$rootDepthMax,
                                
                                depthOfNotRootVolume.fn = depthOfNotRootVolume,
@@ -210,14 +210,14 @@ for(ii in 1:100){
                                omDecayRate = defaultParms$omDecayRate,
                                packing = defaultConsts$packing,
                                
-                               mineralInput_g_per_yr.fn = sedimentInputs,
-                               ssc = defaultParms$ssc, 
+                               mineralInput.fn = sedimentInputs,
+                               suspendedSediment = defaultParms$suspendedSediment, 
                                meanTidalHeight = defaultParms$depthBelowMHW+0.03*ii + 
                                  startingElevation -
                                  max(steadySeaProfile$layer_bottom, na.rm=TRUE),
                                
                                massLiveRoots.fn = massLiveRoots,
-                               totalRootMass_per_area = defaultParms$totalRootBiomass,
+                               totalRootMassPerArea = defaultParms$totalRootBiomass,
                                rootDepthMax=defaultParms$rootDepthMax,
                                
                                depthOfNotRootVolume.fn = depthOfNotRootVolume,
@@ -260,7 +260,7 @@ ggplot(plot.df) +
 ```{r convertToUnifDepth}
 equProfile <- equProfile[is.finite(equProfile$age),]
 sampleStep<- 5
-profile_by_depth <- convertProfile_AgeToDepth(equProfile,
+profile_by_depth <- convertProfileAgeToDepth(equProfile,
   layerTop = seq(0, floor(max(equProfile$layer_top) - sampleStep),by=sampleStep), 
   layerBottom = seq(sampleStep, floor(max(equProfile$layer_top)), by=sampleStep))
 
@@ -286,7 +286,7 @@ parametersToRun <- expand.grid(rootDepthMax=c(15, 30, 60),
             rootTurnover=c(0.25, 0.5, 0.9),
             rootOmFrac_fast=c(0.2, 0.4, 0.8),
             omDecayRate_fast=c(0.2, 0.4, 0.8),
-            ssc=c(10, 20, 40),
+            suspendedSediment=c(10, 20, 40),
             depthBelowMHW=c(5, 10, 20)) %>%
   filter(rootDepthMax*defaultConsts$packing$root/2 >
            totalRootBiomass) %>% #check that we don't have above a max biomass per area
@@ -301,19 +301,19 @@ parametersToRun <- expand.grid(rootDepthMax=c(15, 30, 60),
                      rootOmFrac = list(fast=xx$rootOmFrac_fast, 
                                        slow=1-xx$rootOmFrac_fast), # root allocation to om pools (labile, slow), g/g
                      omDecayRate = list(fast=xx$omDecayRate_fast, slow=0), # organic matter decay rate (labile, slow), 1/yr
-                     ssc = xx$ssc, # Suspended Sediment Concentration, mg per liter
+                     suspendedSediment = xx$suspendedSediment, # Suspended Sediment Concentration, mg per liter
                      depthBelowMHW = xx$depthBelowMHW)
     return(runToEquilibrium(rootTurnover = newParms$rootTurnover, 
                             rootOmFrac = newParms$rootOmFrac,
                             omDecayRate = newParms$omDecayRate,
                             packing = defaultConsts$packing,
                             
-                            mineralInput_g_per_yr.fn = sedimentInputs,
-                            ssc = newParms$ssc, 
+                            mineralInput.fn = sedimentInputs,
+                            suspendedSediment = newParms$suspendedSediment, 
                             meanTidalHeight = newParms$depthBelowMHW, 
                             
                             massLiveRoots.fn = massLiveRoots,
-                            totalRootMass_per_area = newParms$totalRootBiomass,
+                            totalRootMassPerArea = newParms$totalRootBiomass,
                             rootDepthMax = newParms$rootDepthMax,
                             
                             depthOfNotRootVolume.fn = depthOfNotRootVolume,
