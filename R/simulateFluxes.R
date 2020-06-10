@@ -1,71 +1,21 @@
----
-title: "MEM Fluxes"
-author: "James R Holmquist"
-date: "5/21/2020"
-output: pdf_document
----
-
-```{r setup, include=TRUE}
-
-require(rCTM)
-require(tidyverse)
-require(gridExtra)
-
-```
-
-``` {r graph MEM-CTM output}
-# First we'll profile the script
-start_time <- Sys.time()
-memCohortExample <- runMemWithCohorts(startYear=2015, rslrT1=0.3, rslrTotal=100,
-                                      initElv=32, MSL=7.4, MHW=16.9, MHHW=25.4, MHHWS=31.2, 
-                                      ssc=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
-                                      zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
-                                      plantElevationType="orthometric", rootToShoot=2,
-                                      rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
-                                      recalcitrantFrac=0.2, settlingVelocity=2.8)
-print(Sys.time()-start_time)
-```
-
-```{r functionsForDeterminingFluxes}
-
-omToOcParams <- list(B=0,
-                     B1=0.42)
-
-salinity <- 3
-
-salThreshold <- 14
-salRate <- 0.5
-
-salinityPlot <- 1:32 
-
-maxCH4effect <- 1
-
-salEffect <- maxCH4effect/(1+exp(salRate*(salinityPlot-salThreshold)))
-
-plot(x=salinityPlot, y=salEffect, type = "l",
-     xlab = "salinity (ppt)",
-     ylab = "Salinity effect")
-
-```
-
-``` {r memOutputsToFluxes}
-
-# Going to write a function that takes MEM outputs and pareses the fluxes into CO2 and CH4
-memOutputsToFluxes <- function(cohorts, annualTimeSteps, 
-                               omToOcParams = list(B=0, B1=0.42),
-                               salinity = 32,
-                               salThreshold = 14,
-                               salRate = 0.5,
-                               maxCH4effect = 1) {
+#` 
+#` 
+simulateFluxes <- function(cohorts, annualTimeSteps,
+                           omToOcParams = list(B0=0, B1=0.48),
+                           salinity = 32,
+                           salThreshold = 14,
+                           salRate = 0.5,
+                           maxCH4effect = 1,
+                           agbTurnoverRate = NA) {
   
   # To convert OM to OC
   # If parmeter list is 2 long then simple linear correlation
   if (length(omToOcParams) == 2) {
-    omToOc <- function(om, B=omToOcParams$B, B1=omToOcParams$B1) {return(B + om*B1)}
+    omToOc <- function(om, B0=omToOcParams$B0, B1=omToOcParams$B1) {return(B0 + om*B1)}
   } else if (length(omToOcParams) == 3) {
     # If parameter list is 3 long, then it's quadratic
-    omToOc <- function(om, B=omToOcParams$B, B1=omToOcParams$B1,
-                       B2=omToOcParams$B2) {return(B + om*B1 + om^2*B2)}
+    omToOc <- function(om, B0=omToOcParams$B0, B1=omToOcParams$B1,
+                       B2=omToOcParams$B2) {return(B0 + om*B1 + om^2*B2)}
   } else {
     # If something else then trip an error message
     stop("Invalid number of organic matter to organic carbon conversion parameters,")
@@ -78,7 +28,7 @@ memOutputsToFluxes <- function(cohorts, annualTimeSteps,
   if (length(salinity == 1) | length(salinity) == nrow(annualTimeSteps)) {
     annualTimeSteps <- dplyr::mutate(annualTimeSteps, salinity = salinity)
   } else {
-    stop("Invalid entry for salinities, either one single value, or one for each year of the simulation.")
+    stop("Invalid entry for salinities. Use either one single value, or one for each year of the simulation.")
   }
   
   # Create a table of tidal cycles
@@ -99,21 +49,21 @@ memOutputsToFluxes <- function(cohorts, annualTimeSteps,
     dplyr::mutate(datumLow = MSL-(datumHigh-MSL)) %>% 
     dplyr::left_join(tidalCycles) %>% 
     dplyr::arrange(year, datum) # not really necessary
-    
+  
   C_to_CH4 <- 16.04 / 12.01
   C_to_CO2 <- 44.01 / 12.01
   
   ghgFluxesCohorts <- cohorts %>% 
-    select(year, age, respired_OM, layer_top, layer_bottom) %>% 
+    dplyr::select(year, age, respired_OM, layer_top, layer_bottom) %>% 
     # Join the Surface Elevation, MSL, MHW, MHHW, and MHHWS, 
     # and salinity data from annual time steps to cohorts
     dplyr::full_join(timeStepsRelevantData) %>% 
     # Calculate fractional inundation time for each cohort
     dplyr::mutate(layer_mid = layer_bottom - ((layer_bottom-layer_top)/2),
                   z = surfaceElevation - layer_mid,
-      floodTime = ifelse(z > datumHigh,
-                         0, floodTimeFromDatum(z = z, datumHigh = datumHigh,
-                                               datumLow = datumLow) * nTides)) %>%
+                  floodTime = ifelse(z > datumHigh,
+                                     0, floodTimeFromDatum(z = z, datumHigh = datumHigh,
+                                                           datumLow = datumLow) * nTides)) %>%
     dplyr::select(year, age, layer_top, layer_bottom, layer_mid, respired_OM, salinity, floodTime) %>% 
     dplyr::group_by(year, age, layer_top, layer_bottom, layer_mid, respired_OM, salinity) %>% 
     dplyr::summarise(floodTime = sum(floodTime)) %>% 
@@ -134,7 +84,7 @@ memOutputsToFluxes <- function(cohorts, annualTimeSteps,
   ghgFluxesAnnual <- ghgFluxesCohorts %>% 
     dplyr::group_by(year) %>% 
     dplyr::summarise(respired_CH4 = sum(respired_CH4), # Summarise each years CH4 emission
-              respired_CO2 = sum(respired_CO2)) # Summarise each year's CO2 respiration
+                     respired_CO2 = sum(respired_CO2)) # Summarise each year's CO2 respiration
   
   co2_removal <- cohorts %>% 
     dplyr::group_by(year) %>% 
@@ -147,44 +97,7 @@ memOutputsToFluxes <- function(cohorts, annualTimeSteps,
   
   ghgFluxesAnnual <- dplyr::left_join(ghgFluxesAnnual, co2_removal,
                                       by=c("year"))
-    
+  
   return(list(ghgFluxesCohorts, ghgFluxesAnnual))
   
-  }
-
-ghgFluxesAnnual <- memOutputsToFluxes(cohorts = memCohortExample$cohorts,
-                                      annualTimeSteps = memCohortExample$annualTimeSteps,
-                                      salinity=3)
-
-ghgFluxesAnnualPlot <- ghgFluxesAnnual[[2]] %>%
-  gather(value = "flux", key = "gas", -year) %>% 
-  # bind_rows(co2_removal_plot) %>% 
-  mutate(flux = flux * 10000)
-
-ggplot(data = ghgFluxesAnnualPlot, aes(x=year, y=flux, color = gas)) +
-  geom_line() +
-  geom_point() +
-  ylab(expression(paste("flux (g m"^"-2", " yr"^"-1", ")")))
-
-ggsave("../../../Desktop/MEM_CH4_Attempt_Flux_200522.jpg",
-       width=4,
-       height=3)
-
-subsetOfYears <- seq(min(ghgFluxesAnnual[[1]]$year),
-                     max(ghgFluxesAnnual[[1]]$year),
-                     4)
-ghgFluxesCohortsPlot <- filter(ghgFluxesAnnual[[1]],
-                               year %in% subsetOfYears)
-
-ggplot(ghgFluxesCohortsPlot, aes(x=layer_mid, y=respired_CH4)) +
-  geom_line(aes(color = as.character(year)), alpha=0.6) +
-  coord_flip() +
-  scale_x_reverse() +
-  xlab("Profile Depth (cm)") +
-  ylab(expression(paste("CH"[4], " Flux (g cm"^"-2", " yr"^"-1", ")")))
-
-ggsave("../../../Desktop/MEM_CH4_DepthSeries_200522.jpg",
-       width=4,
-       height=3)
-
-```
+}

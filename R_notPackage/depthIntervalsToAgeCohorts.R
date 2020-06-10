@@ -1,5 +1,7 @@
 depthIntervalsToAgeCohorts <- function(inputDF,
-                                       ageColumn = "horizonAge_yrs") {
+                                       ageColumn = "age",
+                                       minColumn = "layer_top",
+                                       maxColumn = "layer_bottom") {
   # This function takes a table with an age depth model as an attribute,
   # depthMin and depthMax need to be already present.
   # The function iterates through the age depth model to create an annual cohort
@@ -7,7 +9,9 @@ depthIntervalsToAgeCohorts <- function(inputDF,
   
   # First create a new data frame with min and max ages
   tempDf <- inputDF %>%
-    rename(ageMax = ageColumn) %>%
+    rename(ageMax = ageColumn, # a lot of this could be cleaned up with better data management
+           depthMin = minColumn,
+           depthMax = maxColumn) %>%
     mutate(ageMin = ifelse(ageMax == min(ageMax),
                            0, lag(ageMax)),
            accretionRate = (depthMax - depthMin)/(ageMax-ageMin)) %>%
@@ -36,7 +40,8 @@ depthIntervalsToAgeCohorts <- function(inputDF,
     #   table. These should add up to one. Most should be 0.
     depthWeights <- mapply(return_overlap,
                            x1=cohortStartYear, x2=cohortEndYear, 
-                           y1=tempDf$ageMin, y2=tempDf$ageMax)
+                           y1=tempDf$ageMin, y2=tempDf$ageMax)/(tempDf$ageMax-tempDf$depthMin)
+    
     
     # For each target attribute multiply the depth series by the weights, by transforming
     # it to a matrix, getting the colmun sums and then converting back to a dataframe.

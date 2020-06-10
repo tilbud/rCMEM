@@ -4,7 +4,7 @@
 \alias{runToEquilibrium}
 \title{Run to equilbrium with proscribed surface mineral input}
 \usage{
-runToEquilibrium(minAge = 50, maxAge = 200, recordEvolution = FALSE,
+runToEquilibrium(minAge = 50, maxAge = 500, recordEvolution = FALSE,
   relTol = 1e-06, absTol = 1e-08, ...)
 }
 \arguments{

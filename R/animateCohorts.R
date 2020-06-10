@@ -31,9 +31,13 @@ animateCohorts <- function(cohorts, scenario,
   # First reshape the mass cohorts so that they're in long form
   mass_cohorts <- cohorts %>%
     dplyr::select(-cumCohortVol, -respired_OM) %>% 
+    dplyr::filter(complete.cases(.)) %>% 
+    dplyr::group_by(year) %>% 
+    dplyr::mutate(cohortIndex = length(age):1) %>% 
+    ungroup() %>% 
     tidyr::gather(key = "mass_pool", value = "mass_fraction", 
-           -age, -year, -layer_top, -layer_bottom) %>%
-    dplyr::group_by(year, age) %>%
+           -age, -year, -layer_top, -layer_bottom, -cohortIndex) %>%
+    dplyr::group_by(year, age, cohortIndex) %>%
     dplyr::mutate(mass_pool = factor(mass_pool, 
                               levels=c("mineral", 
                                        "slow_OM", 
