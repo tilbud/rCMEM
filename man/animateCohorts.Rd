@@ -25,6 +25,8 @@ animateCohorts(
 
 \item{savePath}{character, filepath to save animation to}
 
+\item{chPalette}{vector, a vector of colors to use to symbolize the different mass cohorts}
+
 \item{trackThresholds}{vector, a vector of characters indicating which water leves in the scenario table to map as horizontal lines}
 
 \item{duration}{numeric, length in seconds of the animation}
@@ -32,8 +34,6 @@ animateCohorts(
 \item{width}{numeric, width in inches of the .gif}
 
 \item{height}{numeric, height in inches of the .gif}
-
-\item{chPalette}{vector, a vector of colors to use to symbolize the different mass cohorts}
 }
 \description{
 This function takes two MEM outputs, cohorts and scenario tables, as inputs and visualizes soil formation as an animated .gif

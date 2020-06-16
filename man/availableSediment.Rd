@@ -4,7 +4,12 @@
 \alias{availableSediment}
 \title{Calculate available sediment}
 \usage{
-availableSediment(floodPct, suspendedSediment, settlingVelocity, capturedSediment = 1)
+availableSediment(
+  floodPct,
+  suspendedSediment,
+  settlingVelocity,
+  capturedSediment = 1
+)
 }
 \arguments{
 \item{floodPct}{a numeric, fraction of time per tidal cycle the marsh is inundated}
