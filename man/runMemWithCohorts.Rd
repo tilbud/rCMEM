@@ -8,7 +8,7 @@ runMemWithCohorts(
   startYear,
   endYear = startYear + 99,
   relSeaLevelRiseInit,
-  rslrTotal,
+  relSeaLevelRiseTotal,
   initElv,
   meanSeaLevel,
   meanSeaLevelDatum = meanSeaLevel[1],
@@ -46,7 +46,7 @@ runMemWithCohorts(
 
 \item{relSeaLevelRiseInit}{a numeric, initial rate of relative sea-level rise}
 
-\item{rslrTotal}{a numeric, total relative sea-level rise over the course of the scanario}
+\item{relSeaLevelRiseTotal}{a numeric, total relative sea-level rise over the course of the scanario}
 
 \item{initElv}{a numeric, the initial elevation of the marsh at the start of the scenario}
 
