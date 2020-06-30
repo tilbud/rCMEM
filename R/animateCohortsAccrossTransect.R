@@ -33,7 +33,7 @@ animateCohortsAccrossTransect <- function(scenarioTransect, cohortsTransect,
                                                      frame = year
   )) +
     geom_rect(aes(fill = fraction_om), color = rgb(0,0,0, alpha = 0.1)) +
-    scale_fill_gradient2(low = "darkgrey", mid = "lightgrey", high = "darkgreen", midpoint = 0.14, name = "Organic Matter (fraction)") + 
+    scale_fill_gradient2(low = "darkgrey", mid = "lightgrey", high = "darkgreen", midpoint = 0.5, name = "Organic Matter (fraction)") + 
     theme_minimal() +
     geom_hline(data=waterLevel, aes(yintercept=waterLevel, lty=datum), color="blue") +
     ylab("Depth (cm NAVD88)") +
@@ -52,12 +52,6 @@ animateCohortsAccrossTransect <- function(scenarioTransect, cohortsTransect,
   (tempAnimation)
   
   gganimate::anim_save(filename=filename,
-                       animation=soil_transect,
-                       path=savePath,
-                       duration = duration,
-                       renderer = gifski_renderer(),
-                       width = width, 
-                       height = height, 
-                       units = "in", 
-                       res = 300) 
+                       animation=tempAnimation,
+                       path=savePath) 
 }

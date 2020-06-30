@@ -95,14 +95,14 @@ runMemWithCohortsAccrossTransect <- function(initElvMin=MSL[1], initElvMax=max(M
     
   }
   
-  scenarioTransectGraph <- scenarioTransect %>% 
-    filter(surfaceElevation != initElv) %>% 
-    mutate(above_below_msl = ifelse(surfaceElevation >= MSL, "above", "below"))
-  
-  ggplot(data=scenarioTransectGraph, aes(x=years, y=surfaceElevation, color=above_below_msl)) +
-    geom_line(aes(group=as.character(initElv))) +
-    geom_point()
-  
+  # scenarioTransectGraph <- scenarioTransect %>% 
+  #   filter(surfaceElevation != initElv) %>% 
+  #   mutate(above_below_msl = ifelse(surfaceElevation >= MSL, "above", "below"))
+  # 
+  # ggplot(data=scenarioTransectGraph, aes(x=years, y=surfaceElevation, color=above_below_msl)) +
+  #   geom_line(aes(group=as.character(initElv))) +
+  #   geom_point()
+  # 
   return(list(scenarioTransect=scenarioTransect,
               cohortsTransect=cohortsTransect))
 

@@ -1,6 +1,19 @@
-#` 
-#` 
-simulateFluxes <- function(cohorts, annualTimeSteps,
+#' Simulate Greenhouse Gas Fluxes
+#' 
+#' This function takes outputs from runMemWithCohorts and uses them to simulate several annualized greenhouse gas flux variables 
+#' 
+#' @param cohorts
+#' @param scenario
+#' @param omToOcParams
+#' @param salinity
+#' @param salThreshold
+#' @param salRate
+#' @param maxCH4effect
+#' @param agbTurnoverRate
+#' 
+#' @return 
+#' @export
+simulateFluxes <- function(cohorts, scenario,
                            omToOcParams = list(B0=0, B1=0.48),
                            salinity = 32,
                            salThreshold = 14,
@@ -25,8 +38,8 @@ simulateFluxes <- function(cohorts, annualTimeSteps,
   # If multiple salinity values are entered, add to the annual time step table,
   # as long as they are the same lenght. 
   # If mutliple values are entered, but not the same number of years of the scenario, trip an error.
-  if (length(salinity == 1) | length(salinity) == nrow(annualTimeSteps)) {
-    annualTimeSteps <- dplyr::mutate(annualTimeSteps, salinity = salinity)
+  if (length(salinity == 1) | length(salinity) == nrow(scenario)) {
+    scenario <- dplyr::mutate(scenario, salinity = salinity)
   } else {
     stop("Invalid entry for salinities. Use either one single value, or one for each year of the simulation.")
   }
@@ -41,7 +54,7 @@ simulateFluxes <- function(cohorts, annualTimeSteps,
                             nTides = c(highTidesPerYear, higherHighTidesPerYear, springTidesPerYear),
                             stringsAsFactors = F)
   
-  timeStepsRelevantData <- annualTimeSteps %>% 
+  timeStepsRelevantData <- scenario %>% 
     dplyr::select(years, MSL, matches("MHW|MHHW|MHHWS"), surfaceElevation, salinity) %>% 
     rename(year=years) %>% 
     tidyr::gather(key = "datum", value = "datumHigh",
@@ -83,8 +96,10 @@ simulateFluxes <- function(cohorts, annualTimeSteps,
   
   ghgFluxesAnnual <- ghgFluxesCohorts %>% 
     dplyr::group_by(year) %>% 
-    dplyr::summarise(respired_CH4 = sum(respired_CH4), # Summarise each years CH4 emission
-                     respired_CO2 = sum(respired_CO2)) # Summarise each year's CO2 respiration
+    # Summarise each years CH4 emission
+    # Summarise each year's CO2 respiration
+    dplyr::summarise(respired_CH4 = sum(respired_CH4),
+                     respired_CO2 = sum(respired_CO2))
   
   co2_removal <- cohorts %>% 
     dplyr::group_by(year) %>% 

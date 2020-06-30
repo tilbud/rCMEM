@@ -114,6 +114,17 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   # Calculate the unmoving bottom of the profile as a consistent reference point
   profileBottomElv <- initElv - max(cohorts$layer_bottom)
   
+  # Convert real growing elevations to dimensionless growing elevations
+  if (! plantElevationType %in% c("dimensionless", "zStar", "Z*", "zstar")) {
+    zStarVegMin <- zToZstar(zVegMin, MHW, MSL)
+    zStarVegMax <- zToZstar(zVegMax, MHW, MSL)
+    zStarVegPeak <- zToZstar(zVegPeak, MHW, MSL)
+  } else {
+    zStarVegMin <- zVegMin
+    zStarVegMax <- zVegMax
+    zStarVegPeak <- zVegPeak
+  }
+  
   # Fourth, add one cohort for each year in the scenario
   # Iterate through scenario table
   for (i in 2:nrow(scenario)) {

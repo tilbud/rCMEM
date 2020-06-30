@@ -39,6 +39,7 @@ require(gifski)
 # Settings for the functions we're going to run
 # Inputs
 startYear <- 2015 # yearStart
+rslrT1 <- 0.3 # rslr at time 1 (cm/yr)
 rslr0 <- 0.3 # rslr at time 1 (cm/yr)
 rslrTotal <- 100 # cm of total relative seal level rise
 initElv <- 21.9 # eInit # cm relative to NAVD88

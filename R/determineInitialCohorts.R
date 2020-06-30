@@ -44,6 +44,7 @@ determineInitialCohorts <- function(initElv,
     # If it does,
     # Return initial cohorts
     cohorts <- initialCohorts
+    initAgb <- NA
     initBgb <- NA
     initSediment <- NA
   } else { # If initial cohorts are not supplied
@@ -104,6 +105,7 @@ determineInitialCohorts <- function(initElv,
       if (! is.na(initialCohorts)) {
         # If it is, than pass the input staight to the output
         cohorts <- supertidalCohorts
+        initAgb <- NA
         initBgb <- NA
         initSediment <- NA
       } else {
@@ -148,6 +150,7 @@ determineInitialCohorts <- function(initElv,
       # If an upland soil is provided use it.
       if (! is.na(uplandCohorts)) {
         cohorts <- uplandCohorts
+        initAgb <- NA
         initBgb <- NA
         initSediment <- NA
       } else {
@@ -162,7 +165,7 @@ determineInitialCohorts <- function(initElv,
                               layer_bottom=1:round(rootDepthMax+0.6)) %>% 
           dplyr::mutate(cumCohortVol = cumsum(layer_bottom-layer_top))
         
-                              
+        initAgb <- 0                      
         initBgb <- 0
         initSediment <- 0
       }
