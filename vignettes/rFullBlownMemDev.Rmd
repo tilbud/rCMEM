@@ -39,7 +39,9 @@ require(gifski)
 # Settings for the functions we're going to run
 # Inputs
 startYear <- 2015 # yearStart
+
 relSeaLevelRiseInit <- 0.3 # rslr at time 1 (cm/yr)
+
 rslrTotal <- 100 # cm of total relative seal level rise
 initElv <- 21.9 # eInit # cm relative to NAVD88
 meanSeaLevel <- 7.4 # tidal datums, cm relative to NAVD88
