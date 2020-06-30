@@ -4,13 +4,33 @@
 \alias{determineInitialCohorts}
 \title{Determine the initial conditions for a set of cohorts}
 \usage{
-determineInitialCohorts(initElv, MSL, MHW, MHHW = NA, MHHWS = NA, ssc,
-  bMax, zVegMin, zVegMax, zVegPeak, plantElevationType, rootToShoot,
-  rootTurnover, rootDepthMax, shape = "linear", omDecayRate,
-  recalcitrantFrac, settlingVelocity, omPackingDensity = 0.085,
-  mineralPackingDensity = 1.99, rootPackingDensity = omPackingDensity,
-  initialCohorts = NA, uplandCohorts = NA, supertidalCohorts = NA,
-  supertidalSedimentInput = NA)
+determineInitialCohorts(
+  initElv,
+  MSL,
+  MHW,
+  MHHW = NA,
+  MHHWS = NA,
+  ssc,
+  bMax,
+  zVegMin,
+  zVegMax,
+  zVegPeak,
+  plantElevationType,
+  rootToShoot,
+  rootTurnover,
+  rootDepthMax,
+  shape = "linear",
+  omDecayRate,
+  recalcitrantFrac,
+  settlingVelocity,
+  omPackingDensity = 0.085,
+  mineralPackingDensity = 1.99,
+  rootPackingDensity = omPackingDensity,
+  initialCohorts = NA,
+  uplandCohorts = NA,
+  supertidalCohorts = NA,
+  supertidalSedimentInput = NA
+)
 }
 \arguments{
 \item{initElv}{a numeric, the initial elevation of the marsh at the start of the scenario}

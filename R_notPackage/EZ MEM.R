@@ -14,27 +14,27 @@ f<-704
 q<-2.8
 # maximum biomass
 ymax<-2000
-# depth of minimun biomass (rel to MHW)
+# depth of minimun biomass (rel to meanHighWater)
 minD<--30
 # mean high water, make permutations
-MHW<-seq(5, 120, by=5)
+meanHighWater<-seq(5, 120, by=5)
 # mean low water
-MLW<--MHW
+meanLowWater<--meanHighWater
 # k is a counter
 k<-0
 # permutations of depth
 D<-seq(-30,130,by= 2)
 # define the length of the output arrays
-dsdt<-numeric(length(MHW)*length(D))
-dodt<-numeric(length(MHW)*length(D))
-dzdt<-numeric(length(MHW)*length(D))
-NEC<-numeric(length(MHW)*length(D))
-Dseq<-numeric(length(MHW)*length(D))
-MHWseq<-numeric(length(MHW)*length(D))
-# iterate through the permutations of MHW
-for (i in 1:length(MHW)){
-  maxD<-MHW[i]+10
-maxE<-MHW[i]-minD
+dsdt<-numeric(length(meanHighWater)*length(D))
+dodt<-numeric(length(meanHighWater)*length(D))
+dzdt<-numeric(length(meanHighWater)*length(D))
+NEC<-numeric(length(meanHighWater)*length(D))
+Dseq<-numeric(length(meanHighWater)*length(D))
+MHWseq<-numeric(length(meanHighWater)*length(D))
+# iterate through the permutations of meanHighWater
+for (i in 1:length(meanHighWater)){
+  maxD<-meanHighWater[i]+10
+maxE<-meanHighWater[i]-minD
 Dopt<-(maxD+minD)/2
 # compute the biomass coefficients
 a <- -((-minD * ymax - maxD * ymax) / ((minD - Dopt) * (-maxD + Dopt)))
@@ -45,10 +45,10 @@ for (j in 1:length(D)){
 # compute the biomass
  Bs<-( a * D[j] + b * (D[j]) ^ 2 + c) 
  if (Bs<0) Bs<-0 
-# compute the marsh elevation for each permutation of MHW and D
-Z<- MHW[i]  -D[j]
+# compute the marsh elevation for each permutation of meanHighWater and D
+Z<- meanHighWater[i]  -D[j]
 # FIT is the fractional inuntation time
-FIT <-(MHW[i] - Z) / (MHW[i] - MLW[i])
+FIT <-(meanHighWater[i] - Z) / (meanHighWater[i] - meanLowWater[i])
 if (FIT>1) FIT<-1
 if (FIT<0) FIT<-0
 # the product of FIT and q should not be greater than 1
@@ -60,15 +60,15 @@ k<-k+1
 Ds<-D[j]
 if(D[j]<0 ) Ds<-0
 Dseq[k]=D[j]
-MHWseq[k]=MHW[i]
+MHWseq[k]=meanHighWater[i]
 # compute the accretion rates from mineral and organic inputs
 dsdt[k] <- (0.5 * Ds * 0.000021 * f * qstar) / k2
 dodt[k] <- kr * RS * BGTR * 0.0001 * Bs / k1
 # compute the total vertical accretion rate
 dzdt[k] <- dsdt[k] + dodt[k]
 # NEC is Normalized Elevation Capital
-#'NEC =  (Z-(MSL-10cm))/((MHW+30cm)-(MSL-10cm))
-NEC[k] = (Z + 10) / (MHW[i] + 30 + 10)
+#'NEC =  (Z-(meanSeaLevel-10cm))/((meanHighWater+30cm)-(meanSeaLevel-10cm))
+NEC[k] = (Z + 10) / (meanHighWater[i] + 30 + 10)
 # the output is limited to 0<NEC<1
 if (NEC[k]<0) NEC[k]<-NA
  }
@@ -84,16 +84,16 @@ par(new=F)
 # plot total mineral accretion for permulations of D against NEC
 plot(NECsplit[[1]],dssplit[[1]],"l",xlim=c(0,1),ylim=c(0,.8),xlab='NEC',ylab=' Accretion (cm/y)', col=2)
   par(new=T)
-for (i in 2:length(MHW)){
+for (i in 2:length(meanHighWater)){
   plot(NECsplit[[i]],dssplit[[i]],"l",xlim=c(0,1),ylim=c(0,.8),xlab='',ylab='',axes=F, col=2)
   par(new=T)}
 # plot total accretion for permulations of D against NEC
-for (i in 1:length(MHW)){
+for (i in 1:length(meanHighWater)){
 plot(NECsplit[[i]],dzsplit[[i]],"l",xlim=c(0,1),ylim=c(0,.8),xlab='',ylab='',axes=F, col=1)
 par(new=T)
 }
 # plot total organic accretion for permulations of D against NEC
-for (i in 1:length(MHW)){
+for (i in 1:length(meanHighWater)){
   plot(NECsplit[[i]],dosplit[[i]],"l",xlim=c(0,1),ylim=c(0,.8),xlab='',ylab='',axes=F, col=3)
   par(new=T)
 }
