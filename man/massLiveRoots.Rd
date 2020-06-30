@@ -31,6 +31,8 @@ massLiveRoots(
 
 \item{shape}{flag of root shape, only \code{linear} is implimented.}
 
+\item{expDecayRatePerMaxDepth}{a numeric, value for exponential decay rate per maximum root depth}
+
 \item{...}{}
 }
 \value{

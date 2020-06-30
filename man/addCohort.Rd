@@ -29,6 +29,8 @@ addCohort(
 
 \item{packing}{A list of numerics with mineral and organic arguments representing their respective packing densities.}
 
+\item{mineralInput}{An optional value for mineral input in grams per year (numeric) if mineralInput.fn is not used}
+
 \item{mineralInput.fn}{A function that returns the mineral input in grams per year (numeric)}
 
 \item{massLiveRoots.fn}{A function that returns the mass of live roots for specified depth layers, must accept \code{layerBottom} and \code{layerTop} as arguments.}

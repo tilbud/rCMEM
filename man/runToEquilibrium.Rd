@@ -6,7 +6,8 @@
 \usage{
 runToEquilibrium(
   minAge = 50,
-  maxAge = 200,
+  maxAge = 12000,
+  minDepth,
   recordEvolution = FALSE,
   relTol = 1e-06,
   absTol = 1e-08,
@@ -14,9 +15,11 @@ runToEquilibrium(
 )
 }
 \arguments{
-\item{minAge}{run the model for atleast these many years}
+\item{minAge}{run the model for at least these many years}
 
 \item{maxAge}{do not run the model for longer then these many years}
+
+\item{minDepth}{run the model to create a profile at least this deep}
 
 \item{recordEvolution}{a boolean flag to record how the equalibrium profile evolves}
 
