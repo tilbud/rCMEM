@@ -4,7 +4,7 @@
 #' @param startYear an integer, year in form YYYY, the start year of the scenario 
 #' @param endYear an integer, year in form YYYY, the end year of the scenario  
 #' @param relSeaLevelRiseInit a numeric, initial rate of relative sea-level rise
-#' @param rslrTotal a numeric, total relative sea-level rise over the course of the scanario
+#' @param relSeaLevelRiseTotal a numeric, total relative sea-level rise over the course of the scanario
 #' @param initElv a numeric, the initial elevation of the marsh at the start of the scenario
 #' @param meanSeaLevel a numeric or a vector, Mean Sea Level at the start of the scenario, or a vector of Mean Sea Levels the same length as the number of years in a scenario
 #' @param meanSeaLevelDatum a numeric, Mean Sea level over the last datum period
@@ -36,7 +36,7 @@
 #' 
 #' @return a list of data frames, including the annualized summaries, mapped cohorts tracked for every years, and if core year is specified, a core.
 #' @export
-runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, rslrTotal, initElv,
+runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, relSeaLevelRiseTotal, initElv,
                               meanSeaLevel, meanSeaLevelDatum=meanSeaLevel[1], meanHighWater, meanHighHighWater=NA, meanHighHighWaterSpring=NA, suspendedSediment, lunarNodalAmp,
                               bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
                               rootToShoot, rootTurnover, rootDepthMax, shape="linear",
@@ -51,7 +51,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
   
   # Build scenario curve
   scenario <- buildScenarioCurve(startYear=startYear, endYear=endYear, meanSeaLevel=meanSeaLevel, 
-                                 relSeaLevelRiseInit=relSeaLevelRiseInit, rslrTotal=rslrTotal, suspendedSediment=suspendedSediment)
+                                 relSeaLevelRiseInit=relSeaLevelRiseInit, relSeaLevelRiseTotal=relSeaLevelRiseTotal, suspendedSediment=suspendedSediment)
   
   # add high tides
   scenario <- buildHighTideScenario(scenario, meanSeaLevelDatum=meanSeaLevelDatum, 

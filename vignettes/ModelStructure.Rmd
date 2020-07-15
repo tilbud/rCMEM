@@ -74,7 +74,7 @@ edgeListCalled <- paste(
                   allfunctions$parent_name[allfunctions$type == 'called'],
                   allfunctions$child_name[allfunctions$type == 'called'], sep='->', collapse = ' ')
 
-grViz(sprintf("
+model_diagram <- grViz(sprintf("
               digraph function_dependencies{
               
               graph [overlap = true, fontsize = 10]
@@ -92,6 +92,7 @@ grViz(sprintf("
               
               
               }", nodeList, edgeListSuggested, edgeListCalled))
+print(model_diagram)
 ```
 
 ```{r}
