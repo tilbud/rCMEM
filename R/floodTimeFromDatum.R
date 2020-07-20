@@ -19,12 +19,12 @@ floodTimeFromDatum <- function(z, datumHigh, datumLow) {
   datumLow <- ifelse(z<=datumLow, z, datumLow)
   
   # Rising time over cell = 6.21 (A/pi - 1)	
-  # where A = 2* pi - cos-1 [2 (height of cell – MLW) / (MHW – MLW) - 1] radians
+  # where A = 2* pi - cos-1 [2 (height of cell – meanLowWater) / (meanHighWater – meanLowWater) - 1] radians
   A1 <- 2 * pi - acos(2 * (z-datumLow) / (datumHigh-datumLow) - 1)
   risingTime <- 6.21 * (A1/pi - 1)
   
   # Falling time over cell = 6.21 (A/pi - 1) where
-  # A = 2* - cos-1 [2 (height of cell – MHW) / (MLW – MHW) - 1] radians
+  # A = 2* - cos-1 [2 (height of cell – meanHighWater) / (meanLowWater – meanHighWater) - 1] radians
   A2 <- 2 * pi - acos(2 * (z-datumHigh) / (datumLow-datumHigh) - 1)
   fallingTime <- 6.21 * (A2/pi - 1)
   

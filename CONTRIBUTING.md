@@ -11,8 +11,8 @@ This is where functions are placed in order to be documented (i.e. have document
 
 1) addCohort
   + Description : Adds another cohort to the soil profile
-  + Dependencies : depthOfNonRootVolume, massLiveRoots, sedimentInputs
-  + Inputs : massPools, packing densities, time step in years, root turnover time in faction/year, allocation fraction between fast and slow organic matter pool in fraction/year, massLiveRoots, depthOfNonRootVolume, mineral input
+  + Dependencies : calculateDepthOfNonRootVolume, massLiveRoots, sedimentInputs
+  + Inputs : massPools, packing densities, time step in years, root turnover time in faction/year, allocation fraction between fast and slow organic matter pool in fraction/year, massLiveRoots, calculateDepthOfNonRootVolume, mineral input
   + Outputs : Returns a data frame simular to massPools that includes age, fast_om, slow_OM, mineral, layer top, layer bottoms, and root mass. returns data fram with the added cohort and simulated change in the cohort pools.
 
 2) availableSediment
@@ -33,7 +33,7 @@ This is where functions are placed in order to be documented (i.e. have document
   + Inputs :start year of scenario, end year of scenario, mean sea level (a numeric or vector), initial rate of relative sea-level rise, total relative sea-level rise, suspended sediment concentration (a numeric average or vector), 
   + Outputs : a data frame including columns for year, sea-level, and suspended sediment concentration, and rows for each year in the scenario
 
- 5) convertProfile_AgeToDepth
+ 5) convertProfileAgeToDepth
   + Description : Converts soil profile from age to depth based cohorts
   + Dependencies : NA
   + Inputs : a data frame of the age cohort, a vector of the tops of the soil layers we want to convert to, a vector of the bottoms of the soil layers we want to convert to
@@ -57,7 +57,7 @@ This is where functions are placed in order to be documented (i.e. have document
   + Inputs : marsh elevation, fraction of time per tidal cycle marsh is inundated, suspended sediment concentration, mean high water level, mean sea level, mean low water level, number of times water column will clear per tidal cycle, fraction of available sediment captured by marsh, flood events per year
   + Outputs : sediment delivered over the course of a year
 
- 9) depthOfNonRootVolume
+ 9) calculateDepthOfNonRootVolume
   + Description : calculate depth of the given soil volume
   + Dependencies : massLiveRoots.fn
   + Inputs : total root mass per area, max root depth, root density, unit length of soil volume, unit width of soil column, root shape, a numerical array of the cumulative non-rooting volume, relative tolerance accepted, verbose
@@ -79,7 +79,7 @@ This is where functions are placed in order to be documented (i.e. have document
   + Description : builds a high tide level based on the 18.1 year lunar nodal cycle
   + Dependencies : NA
   + Inputs : mean sea-level over the last complete 18 year datum period, mean sea-level for each scenario, high tide level over the last complete 18 year datum period, amplitude of the 18 year lunar nodal cycle
-  + Outputs : MHW
+  + Outputs : meanHighWater
  
  13) predictedBiomass
   + Description : predict aboveground biomass given elevation
@@ -89,7 +89,7 @@ This is where functions are placed in order to be documented (i.e. have document
  
  14)runMemWithCohorts
   + Description : Run Marsh Equilibrium Model with Cohorts
-  + Dependencies : addCohort, buildHighTideScenario, buildScenarioCurve, convertProfile_AgeToDepth, deliverSedimentFlexibly, predictedBiomass, runToEquilibrium, trimCohorts, zToZstar
+  + Dependencies : addCohort, buildHighTideScenario, buildScenarioCurve, convertProfileAgeToDepth, deliverSedimentFlexibly, predictedBiomass, runToEquilibrium, trimCohorts, zToZstar
   + Inputs : start year, end year, initial rate of relative sea level rise, total relative sea level rise over scenario, initial marsh elevation, initial mean sea level, mean sea level over last datum period, mean high water level over last datum period, (optional) mean higher high water level, (optional) mean higher high spring tide water level, suspended sediment concentration, amplitude of the 18 year lunar nodal cycle, the number of times a water column will clear per tidal cycle, maximum biomass, upper elevation of biomass limit, lower elevation of biomass limit, (optional) elevation of peak biomass, elevation reference of the vegetation growing, root to shoot ratio, ground below biomass annual turnover rate, percentage rooting depth, relationship between depth and root mass, annual fractional mass lost, fraction of organic matter resistant to decay, bulk density of pure organic matter, bulk density of pure mineral matter, bulk density of pure root matter, core year, core depth, core sampling depth minimums, core sampling depth maximums, ...
   + Outputs : a list of data frames, including the annualized summaries, mapped cohorts tracked for every years, and if core year is specified, a core.
 
@@ -111,7 +111,7 @@ This is where functions are placed in order to be documented (i.e. have document
   + Inputs : cohorts
   + Outputs : cohorts
 
-18) zStarToZ
+18) convertZStarToZ
   + Description : convert from Z* to elevation
   + Dependencies : NA
   + Inputs : normalized Z* elevation, mean high water tide, mean sea level

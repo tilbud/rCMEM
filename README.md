@@ -59,9 +59,9 @@ for (i in 1:length(dependencies)) {
 
 ```
 # Run rMEM with Cohorts example
-memCohortExample <- runMemWithCohorts(startYear=2015, rslrT1=0.3, rslrTotal=100,
-                                      initElv=21.9, MSL=7.4, MHW=16.9, MHHW=25.4, MHHWS=31.2, 
-                                      ssc=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
+memCohortExample <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
+                                      initElv=21.9, meanSeaLevel=7.4, meanHighWater=16.9, meanHighHighWater=25.4, meanHighHighWaterSpring=31.2, 
+                                      suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
@@ -107,7 +107,6 @@ Guiding princples:
 A lot of what underpins current versions of the Marsh Equilibrium Model and the Cohort Theory Model is the ideal mixing model, see [Morris et al. 2016](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2015EF000334) and (Holmquist et al 2018](https://www.nature.com/articles/s41598-018-26948-7). This describes the density of a soil as the summation of the soils' relative organic and inorganic fractions, as well as the _self-packing density_ of the organic (k1) and inorganic (k2) matter.
 
 $$BD = {1 \over {{OM\over k1}+ {(1−OM) \over k2}}}$$
-
 
 If you hold area constant, and you assume you know the input rates of organic and inorganic matter, you can use the ideal mixing model to calculate accretion rate ([Morris et al. 2016](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2015EF000334), [Morris 2006](https://www.sciencedirect.com/science/article/pii/S0272771406001776),  [Morris 2007](https://link.springer.com/chapter/10.1007/978-1-4020-6008-3_14)).
 

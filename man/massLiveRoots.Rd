@@ -7,12 +7,12 @@
 massLiveRoots(
   layerBottom,
   layerTop,
-  totalRootMass_per_area,
+  totalRootMassPerArea,
   rootDepthMax,
   soilLength = 1,
   soilWidth = 1,
   shape,
-  expDecayRate_perMaxDepth = log(0.05),
+  expDecayRatePerMaxDepth = log(0.05),
   ...
 )
 }
@@ -21,7 +21,7 @@ massLiveRoots(
 
 \item{layerTop}{an array of depths from soil top to the top of the layer, generally in cm}
 
-\item{totalRootMass_per_area}{an integer that is the total mass per area of the roots, generally in g cm-3}
+\item{totalRootMassPerArea}{an integer that is the total mass per area of the roots, generally in g cm-3}
 
 \item{rootDepthMax}{an integer that is the maximum root depth, generally in cm}
 
@@ -30,6 +30,8 @@ massLiveRoots(
 \item{soilWidth}{unit width of soil area, generally 1.}
 
 \item{shape}{flag of root shape, only \code{linear} is implimented.}
+
+\item{expDecayRatePerMaxDepth}{a numeric, value for exponential decay rate per maximum root depth}
 
 \item{...}{}
 }
@@ -48,6 +50,6 @@ The linear algorithm is as follows:  \itemize{
 }
 \examples{
 massLiveRoots(layerBottom = 1:10, layerTop = 0:9, 
-              totalRootMass_per_area = 0.3, rootDepthMax=5,
+              totalRootMassPerArea = 0.3, rootDepthMax=5,
               soilLength=1, soilWidth=1, shape='linear')
 }

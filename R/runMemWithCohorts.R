@@ -3,15 +3,15 @@
 #' This function takes an initial elevation, average annual suspended sediment concentrtion and tidal properties, plant traits, and decay rates, then builds a scenario, and runs the marsh equilibrium model over that scenario tracking individual sediment mass cohorts including minderal, live root, slow decay organic mater pool and a fast organic matter pool.
 #' @param startYear an integer, year in form YYYY, the start year of the scenario 
 #' @param endYear an integer, year in form YYYY, the end year of the scenario  
-#' @param rslrT1 a numeric, initial rate of relative sea-level rise
-#' @param rslrTotal a numeric, total relative sea-level rise over the course of the scanario
+#' @param relSeaLevelRiseInit a numeric, initial rate of relative sea-level rise
+#' @param relSeaLevelRiseTotal a numeric, total relative sea-level rise over the course of the scanario
 #' @param initElv a numeric, the initial elevation of the marsh at the start of the scenario
-#' @param MSL a numeric or a vector, Mean Sea Level at the start of the scenario, or a vector of Mean Sea Levels the same length as the number of years in a scenario
-#' @param MSL0 a numeric, Mean Sea level over the last datum period
-#' @param MHW a numeric, Mean High Water level over the last datum period
-#' @param MHHW a numeric (optional), Mean Higher High Water level over the last datum period
-#' @param MHHWS a numeric (optional), Mean Higher High Spring Tide Water level over the last datum period
-#' @param ssc a numeric, suspended sediment concentration of the water column
+#' @param meanSeaLevel a numeric or a vector, Mean Sea Level at the start of the scenario, or a vector of Mean Sea Levels the same length as the number of years in a scenario
+#' @param meanSeaLevelDatum a numeric, Mean Sea level over the last datum period
+#' @param meanHighWater a numeric, Mean High Water level over the last datum period
+#' @param meanHighHighWater a numeric (optional), Mean Higher High Water level over the last datum period
+#' @param meanHighHighWaterSpring a numeric (optional), Mean Higher High Spring Tide Water level over the last datum period
+#' @param suspendedSediment a numeric, suspended sediment concentration of the water column
 #' @param lunarNodalAmp a numeric, the amplitude of the 18-year lunar nodal cycle
 #' @param settlingVelocity a numeric, the number of times a water column will clear per tidal cycle
 #' @param bMax a numeric, maximum biomass
@@ -36,8 +36,8 @@
 #' 
 #' @return a list of data frames, including the annualized summaries, and mapped cohorts tracked for every year of the simulation.
 #' @export
-runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal, initElv,
-                              MSL, MSL0=MSL[1], MHW, MHHW=NA, MHHWS=NA, ssc, lunarNodalAmp,
+runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, relSeaLevelRiseTotal, initElv,
+                              meanSeaLevel, meanSeaLevelDatum=meanSeaLevel[1], meanHighWater, meanHighHighWater=NA, meanHighHighWaterSpring=NA, suspendedSediment, lunarNodalAmp,
                               bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
                               rootToShoot, rootTurnover, rootDepthMax, shape="linear",
                               omDecayRate, recalcitrantFrac, settlingVelocity,
@@ -53,12 +53,12 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   require(tidyverse, quietly = TRUE)
   
   # Build scenario curve
-  scenario <- buildScenarioCurve(startYear=startYear, endYear=endYear, MSL=MSL, 
-                                 rslr0=rslrT1, rslrTotal=rslrTotal, ssc=ssc)
+  scenario <- buildScenarioCurve(startYear=startYear, endYear=endYear, meanSeaLevel=meanSeaLevel, 
+                                 relSeaLevelRiseInit=relSeaLevelRiseInit, relSeaLevelRiseTotal=relSeaLevelRiseTotal, suspendedSediment=suspendedSediment)
   
   # add high tides
-  scenario <- buildHighTideScenario(scenario, MSL0=MSL0, 
-                                    MHW0=MHW, MHHW0=MHHW, MHHWS0=MHHWS, 
+  scenario <- buildHighTideScenario(scenario, meanSeaLevelDatum=meanSeaLevelDatum, 
+                                    meanHighWaterDatum=meanHighWater, meanHighHighWaterDatum=meanHighHighWater, meanHighHighWaterSpringDatum=meanHighHighWaterSpring, 
                                     lunarNodalAmp = lunarNodalAmp)
   
   # Add blank colums for attributes we will add later
@@ -66,18 +66,57 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   scenario$aboveground_biomass <- as.numeric(rep(NA, nrow(scenario)))
   scenario$belowground_biomass <- as.numeric(rep(NA, nrow(scenario)))
   scenario$mineral <- as.numeric(rep(NA, nrow(scenario)))
+ 
+  #TO JH: Not sure which section to go with here. Can you clarify? lines 71-83 OR lines 84-119 -KTB
+#<<<<<<< HEAD
+#  # Set initial conditions
+#  # Calculate initial z star
+#  initialConditions <- determineInitialCohorts(initElv=initElv,
+#                                               MSL=MSL, MHW=MHW, MHHW=MHHW, MHHWS=MHHWS, ssc=ssc,
+#                                               bMax=bMax, zVegMin=zVegMin, zVegMax=zVegMax, zVegPeak=zVegPeak, 
+#                                               plantElevationType=plantElevationType,
+#                                               rootToShoot=rootToShoot, rootTurnover=rootTurnover, rootDepthMax=rootDepthMax, shape=shape,
+#                                               omDecayRate=omDecayRate, recalcitrantFrac=recalcitrantFrac, settlingVelocity=settlingVelocity,
+#                                               omPackingDensity=omPackingDensity, mineralPackingDensity=mineralPackingDensity,
+#                                               rootPackingDensity=omPackingDensity)
+#  cohorts <- initialConditions[[1]]
+#=======
+  # Convert dimensionless plant growing elevations to real growing elevations
+  if (! plantElevationType %in% c("dimensionless", "zStar", "Z*", "zstar")) {
+    zStarVegMin <- convertZToZstar(zVegMin, meanHighWater, meanSeaLevel[1])
+    zStarVegMax <- convertZToZstar(zVegMax, meanHighWater, meanSeaLevel[1])
+    zStarVegPeak <- convertZToZstar(zVegPeak, meanHighWater, meanSeaLevel[1])
+  } else {
+    zStarVegMin <- zVegMin
+    zStarVegMax <- zVegMax
+    zStarVegPeak <- zVegPeak
+  }
   
   # Set initial conditions
   # Calculate initial z star
-  initialConditions <- determineInitialCohorts(initElv=initElv,
-                                               MSL=MSL, MHW=MHW, MHHW=MHHW, MHHWS=MHHWS, ssc=ssc,
-                                               bMax=bMax, zVegMin=zVegMin, zVegMax=zVegMax, zVegPeak=zVegPeak, 
-                                               plantElevationType=plantElevationType,
-                                               rootToShoot=rootToShoot, rootTurnover=rootTurnover, rootDepthMax=rootDepthMax, shape=shape,
-                                               omDecayRate=omDecayRate, recalcitrantFrac=recalcitrantFrac, settlingVelocity=settlingVelocity,
-                                               omPackingDensity=omPackingDensity, mineralPackingDensity=mineralPackingDensity,
-                                               rootPackingDensity=omPackingDensity)
-  cohorts <- initialConditions[[1]]
+  initElvStar <- convertZToZstar(z=initElv, meanSeaLevel=scenario$meanSeaLevel[1], meanHighWater=scenario$meanHighWater[1])
+  
+  # Initial Above Ground Biomass
+  initAgb <- predictedBiomass(z=initElvStar, bMax = bMax, zVegMax = zStarVegMax, 
+                              zVegMin = zStarVegMin, zVegPeak = zStarVegPeak)
+  
+  # Initial Below Ground Biomass
+  initBgb <- initAgb * rootToShoot
+  
+  # Initial Sediment
+  initSediment <- deliverSedimentFlexibly(z=initElv, suspendedSediment=scenario$suspendedSediment[1], 
+                                          meanSeaLevel=scenario$meanSeaLevel[1], meanHighWater=scenario$meanHighWater[1], 
+                                          meanHighHighWater = scenario$meanHighHighWater[1], meanHighHighWaterSpring = scenario$meanHighHighWaterSpring[1],
+                                          settlingVelocity=settlingVelocity)
+  
+  # Run initial conditions to equilibrium
+  cohorts <- runToEquilibrium(totalRootMassPerArea=initBgb, rootDepthMax=rootDepthMax,
+                              rootTurnover=rootTurnover, omDecayRate = list(fast=omDecayRate, slow=0),
+                              rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
+                              packing=list(organic=omPackingDensity, mineral=mineralPackingDensity),
+                              rootDensity=rootPackingDensity, shape=shape, 
+                              mineralInput = initSediment)
+#>>>>>>> 1effe30ef5f5e81df7c7a0fbef5054267e6e7f66
   
   # Add initial conditions to annual time step tracker
   scenario$surfaceElevation[1] <- initElv
@@ -119,7 +158,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   for (i in 2:nrow(scenario)) {
     
     # Calculate surface elevation relative to datum
-    surfaceElvZStar <- zToZstar(z=scenario$surfaceElevation[i-1], MHW=scenario$MHW[i], MSL=scenario$MSL[i])
+    surfaceElvZStar <- convertZToZstar(z=scenario$surfaceElevation[i-1], meanHighWater=scenario$meanHighWater[i], meanSeaLevel=scenario$meanSeaLevel[i])
     
     # Calculate dynamic above ground
     dynamicAgb <- predictedBiomass(z=surfaceElvZStar, bMax = bMax, zVegMax = zStarVegMax, zVegMin = zStarVegMin, zVegPeak = zStarVegPeak)
@@ -128,18 +167,19 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
     dynamicBgb <- dynamicAgb * rootToShoot
     
     # Calculate Mineral pool
-    dynamicMineralPool <- deliverSedimentFlexibly(z=scenario$surfaceElevation[i-1], ssc=scenario$ssc[i], 
-                                                  MSL=scenario$MSL[i], MHW=scenario$MHW[i], MHHW = scenario$MHHW[i], 
-                                                  MHHWS = scenario$MHHWS[i], settlingVelocity=settlingVelocity)
+    dynamicMineralPool <- deliverSedimentFlexibly(z=scenario$surfaceElevation[i-1], suspendedSediment=scenario$suspendedSediment[i], 
+                                                  meanSeaLevel=scenario$meanSeaLevel[i], meanHighWater=scenario$meanHighWater[i], meanHighHighWater = scenario$meanHighHighWater[i], 
+                                                  meanHighHighWaterSpring = scenario$meanHighHighWaterSpring[i], settlingVelocity=settlingVelocity)
     
    
     # Calculate dynamic sediment deliver
-    cohorts <- addCohort(massPools = cohorts, totalRootMass_per_area=dynamicBgb, rootDepthMax=rootDepthMax, 
+
+    cohorts <- addCohort(cohorts, totalRootMassPerArea=dynamicBgb, rootDepthMax=rootDepthMax, 
                          rootTurnover = rootTurnover, omDecayRate = list(fast=omDecayRate, slow=0),
                          rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
                          packing=list(organic=omPackingDensity, mineral=mineralPackingDensity), 
                          rootDensity=rootPackingDensity, shape=shape,
-                         mineralInput_g_per_yr = dynamicMineralPool)
+                         mineralInput = dynamicMineralPool)
     
     cohorts$year <- rep(scenario$years[i], nrow(cohorts))
     
@@ -161,6 +201,30 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, rslrT1, rslrTotal
   
   # Return annual time steps and full set of cohorts
   outputsList <- list(annualTimeSteps = scenario, cohorts = trackCohorts)
+  
+  # If a core year is specificed return a core too.
+  if (! is.na(coreYear)) {
+    # Filter only to cohorts in the core year
+    cohortsInCoreYear <- trackCohorts %>% 
+      dplyr::filter(year==coreYear) %>%
+      dplyr::select(-year)
+    
+    # Convert cohorts to age-depth profile
+    coreYearAgeDepth <- convertProfileAgeToDepth(ageCohort=cohortsInCoreYear,
+                                                  layerTop=coreMins,
+                                                  layerBottom=coreMaxs)
+    coreYearAgeDepth <- coreYearAgeDepth %>%  dplyr::filter(complete.cases(.)) %>%
+      dplyr::mutate(om_fraction = (fast_OM+slow_OM+root_mass)/(fast_OM+slow_OM+root_mass+mineral),
+             dry_bulk_density = (1/(
+               (om_fraction/omPackingDensity) +
+                 ((1-om_fraction)/mineralPackingDensity)
+             )
+             )
+      )
+    
+    # Add to the list of outputs
+    outputsList$core <- coreYearAgeDepth
+  }
   
   return(outputsList)
 }

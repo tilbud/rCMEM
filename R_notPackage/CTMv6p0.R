@@ -8,7 +8,7 @@
   SSC <-	10 # Suspended Sediment Concentration (mg/L)
   OMDR <-	0.8 # Labile OM decay rate (yr^-1)
   BGTR <-	0.5 # Below ground turnover rate (yr^-1) 
-  D <-	5 # Depth of surface below MHW (cm^3)
+  D <-	5 # Depth of surface below meanHighWater (cm^3)
   CY <-	2015 # Core year
   k1 <-	0.085 # OM self packing density (g/cm^3)
   k2 <-	1.99 # Mineral sefl packing density (g/cm^3)
