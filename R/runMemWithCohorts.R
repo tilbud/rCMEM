@@ -4,7 +4,7 @@
 #' @param startYear an integer, year in form YYYY, the start year of the scenario 
 #' @param endYear an integer, year in form YYYY, the end year of the scenario  
 #' @param relSeaLevelRiseInit a numeric, initial rate of relative sea-level rise
-#' @param rslrTotal a numeric, total relative sea-level rise over the course of the scanario
+#' @param relSeaLevelRiseTotal a numeric, total relative sea-level rise over the course of the scanario
 #' @param initElv a numeric, the initial elevation of the marsh at the start of the scenario
 #' @param meanSeaLevel a numeric or a vector, Mean Sea Level at the start of the scenario, or a vector of Mean Sea Levels the same length as the number of years in a scenario
 #' @param meanSeaLevelDatum a numeric, Mean Sea level over the last datum period
@@ -36,7 +36,7 @@
 #' 
 #' @return a list of data frames, including the annualized summaries, and mapped cohorts tracked for every year of the simulation.
 #' @export
-runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, rslrTotal, initElv,
+runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, relSeaLevelRiseTotal, initElv,
                               meanSeaLevel, meanSeaLevelDatum=meanSeaLevel[1], meanHighWater, meanHighHighWater=NA, meanHighHighWaterSpring=NA, suspendedSediment, lunarNodalAmp,
                               bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
                               rootToShoot, rootTurnover, rootDepthMax, shape="linear",
@@ -55,7 +55,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
   
   # Build scenario curve
   scenario <- buildScenarioCurve(startYear=startYear, endYear=endYear, meanSeaLevel=meanSeaLevel, 
-                                 relSeaLevelRiseInit=relSeaLevelRiseInit, rslrTotal=rslrTotal, suspendedSediment=suspendedSediment)
+                                 relSeaLevelRiseInit=relSeaLevelRiseInit, relSeaLevelRiseTotal=relSeaLevelRiseTotal, suspendedSediment=suspendedSediment)
   
   # add high tides
   scenario <- buildHighTideScenario(scenario, meanSeaLevelDatum=meanSeaLevelDatum, 
@@ -67,6 +67,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
   scenario$aboveground_biomass <- as.numeric(rep(NA, nrow(scenario)))
   scenario$belowground_biomass <- as.numeric(rep(NA, nrow(scenario)))
   scenario$mineral <- as.numeric(rep(NA, nrow(scenario)))
+#<<<<<<< HEAD
 
   # Set initial conditions
   # Calculate initial z star
@@ -80,7 +81,58 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
                                                omPackingDensity=omPackingDensity, mineralPackingDensity=mineralPackingDensity,
                                                rootPackingDensity=omPackingDensity)
   cohorts <- initialConditions[[1]]
-
+ 
+  #TO JH: Not sure which section to go with here. Can you clarify? 
+#<<<<<<< HEAD
+#  # Set initial conditions
+#  # Calculate initial z star
+#  initialConditions <- determineInitialCohorts(initElv=initElv,
+#                                               MSL=MSL, MHW=MHW, MHHW=MHHW, MHHWS=MHHWS, ssc=ssc,
+#                                               bMax=bMax, zVegMin=zVegMin, zVegMax=zVegMax, zVegPeak=zVegPeak, 
+#                                               plantElevationType=plantElevationType,
+#                                               rootToShoot=rootToShoot, rootTurnover=rootTurnover, rootDepthMax=rootDepthMax, shape=shape,
+#                                               omDecayRate=omDecayRate, recalcitrantFrac=recalcitrantFrac, settlingVelocity=settlingVelocity,
+#                                               omPackingDensity=omPackingDensity, mineralPackingDensity=mineralPackingDensity,
+#                                               rootPackingDensity=omPackingDensity)
+#  cohorts <- initialConditions[[1]]
+#=======
+  # Convert dimensionless plant growing elevations to real growing elevations
+  if (! plantElevationType %in% c("dimensionless", "zStar", "Z*", "zstar")) {
+    zStarVegMin <- convertZToZstar(zVegMin, meanHighWater, meanSeaLevel[1])
+    zStarVegMax <- convertZToZstar(zVegMax, meanHighWater, meanSeaLevel[1])
+    zStarVegPeak <- convertZToZstar(zVegPeak, meanHighWater, meanSeaLevel[1])
+  } else {
+    zStarVegMin <- zVegMin
+    zStarVegMax <- zVegMax
+    zStarVegPeak <- zVegPeak
+  }
+  
+  # Set initial conditions
+  # Calculate initial z star
+  initElvStar <- convertZToZstar(z=initElv, meanSeaLevel=scenario$meanSeaLevel[1], meanHighWater=scenario$meanHighWater[1])
+  
+  # Initial Above Ground Biomass
+  initAgb <- predictedBiomass(z=initElvStar, bMax = bMax, zVegMax = zStarVegMax, 
+                              zVegMin = zStarVegMin, zVegPeak = zStarVegPeak)
+  
+  # Initial Below Ground Biomass
+  initBgb <- initAgb * rootToShoot
+  
+  # Initial Sediment
+  initSediment <- deliverSedimentFlexibly(z=initElv, suspendedSediment=scenario$suspendedSediment[1], 
+                                          meanSeaLevel=scenario$meanSeaLevel[1], meanHighWater=scenario$meanHighWater[1], 
+                                          meanHighHighWater = scenario$meanHighHighWater[1], meanHighHighWaterSpring = scenario$meanHighHighWaterSpring[1],
+                                          settlingVelocity=settlingVelocity)
+  
+  # Run initial conditions to equilibrium
+  cohorts <- runToEquilibrium(totalRootMassPerArea=initBgb, rootDepthMax=rootDepthMax,
+                              rootTurnover=rootTurnover, omDecayRate = list(fast=omDecayRate, slow=0),
+                              rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
+                              packing=list(organic=omPackingDensity, mineral=mineralPackingDensity),
+                              rootDensity=rootPackingDensity, shape=shape, 
+                              mineralInput = initSediment)
+#>>>>>>> 1effe30ef5f5e81df7c7a0fbef5054267e6e7f66
+#>>>>>>> ktoddbrown-master
   
   # Add initial conditions to annual time step tracker
   scenario$surfaceElevation[1] <- initElv
@@ -133,7 +185,7 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
   for (i in 2:nrow(scenario)) {
     
     # Calculate surface elevation relative to datum
-    surfaceElvZStar <- zToZstar(z=scenario$surfaceElevation[i-1], meanHighWater=scenario$meanHighWater[i], meanSeaLevel=scenario$meanSeaLevel[i])
+    surfaceElvZStar <- convertZToZstar(z=scenario$surfaceElevation[i-1], meanHighWater=scenario$meanHighWater[i], meanSeaLevel=scenario$meanSeaLevel[i])
     
     # Calculate dynamic above ground
     dynamicAgb <- predictedBiomass(z=surfaceElvZStar, bMax = bMax, zVegMax = zStarVegMax, zVegMin = zStarVegMin, zVegPeak = zStarVegPeak)

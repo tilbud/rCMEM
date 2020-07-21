@@ -9,7 +9,7 @@
 #' @return elevation normalized to the tidal range
 #' @export
 #'
-zToZstar <- function(z, meanHighWater, meanSeaLevel) { 
+convertZToZstar <- function(z, meanHighWater, meanSeaLevel) { 
   
   (z-meanSeaLevel)/(meanHighWater-meanSeaLevel) 
   
