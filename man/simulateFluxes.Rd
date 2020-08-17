@@ -4,22 +4,15 @@
 \alias{simulateFluxes}
 \title{Simulate Greenhouse Gas Fluxes}
 \usage{
-simulateFluxes(
-  cohorts,
-  scenario,
-  omToOcParams = list(B0 = 0, B1 = 0.48),
-  salinity = 32,
-  salThreshold = 14,
-  salRate = 0.5,
-  maxCH4effect = 1,
-  agbTurnoverRate = NA
-)
+simulateFluxes(cohorts, scenario, omToOcParams = list(B0 = 0, B1 = 0.48),
+  salinity = 32, salThreshold = 18, salRate = 0.5,
+  maxCh4ToCo2 = 1/5)
 }
 \arguments{
-\item{agbTurnoverRate}{}
+\item{maxCH4effect}{}
 }
 \value{
-
+list of 2 data frames, one the input cohorts table with depthwise fluxes added, the second the annualized scenario table with annualized fluxes added
 }
 \description{
 This function takes outputs from runMemWithCohorts and uses them to simulate several annualized greenhouse gas flux variables

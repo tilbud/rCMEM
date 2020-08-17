@@ -16,11 +16,11 @@
 buildScenarioCurve <- function(startYear, endYear=startYear+99, meanSeaLevel, 
                                relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100, suspendedSediment) {
   
-  # Create a sequence of the number of years
+  # Create a sequence of the number of year
   years <- startYear:endYear
   nYearsOfSim <- length(years) # Put this in args. Replace this with yearEnd.
   
-  scenario <- data.frame(index = 1:nYearsOfSim, years = years,
+  scenario <- data.frame(index = 1:nYearsOfSim, year = years,
                          meanSeaLevel = rep(NA, nYearsOfSim),
                          suspendedSediment = rep(NA, nYearsOfSim))
   

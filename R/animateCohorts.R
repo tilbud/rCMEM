@@ -25,8 +25,7 @@ animateCohorts <- function(cohorts, scenario,
   require(png, quietly = TRUE)
   
   surface_elv <- scenario %>%
-    dplyr::select(years, surfaceElevation) %>%
-    dplyr::rename(year=years)
+    dplyr::select(year, surfaceElevation)
   
   # First reshape the mass cohorts so that they're in long form
   mass_cohorts <- cohorts %>%
@@ -57,9 +56,9 @@ animateCohorts <- function(cohorts, scenario,
   tides <- scenario %>%
     # Track any elevation threholds in the animation speciefied.
     # meanSeaLevel and meanHighWater are the defaults
-    dplyr::select(years, trackThresholds) %>%
-    tidyr::gather(value="WaterLevel", key="datum", -years) %>%
-    dplyr::rename(year=years) %>%
+    dplyr::select(year, trackThresholds) %>%
+    tidyr::gather(value="WaterLevel", key="datum", -year) %>%
+    # dplyr::rename(year=years) %>%
     dplyr::arrange(year) %>%
     dplyr::filter(complete.cases(.))
   
@@ -84,7 +83,8 @@ animateCohorts <- function(cohorts, scenario,
     gganimate::transition_time(year) +
     gganimate::ease_aes('linear')
   
-  tempAnimation <- gganimate::animate(animate_mass_cohorts, 
+  tempAnimation <- gganimate::animate(animate_mass_cohorts,
+                                      nframes=length(unique(scenario$year)),
                                       duration = duration,
                                       renderer = gifski_renderer(),
                                       width = width, 

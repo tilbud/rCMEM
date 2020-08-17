@@ -4,16 +4,9 @@
 \alias{deliverSedimentFlexibly}
 \title{Deliver sediment flexibly}
 \usage{
-deliverSedimentFlexibly(
-  z,
-  suspendedSediment,
-  meanSeaLevel,
-  meanHighWater,
-  meanHighHighWater = NA,
-  meanHighHighWaterSpring = NA,
-  settlingVelocity,
-  ...
-)
+deliverSedimentFlexibly(z, suspendedSediment, meanSeaLevel, meanHighWater,
+  meanHighHighWater = NA, meanHighHighWaterSpring = NA,
+  settlingVelocity, ...)
 }
 \arguments{
 \item{z}{a numeric, elevation of the marsh}

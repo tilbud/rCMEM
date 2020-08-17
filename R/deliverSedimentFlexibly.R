@@ -14,14 +14,14 @@
 #' @export
 deliverSedimentFlexibly <- function(z, suspendedSediment, meanSeaLevel, meanHighWater, meanHighHighWater=NA, meanHighHighWaterSpring=NA, settlingVelocity, ...) {
   # If the user does not include detailed tidal datums
-  deliveredSSC <- ifelse(any(is.na(c(meanHighHighWater, meanHighHighWaterSpring))),
+  deliveredSSC <- ifelse(all(is.na(c(meanHighHighWater, meanHighHighWaterSpring))),
                          # run the simple SSC module
-                         deliveredSedimentSimple(z=z, 
+                         deliverSedimentSimple(z=z, 
                                                  suspendedSediment=suspendedSediment, 
                                                  meanSeaLevel=meanSeaLevel, meanHighWater=meanHighWater, 
                                                  settlingVelocity=settlingVelocity),
                          # If they do include them, run the 3 tide stage module
-                         deliveredSediment3TidalCycle(z=z, 
+                         deliverSediment3TidalCycle(z=z, 
                                                       suspendedSediment=suspendedSediment, 
                                                       meanSeaLevel=meanSeaLevel, 
                                                       meanHighWater=meanHighWater, 

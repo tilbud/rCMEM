@@ -13,16 +13,16 @@
 buildHighTideScenario <- function(scenarioCurve, meanSeaLevelDatum=scenarioCurve$meanSeaLevel[1], meanHighWaterDatum, meanHighHighWaterDatum, meanHighHighWaterSpringDatum, lunarNodalAmp) {
   
   # In create a meanHighWater and add it to the scenario
-  scenarioCurve$meanHighWater <- predictLunarNodalCycle(year = scenarioCurve$years, meanSeaLevel= scenarioCurve$meanSeaLevel, 
+  scenarioCurve$meanHighWater <- predictLunarNodalCycle(year = scenarioCurve$year, meanSeaLevel= scenarioCurve$meanSeaLevel, 
                                              meanSeaLevelDatum = meanSeaLevelDatum, floodElv=meanHighWaterDatum, 
                                              lunarNodalAmp=lunarNodalAmp)
   
   # If meanHighHighWater and meanHighHighWaterSpring are arguements add them to the scenario table too
   if (!missing(meanHighHighWaterDatum) & !missing(meanHighHighWaterSpringDatum)) {
-    scenarioCurve$meanHighHighWater <- predictLunarNodalCycle(year = scenarioCurve$years, meanSeaLevel=scenarioCurve$meanSeaLevel,
+    scenarioCurve$meanHighHighWater <- predictLunarNodalCycle(year = scenarioCurve$year, meanSeaLevel=scenarioCurve$meanSeaLevel,
                                                 meanSeaLevelDatum = meanSeaLevelDatum, floodElv=meanHighHighWaterDatum, 
                                                 lunarNodalAmp=lunarNodalAmp)
-    scenarioCurve$meanHighHighWaterSpring <- predictLunarNodalCycle(year = scenarioCurve$years, meanSeaLevel= scenarioCurve$meanSeaLevel, 
+    scenarioCurve$meanHighHighWaterSpring <- predictLunarNodalCycle(year = scenarioCurve$year, meanSeaLevel= scenarioCurve$meanSeaLevel, 
                                                  meanSeaLevelDatum = meanSeaLevelDatum, floodElv=meanHighHighWaterSpringDatum, 
                                                  lunarNodalAmp=lunarNodalAmp)
   }

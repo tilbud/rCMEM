@@ -4,40 +4,18 @@
 \alias{runMemWithCohorts}
 \title{Run Marsh Equilibrium Model with Cohorts}
 \usage{
-runMemWithCohorts(
-  startYear,
-  endYear = startYear + 99,
-  relSeaLevelRiseInit,
-  relSeaLevelRiseTotal,
-  initElv,
-  meanSeaLevel,
-  meanSeaLevelDatum = meanSeaLevel[1],
-  meanHighWater,
-  meanHighHighWater = NA,
-  meanHighHighWaterSpring = NA,
-  suspendedSediment,
-  lunarNodalAmp,
-  bMax,
-  zVegMin,
-  zVegMax,
-  zVegPeak,
-  plantElevationType,
-  rootToShoot,
-  rootTurnover,
-  rootDepthMax,
-  shape = "linear",
-  omDecayRate,
-  recalcitrantFrac,
-  settlingVelocity,
-  omPackingDensity = 0.085,
-  mineralPackingDensity = 1.99,
-  rootPackingDensity = omPackingDensity,
-  initialCohorts = NA,
-  uplandCohorts = NA,
-  supertidalCohorts = NA,
-  supertidalSedimentInput = NA,
-  ...
-)
+runMemWithCohorts(startYear, endYear = startYear + 99,
+  relSeaLevelRiseInit, relSeaLevelRiseTotal, initElv, meanSeaLevel,
+  meanSeaLevelDatum = meanSeaLevel[1], meanHighWaterDatum,
+  meanHighHighWaterDatum = NA, meanHighHighWaterSpringDatum = NA,
+  suspendedSediment, lunarNodalAmp, bMax, zVegMin, zVegMax, zVegPeak,
+  plantElevationType, rootToShoot, rootTurnover,
+  abovegroundTurnover = NA, speciesCode = NA, rootDepthMax,
+  shape = "linear", omDecayRate, recalcitrantFrac, settlingVelocity,
+  omPackingDensity = 0.085, mineralPackingDensity = 1.99,
+  rootPackingDensity = omPackingDensity, initialCohorts = NA,
+  uplandCohorts = NA, supertidalCohorts = NA,
+  supertidalSedimentInput = NA, ...)
 }
 \arguments{
 \item{startYear}{an integer, year in form YYYY, the start year of the scenario}
@@ -54,31 +32,35 @@ runMemWithCohorts(
 
 \item{meanSeaLevelDatum}{a numeric, Mean Sea level over the last datum period}
 
-\item{meanHighWater}{a numeric, Mean High Water level over the last datum period}
+\item{meanHighWaterDatum}{a numeric, Mean High Water level over the last datum period}
 
-\item{meanHighHighWater}{a numeric (optional), Mean Higher High Water level over the last datum period}
+\item{meanHighHighWaterDatum}{a numeric (optional), Mean Higher High Water level over the last datum period}
 
-\item{meanHighHighWaterSpring}{a numeric (optional), Mean Higher High Spring Tide Water level over the last datum period}
+\item{meanHighHighWaterSpringDatum}{a numeric (optional), Mean Higher High Spring Tide Water level over the last datum period}
 
 \item{suspendedSediment}{a numeric, suspended sediment concentration of the water column}
 
 \item{lunarNodalAmp}{a numeric, the amplitude of the 18-year lunar nodal cycle}
 
-\item{bMax}{a numeric, maximum biomass}
+\item{bMax}{a numeric, or vector of numerics, maximum biomass}
 
-\item{zVegMin}{a numeric, lower elevation of biomass limit}
+\item{zVegMin}{a numeric, or vector of numerics, lower elevation of biomass limit}
 
-\item{zVegMax}{a numeric, upper elevation of biomass limit}
+\item{zVegMax}{a numeric, or vector of numerics, upper elevation of biomass limit}
 
-\item{zVegPeak}{a numeric, (optional) elevation of peak biomass}
+\item{zVegPeak}{(optional) a numeric, or vector of numerics, elevation of peak biomass}
 
 \item{plantElevationType}{character, either "orthometric" or "dimensionless", specifying elevation reference of the vegetation growing elevations}
 
-\item{rootToShoot}{a numeric, root to shoot ratio}
+\item{rootToShoot}{a numeric, or vector of numerics, root to shoot ratio}
 
-\item{rootTurnover}{a numeric, below ground biomass annual turnover rate}
+\item{rootTurnover}{a numeric, or vector of numerics, belowground biomass annual turnover rate}
 
-\item{rootDepthMax}{a numeric, maximum (95\%) rooting depth}
+\item{abovegroundTurnover}{(optional) a numeric, or vector of numerics, aboveground biomass annual turnover rate}
+
+\item{speciesCode}{(optional) a character, or vector of characters, species names or codes associated with biological inputs}
+
+\item{rootDepthMax}{a numeric, or vector of numerics, maximum (95\%) rooting depth}
 
 \item{shape}{a character, "linear" or "exponential" describing the shape of the relationship between depth and root mass}
 
@@ -101,6 +83,8 @@ runMemWithCohorts(
 \item{supertidalSedimentInput, }{a numeric, (optional) grams per cm^2 per year, an optional parameter which will define annual suspended sediment delivery to a sediment column that is is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 
 \item{...}{}
+
+\item{abovegroundTurnover}{(optional) a numeric or vector of numerics, aboveground biomass annual turnover rate}
 
 \item{superTidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 }

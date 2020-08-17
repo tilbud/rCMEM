@@ -4,64 +4,50 @@
 \alias{determineInitialCohorts}
 \title{Determine the initial conditions for a set of cohorts}
 \usage{
-determineInitialCohorts(
-  initElv,
-  MSL,
-  MHW,
-  MHHW = NA,
-  MHHWS = NA,
-  ssc,
-  bMax,
-  zVegMin,
-  zVegMax,
-  zVegPeak,
-  plantElevationType,
-  rootToShoot,
-  rootTurnover,
-  rootDepthMax,
-  shape = "linear",
-  omDecayRate,
-  recalcitrantFrac,
-  settlingVelocity,
-  omPackingDensity = 0.085,
-  mineralPackingDensity = 1.99,
-  rootPackingDensity = omPackingDensity,
-  initialCohorts = NA,
-  uplandCohorts = NA,
-  supertidalCohorts = NA,
-  supertidalSedimentInput = NA
-)
+determineInitialCohorts(initElv, meanSeaLevel, meanHighWater,
+  meanHighHighWater = NA, meanHighHighWaterSpring = NA,
+  suspendedSediment, bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
+  rootToShoot, rootTurnover, rootDepthMax, shape = "linear",
+  abovegroundTurnover = NA, speciesCode = NA, omDecayRate,
+  recalcitrantFrac, settlingVelocity, omPackingDensity = 0.085,
+  mineralPackingDensity = 1.99, rootPackingDensity = omPackingDensity,
+  initialCohorts = NA, uplandCohorts = NA, supertidalCohorts = NA,
+  supertidalSedimentInput = NA, ...)
 }
 \arguments{
 \item{initElv}{a numeric, the initial elevation of the marsh at the start of the scenario}
 
-\item{MSL}{a numeric, Mean Sea Level over the last datum period}
+\item{meanSeaLevel}{a numeric, Mean Sea Level}
 
-\item{MHW}{a numeric, Mean High Water level over the last datum period}
+\item{meanHighWater}{a numeric, Mean High Water level}
 
-\item{MHHW}{a numeric (optional), Mean Higher High Water level over the last datum period}
+\item{meanHighHighWater}{a numeric (optional), Mean Higher High Water level}
 
-\item{MHHWS}{a numeric (optional), Mean Higher High Spring Tide Water level over the last datum period}
+\item{meanHighHighWaterSpring}{a numeric (optional), Mean Higher High Spring Tide Water level}
 
-\item{ssc}{a numeric, suspended sediment concentration of the water column}
+\item{suspendedSediment}{a numeric, suspended sediment concentration of the water column}
 
-\item{bMax}{a numeric, maximum biomass}
+\item{bMax}{a numeric or vector of numerics, maximum biomass}
 
-\item{zVegMin}{a numeric, lower elevation of biomass limit}
+\item{zVegMin}{a numeric or vector of numerics, lower elevation of biomass limit}
 
-\item{zVegMax}{a numeric, upper elevation of biomass limit}
+\item{zVegMax}{a numeric or vector of numerics, upper elevation of biomass limit}
 
-\item{zVegPeak}{a numeric, (optional) elevation of peak biomass}
+\item{zVegPeak}{a numeric or vector of numerics, (optional) elevation of peak biomass}
 
 \item{plantElevationType}{character, either "orthometric" or "dimensionless", specifying elevation reference of the vegetation growing elevations}
 
-\item{rootToShoot}{a numeric, root to shoot ratio}
+\item{rootToShoot}{a numeric or vector of numerics, root to shoot ratio}
 
-\item{rootTurnover}{a numeric, below ground biomass annual turnover rate}
+\item{rootTurnover}{a numeric or vector of numerics, below ground biomass annual turnover rate}
 
-\item{rootDepthMax}{a numeric, maximum (95\%) rooting depth}
+\item{rootDepthMax}{a numeric or vector of numerics, maximum (95\%) rooting depth}
 
 \item{shape}{a character, "linear" or "exponential" describing the shape of the relationship between depth and root mass}
+
+\item{abovegroundTurnover}{(optional) a numeric or vector of numerics, aboveground biomass annual turnover rate}
+
+\item{speciesCode}{(optional) a character or vector of characters, species names or codes associated with biological inputs}
 
 \item{omDecayRate}{a numeric, annual fractional mass lost}
 

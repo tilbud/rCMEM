@@ -33,12 +33,12 @@ omToOcParams <- list(B=0,
 
 salinity <- 3
 
-salThreshold <- 14
+salThreshold <- 18
 salRate <- 0.5
 
 salinityPlot <- 1:32 
 
-maxCH4effect <- 1
+maxCH4effect <- 1/5
 
 salEffect <- maxCH4effect/(1+exp(salRate*(salinityPlot-salThreshold)))
 
@@ -56,7 +56,7 @@ memOutputsToFluxes <- function(cohorts, annualTimeSteps,
                                salinity = 32,
                                salThreshold = 14,
                                salRate = 0.5,
-                               maxCH4effect = 1) {
+                               maxCH4effect = 1/5) {
   
   # To convert OM to OC
   # If parmeter list is 2 long then simple linear correlation

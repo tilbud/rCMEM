@@ -4,8 +4,7 @@
 \name{CTMv6.1_vba_testcase}
 \alias{CTMv6.1_vba_testcase}
 \title{Test cases from CTM v6.1 (VBA implimentation)}
-\format{
-A list of size 8 with 1 string, and 7 tbl_df (tibbles):
+\format{A list of size 8 with 1 string, and 7 tbl_df (tibbles):
 \describe{
   \item{reference}{a reference string for where the output was provided}
   \item{parameters.df}{a tbl_df with 11 observations of 9 variables (3 character variables 6 numerical)}
@@ -15,8 +14,7 @@ A list of size 8 with 1 string, and 7 tbl_df (tibbles):
   \item{Run4}{a tbl_df with 120 nuemrical observations of 13 variables}
   \item{Run5}{a tbl_df with 120 nuemrical observations of 13 variables}
   \item{Run6}{a tbl_df with 120 nuemrical observations of 13 variables}
-}
-}
+}}
 \source{
 Dr James Morris \email{morris@inlet.geol.sc.edu} June 7, 2019 CTM v6.1
 }

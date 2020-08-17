@@ -3,7 +3,7 @@
 #' This function builds a high tide level based on the 18.1 year lunar nodal cycle.
 #' @param year a numeric, the current year
 #' @param meanSeaLevelDatum a numeric, mean sea-level over the last complete 18 year datum period
-#' @param meanSeaLevel a vector, mean sea-level for each scenario we are predicting
+#' @param meanSeaLevel a vector, mean sea-level for each year of the scenario we are predicting
 #' @param floodElv a numeric, high tide level over the last complete 18 year datum period
 #' @param lunarNodalAmp the amplitude of the 18 year lunar nodal cycle
 #' 

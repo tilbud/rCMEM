@@ -1,4 +1,15 @@
-
+#' Animate sediment cohorts accross an elevation transect
+#' 
+#' This function takes two runMemWithCohortsAccrossTransect outputs, cohortsTransect and scenarioTransect tables, as inputs and visualizes soil formation as an animated .gif 
+#' @param cohortsTransect data frame, annually tracked soil mass cohorts output from runMemWithCohortsAccrossTransect
+#' @param scenarioTransect data frame, annual summaries of inputs and outputs from runMemWithCohortsAccrossTransect
+#' @param filename, character, name of the output file
+#' @param savePath character, filepath to save animation to
+#' @param duration numeric, length in seconds of the animation
+#' @param width numeric, width in inches of the .gif
+#' @param height numeric, height in inches of the .gif
+#' 
+#' @export
 animateCohortsAccrossTransect <- function(scenarioTransect, cohortsTransect,
                                           duration = 30,
                                           width = 5,
@@ -11,8 +22,9 @@ animateCohortsAccrossTransect <- function(scenarioTransect, cohortsTransect,
   require(png, quietly = TRUE)
   
   surfaceElevations <- scenarioTransect %>% 
-    dplyr::select(years, elvMax, elvMin, surfaceElevation) %>% 
-    dplyr::rename(year = years)
+    dplyr::select(year, elvMax, elvMin, surfaceElevation) # %>% 
+    # TODO rename years as year up stream so we don't have to rename it here
+    # dplyr::rename(year = years)
   
   animateCohorts <- cohortsTransect %>% 
     dplyr::mutate(fraction_om = (fast_OM + slow_OM + root_mass) / 
@@ -23,10 +35,10 @@ animateCohortsAccrossTransect <- function(scenarioTransect, cohortsTransect,
                   layer_bottom = surfaceElevation - layer_bottom)
   
   waterLevel <- scenarioTransect %>% 
-    dplyr::select(years, MSL, MHW) %>% 
-    dplyr::rename(year = years) %>% 
+    dplyr::select(year, meanSeaLevel, meanHighWater) %>% 
+    # dplyr::rename(year = years) %>% 
     group_by(year) %>%
-    summarise(MSL=first(MSL), MHW=first(MHW)) %>% 
+    summarise(meanSeaLevel=first(meanSeaLevel), meanHighWater=first(meanHighWater)) %>% 
     gather(value="waterLevel", key="datum", -year) 
   
   soil_transect <- ggplot(data = animateCohorts, aes(xmin = elvMin, xmax = elvMax, ymin = layer_bottom, ymax = layer_top, 
@@ -44,6 +56,7 @@ animateCohortsAccrossTransect <- function(scenarioTransect, cohortsTransect,
   
   tempAnimation <- gganimate::animate(soil_transect, 
                                       duration = duration,
+                                      nframes=length(unique(scenarioTransect$year)),
                                       renderer = gifski_renderer(),
                                       width = width, 
                                       height = height, 

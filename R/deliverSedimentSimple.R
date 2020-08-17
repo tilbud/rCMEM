@@ -14,7 +14,7 @@
 #'
 #' @return a numeric, the sediment delivered over the course of a year
 #' @export 
-deliveredSedimentSimple <- function(z, suspendedSediment, meanSeaLevel, meanHighWater, meanLowWater = meanSeaLevel-meanHighWater, settlingVelocity, 
+deliverSedimentSimple <- function(z, suspendedSediment, meanSeaLevel, meanHighWater, meanLowWater = meanSeaLevel-meanHighWater, settlingVelocity, 
                                     capturedSediment=1, nTides=704) {
   
   # Flood depth in meters is the same as water volume when in m and assuming a 1m2 area of interest

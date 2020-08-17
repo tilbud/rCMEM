@@ -2,14 +2,14 @@
 #' 
 #' This will take MEM outputs and simulate sediment elevation table and marker horizon data.
 #' 
-#' @param cohorts 
-#' @param scenario
-#' @param markerHorizonYear 
+#' @param cohorts a dataframe, one output from runMemWithCohorts 
+#' @param scenario a dataframe, a second output from runMemWithCohorts
+#' @param markerHorizonYear an integer, the year a marker horizon was lain down, that were using to simulate an accretion measurement 
 #' 
 #' @return a dataframe of net elevation changes and accretion rates relative to year
 #' 
 #' @export
-sumulateSetData <- function(cohorts, scenario, markerHorizonYear=NA) {
+simulateSetData <- function(cohorts, scenario, markerHorizonYear=NA) {
   # For the scenario, 
   # For each set of cohorts measure the minimum depth of the cohort nearest to the horizon age without going older
   # Accretion rate is mimium depth / (time t - marker horizon year)
@@ -28,13 +28,13 @@ sumulateSetData <- function(cohorts, scenario, markerHorizonYear=NA) {
     cohortsMh <- cohortsMh %>% 
       dplyr::filter(index == mhYear) %>%
       dplyr::mutate(accretionRate = layer_top / age) %>% 
-      dplyr::select(year, accretionRate) %>% 
-      dplyr::rename(years = year)
+      dplyr::select(year, accretionRate) # %>% 
+      # dplyr::rename(years = year)
     
     cohortsMh$accretionRate[1] <- 0 
     
     scenario <- scenario %>% 
-      dplyr::left_join(cohortsMh, by="years")
+      dplyr::left_join(cohortsMh, by="year")
   }
   return(scenario)
 }

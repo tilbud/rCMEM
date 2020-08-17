@@ -15,20 +15,35 @@
 #'
 #' @return a numeric, the sediment delivered over the course of a year
 #' @export
-deliveredSediment3TidalCycle <- function(z, suspendedSediment, meanSeaLevel, meanHighWater, meanHighHighWater, meanHighHighWaterSpring,
+deliverSediment3TidalCycle <- function(z, suspendedSediment, meanSeaLevel, meanHighWater, meanHighHighWater, meanHighHighWaterSpring=NA,
                                          meanLowWater=meanSeaLevel-meanHighWater, meanLowLowWater=meanSeaLevel-meanHighHighWater, meanLowLowWaterSpring=meanSeaLevel-meanHighHighWaterSpring,
                                          settlingVelocity, capturedSediment=1) {
   
-  # Define Constants
-  highTidesPerYear <- 352.657
-  higherHighTidesPerYear <- 352.657 - 24.720
-  springTidesPerYear <- 24.720
-  hoursInTidalCycle <- 12.42
-  
-  # Create a data frame operation so we can use tidy functions to speed this up
-  tidalCycles <- data.frame(datumHigh = c(meanHighWater, meanHighHighWater, meanHighHighWaterSpring), 
-                            datumLow = c(meanLowWater, meanLowLowWater, meanLowLowWaterSpring),
-                            nTides = c(highTidesPerYear, higherHighTidesPerYear, springTidesPerYear))
+  if (! is.na(meanHighHighWaterSpring)) {
+    # If MHHWS, MHHW, and MHW
+    # Define Constants
+    highTidesPerYear <- 352.657
+    higherHighTidesPerYear <- 352.657 - 24.720
+    springTidesPerYear <- 24.720
+    hoursInTidalCycle <- 12.42
+    
+    # Create a data frame operation so we can use tidy functions to speed this up
+    tidalCycles <- data.frame(datumHigh = c(meanHighWater, meanHighHighWater, meanHighHighWaterSpring), 
+                              datumLow = c(meanLowWater, meanLowLowWater, meanLowLowWaterSpring),
+                              nTides = c(highTidesPerYear, higherHighTidesPerYear, springTidesPerYear))
+    
+  } else {
+    # If MHW and MHHW
+    highTidesPerYear <- 352.657
+    higherHighTidesPerYear <- 352.657
+    hoursInTidalCycle <- 12.42
+    
+    # Create a data frame operation so we can use tidy functions to speed this up
+    tidalCycles <- data.frame(datumHigh = c(meanHighWater, meanHighHighWater), 
+                              datumLow = c(meanLowWater, meanLowLowWater),
+                              nTides = c(highTidesPerYear, higherHighTidesPerYear))
+    
+  }
   
   tidalCycles <- tidalCycles %>%
     # Set tidal propoerties to 0 if surface is above tidal range in each case
