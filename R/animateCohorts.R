@@ -1,8 +1,8 @@
 #' Animate sediment cohorts
 #' 
 #' This function takes two MEM outputs, cohorts and scenario tables, as inputs and visualizes soil formation as an animated .gif 
-#' @param cohorts data frame, annually tracked soil mass cohorts output from runMemWithCohorts
-#' @param scenario data frame, annual summaries of inputs and outputs from runMemWithCohorts
+#' @param cohorts data frame, annually tracked soil mass cohorts output from runCohortMem
+#' @param scenario data frame, annual summaries of inputs and outputs from runCohortMem
 #' @param filename, character, name of the output file
 #' @param savePath character, filepath to save animation to
 #' @param chPalette vector, a vector of colors to use to symbolize the different mass cohorts

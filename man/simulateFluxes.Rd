@@ -9,11 +9,23 @@ simulateFluxes(cohorts, scenario, omToOcParams = list(B0 = 0, B1 = 0.48),
   maxCh4ToCo2 = 1/5)
 }
 \arguments{
-\item{maxCH4effect}{}
+\item{cohorts}{a data frame, ouptut from runCohortMem, tracking mineral and organic mass cohorts over each year of the simulation}
+
+\item{scenario}{a data frame, second ouptut from runCohortMem, tracking annualized summaries of drivers and marsh profiles dynamics}
+
+\item{omToOcParams}{a list of parameters defining a linear or quadratic relationship between fraction organic matter and fraction carbon}
+
+\item{salinity}{a numeric, or vector of numerics, salinity in parts per thousand}
+
+\item{salThreshold}{a numeric, the salinity threashold defining the relationship between salinity and methane production}
+
+\item{salRate}{a numeric, the rate of a logistic relationship, defining the steepness of the threshold between salinity and methane production}
+
+\item{maxCH4effect}{a numeric, the maximum ratio or methane to carbon dioxide produced under fully fresh conditions}
 }
 \value{
 list of 2 data frames, one the input cohorts table with depthwise fluxes added, the second the annualized scenario table with annualized fluxes added
 }
 \description{
-This function takes outputs from runMemWithCohorts and uses them to simulate several annualized greenhouse gas flux variables
+This function takes outputs from runCohortMem and uses them to simulate several annualized greenhouse gas flux variables
 }

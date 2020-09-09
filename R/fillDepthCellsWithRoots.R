@@ -8,15 +8,15 @@
 #' a custom parameters list.
 #' The custom function listed here is a gaussian root depth distribution.
 #'
-#' @param depthMins 
-#' @param depthMaxs 
-#' @param totalRootBmass 
-#' @param rootShape 
-#' @param rootDepthMax 
-#' @param customFunction 
-#' @param customParams 
+#' @param depthMins a vector of numerics, minimum of depth intervals that the funciton will fill with roots
+#' @param depthMaxs a vector of numerics, maximum of depth intervals that the funciton will fill with roots
+#' @param totalRootBmass a numeric, total root biomass
+#' @param rootShape a character, either linear, exponential, or custom, defining the shape of the root profile
+#' @param rootDepthMax a numeric, maximum depth of root zone
+#' @param customFunction a function (optional), if root shape is custom, then use a customized function 
+#' @param customParams a list (optional), any other parameters required by a custom root shape function
 #'
-#' @return
+#' @return a data frame with minimum and maximum depths and and root biomass within those depths intervals
 #' @export
 #'
 fillDepthCellsWithRoots <- function(depthMins = 0:149, 

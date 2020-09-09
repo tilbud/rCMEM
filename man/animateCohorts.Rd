@@ -10,9 +10,9 @@ animateCohorts(cohorts, scenario, filename = "MEM-CTM-animated.gif",
   duration = 30, width = 4.5, height = 4.5)
 }
 \arguments{
-\item{cohorts}{data frame, annually tracked soil mass cohorts output from runMemWithCohorts}
+\item{cohorts}{data frame, annually tracked soil mass cohorts output from runCohortMem}
 
-\item{scenario}{data frame, annual summaries of inputs and outputs from runMemWithCohorts}
+\item{scenario}{data frame, annual summaries of inputs and outputs from runCohortMem}
 
 \item{filename, }{character, name of the output file}
 

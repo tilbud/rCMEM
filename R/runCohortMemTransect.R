@@ -1,6 +1,6 @@
 #' Run Marsh Equilibrium Model with Cohorts Accross an Elevation Transect
 #'
-#' This function takes an elevation minimum, maximum, and intervals,  uses them to simulate an elevation transect, then batch runs runMemWithCohorts over it.
+#' This function takes an elevation minimum, maximum, and intervals,  uses them to simulate an elevation transect, then batch runs runCohortMem over it.
 #' @param startYear an integer, year in form YYYY, the start year of the scenario 
 #' @param endYear an integer, year in form YYYY, the end year of the scenario  
 #' @param relSeaLevelRiseInit a numeric, initial rate of relative sea-level rise
@@ -33,14 +33,14 @@
 #' @param uplandCohorts a data frame,  (optional) custom set of mass cohorts to be used if intiial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance
 #' @param supertidalCohorts a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance
 #' @param supertidalSedimentInput a numeric, (optional) grams per cm^2 per year, an optional parameter which will define annual suspended sediment delivery to a sediment column that is is higher than maximum tidal height, but not maximum wetland vegetation tolerance
-#' @param initElvMin a numeric, the lowest initial elevation point to 
-#' @param initElvMax
-#' @param elvIntervals
+#' @param initElvMin a numeric, the lowest initial elevation over which to batch run the model
+#' @param initElvMax a numeric, the highest initial elevation over which to batch run the model
+#' @param elvIntervals a numeric, the elevation intervals of the transect
 #' @param ...
 #' 
 #' @return a list of data frames, including the annualized summaries, and mapped cohorts tracked for every year, and every depth interval, of the simulation.
 #' @export
-runMemWithCohortsAccrossTransect <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, relSeaLevelRiseTotal,
+runCohortMemTransect <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, relSeaLevelRiseTotal,
                                              meanSeaLevel, meanSeaLevelDatum=meanSeaLevel[1], 
                                              meanHighWaterDatum, meanHighHighWaterDatum=NA, meanHighHighWaterSpringDatum=NA, 
                                              suspendedSediment, lunarNodalAmp, settlingVelocity,
@@ -65,7 +65,7 @@ runMemWithCohortsAccrossTransect <- function(startYear, endYear=startYear+99, re
   elvMaxs <- elvTransect + elvIntervals/2
   
   for (i in 1:length(elvTransect)) {
-    memOutputs <- runMemWithCohorts(initElv = elvTransect[i],
+    memOutputs <- runCohortMem(initElv = elvTransect[i],
                                     startYear=startYear, 
                                     endYear=endYear, 
                                     relSeaLevelRiseInit=relSeaLevelRiseInit, 
@@ -118,15 +118,7 @@ runMemWithCohortsAccrossTransect <- function(startYear, endYear=startYear+99, re
     }
     
   }
-  
-  # scenarioTransectGraph <- scenarioTransect %>% 
-  #    filter(surfaceElevation != initElv) %>% 
-  #    mutate(above_below_msl = ifelse(surfaceElevation >= meanSeaLevel, "above", "below"))
-  #  
-  #  ggplot(data=scenarioTransectGraph, aes(x=years, y=surfaceElevation, color=above_below_msl)) +
-  #    geom_line(aes(group=as.character(initElv))) +
-  #    geom_point()
-   
+
   return(list(scenarioTransect=scenarioTransect,
               cohortsTransect=cohortsTransect))
 

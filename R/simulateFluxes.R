@@ -1,14 +1,14 @@
 #' Simulate Greenhouse Gas Fluxes
 #' 
-#' This function takes outputs from runMemWithCohorts and uses them to simulate several annualized greenhouse gas flux variables 
+#' This function takes outputs from runCohortMem and uses them to simulate several annualized greenhouse gas flux variables 
 #' 
-#' @param cohorts
-#' @param scenario
-#' @param omToOcParams
-#' @param salinity
-#' @param salThreshold
-#' @param salRate
-#' @param maxCH4effect
+#' @param cohorts a data frame, ouptut from runCohortMem, tracking mineral and organic mass cohorts over each year of the simulation
+#' @param scenario a data frame, second ouptut from runCohortMem, tracking annualized summaries of drivers and marsh profiles dynamics
+#' @param omToOcParams a list of parameters defining a linear or quadratic relationship between fraction organic matter and fraction carbon
+#' @param salinity a numeric, or vector of numerics, salinity in parts per thousand
+#' @param salThreshold a numeric, the salinity threashold defining the relationship between salinity and methane production
+#' @param salRate a numeric, the rate of a logistic relationship, defining the steepness of the threshold between salinity and methane production
+#' @param maxCH4effect a numeric, the maximum ratio or methane to carbon dioxide produced under fully fresh conditions 
 #' 
 #' @return list of 2 data frames, one the input cohorts table with depthwise fluxes added, the second the annualized scenario table with annualized fluxes added
 #' @export
@@ -136,7 +136,8 @@ simulateFluxes <- function(cohorts, scenario,
     dplyr::mutate(belowgroundNPP = omToOc(belowground_biomass * rootTurnover) * C_to_CO2,
                   abovegroundNPP = omToOc(aboveground_biomass * abovegroundTurnover) * C_to_CO2,
                   totalNPP = abovegroundNPP + belowgroundNPP) %>% 
-    left_join(ghgFluxesAnnual, by=c("year"))
+    left_join(ghgFluxesAnnual, by=c("year")) %>% 
+    left_join(co2_removal, by=c("year"))
   
   return(list(ghgFluxesCohorts, ghgFluxesScenario))
   

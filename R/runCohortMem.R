@@ -39,7 +39,7 @@
 #' 
 #' @return a list of data frames, including the annualized summaries, and mapped cohorts tracked for every year of the simulation.
 #' @export
-runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, relSeaLevelRiseTotal, initElv,
+runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, relSeaLevelRiseTotal, initElv,
                               meanSeaLevel, meanSeaLevelDatum=meanSeaLevel[1], meanHighWaterDatum, meanHighHighWaterDatum=NA, meanHighHighWaterSpringDatum=NA, 
                               suspendedSediment, lunarNodalAmp,
                               bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
@@ -84,7 +84,6 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
   scenario$mineral <- as.numeric(rep(NA, nrow(scenario)))
 
   # Set initial conditions
-  # Calculate initial z star
   initialConditions <- determineInitialCohorts(initElv=initElv,
                                                meanSeaLevel=scenario$meanSeaLevel[1], 
                                                meanHighWater=scenario$meanHighWater[1], 
@@ -93,10 +92,14 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
                                                suspendedSediment=scenario$suspendedSediment[1],
                                                bMax=bMax, zVegMin=zVegMin, zVegMax=zVegMax, zVegPeak=zVegPeak, 
                                                plantElevationType=plantElevationType,
-                                               rootToShoot=rootToShoot, rootTurnover=rootTurnover, rootDepthMax=rootDepthMax, shape=shape,
+                                               rootToShoot=rootToShoot, rootTurnover=rootTurnover, 
+                                               rootDepthMax=rootDepthMax, shape=shape,
                                                abovegroundTurnover=abovegroundTurnover,
-                                               omDecayRate=omDecayRate, recalcitrantFrac=recalcitrantFrac, settlingVelocity=settlingVelocity,
-                                               omPackingDensity=omPackingDensity, mineralPackingDensity=mineralPackingDensity,
+                                               omDecayRate=omDecayRate, 
+                                               recalcitrantFrac=recalcitrantFrac, 
+                                               settlingVelocity=settlingVelocity,
+                                               omPackingDensity=omPackingDensity, 
+                                               mineralPackingDensity=mineralPackingDensity,
                                                rootPackingDensity=omPackingDensity,
                                                speciesCode=speciesCode,
                                                initialCohorts=initialCohorts,
@@ -155,9 +158,11 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
   for (i in 2:nrow(scenario)) {
     
     # Calculate surface elevation relative to datum
-    surfaceElvZStar <- convertZToZstar(z=scenario$surfaceElevation[i-1], meanHighWater=scenario$meanHighWater[i], meanSeaLevel=scenario$meanSeaLevel[i])
+    surfaceElvZStar <- convertZToZstar(z=scenario$surfaceElevation[i-1], 
+                                       meanHighWater=scenario$meanHighWater[i], 
+                                       meanSeaLevel=scenario$meanSeaLevel[i])
     
-    # Calculate dynamic above ground
+    # Calculate dynamic above ground biomass
     bio_table <- runMultiSpeciesBiomass(z=surfaceElvZStar, bMax=bMax, zVegMax=zStarVegMax, 
                                         zVegMin=zStarVegMin, zVegPeak=zStarVegPeak,
                                         rootToShoot=rootToShoot,
@@ -167,7 +172,8 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
                                         speciesCode=speciesCode)    
     
     # Calculate Mineral pool
-    dynamicMineralPool <- deliverSedimentFlexibly(z=scenario$surfaceElevation[i-1], suspendedSediment=scenario$suspendedSediment[i], 
+    dynamicMineralPool <- deliverSedimentFlexibly(z=scenario$surfaceElevation[i-1], 
+                                                  suspendedSediment=scenario$suspendedSediment[i], 
                                                   meanSeaLevel=scenario$meanSeaLevel[i], 
                                                   meanHighWater=scenario$meanHighWater[i], 
                                                   meanHighHighWater = scenario$meanHighHighWater[i], 
@@ -175,7 +181,8 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
                                                   settlingVelocity=settlingVelocity)
     
    
-    # Calculate dynamic sediment deliver
+    # Add a the new inorganic sediment cohort,
+    # add live roots, and age the organic matter
     cohorts <- addCohort(cohorts, totalRootMassPerArea=bio_table$belowground_biomass[1], rootDepthMax=bio_table$rootDepthMax[1], 
                          rootTurnover = bio_table$rootTurnover[1], omDecayRate = list(fast=omDecayRate, slow=0),
                          rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
@@ -183,19 +190,21 @@ runMemWithCohorts <- function(startYear, endYear=startYear+99, relSeaLevelRiseIn
                          rootDensity=rootPackingDensity, shape=shape,
                          mineralInput = dynamicMineralPool)
     
+    # Add the calendar year to the cohort table so that we can track each cohort over each year
     cohorts$year <- rep(scenario$year[i], nrow(cohorts))
     
-    # Add summary variables to annual time step tracker
-    scenario$surfaceElevation[i] <- profileBottomElv + max(cohorts$layer_bottom, na.rm=T)
-    scenario[i,names(scenario) %in% names(bio_table)] <- bio_table
-    scenario$mineral[i] <- dynamicMineralPool
-
-    # add initial set of cohorts
+    # add new set of cohorts, to the table of all the cohorts we are tracking over each year
     cohortsNewRowMax <- cohortsNewRowMin + nrow(cohorts) - 1
     trackCohorts[cohortsNewRowMin:cohortsNewRowMax,] <- cohorts
     
-    # create variables to keep track of cohorts added to the full cohort tracker
+    # Keep track of the number of rows in the cohorts table
     cohortsNewRowMin <- cohortsNewRowMin + nrow(cohorts) + 1
+    
+    # Add annual variables to annual time step summary table
+    scenario$surfaceElevation[i] <- profileBottomElv + max(cohorts$layer_bottom, na.rm=T)
+    scenario[i,names(scenario) %in% names(bio_table)] <- bio_table
+    scenario$mineral[i] <- dynamicMineralPool
+    
   }
   
   # Remove NA values from cohorts

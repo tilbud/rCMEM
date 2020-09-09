@@ -7,9 +7,9 @@
 simulateSetData(cohorts, scenario, markerHorizonYear = NA)
 }
 \arguments{
-\item{cohorts}{a dataframe, one output from runMemWithCohorts}
+\item{cohorts}{a data frame, ouptut from runCohortMem, tracking mineral and organic mass cohorts over each year of the simulation}
 
-\item{scenario}{a dataframe, a second output from runMemWithCohorts}
+\item{scenario}{a data frame, second ouptut from runCohortMem, tracking annualized summaries of drivers and marsh profiles dynamics}
 
 \item{markerHorizonYear}{an integer, the year a marker horizon was lain down, that were using to simulate an accretion measurement}
 }

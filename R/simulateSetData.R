@@ -2,8 +2,8 @@
 #' 
 #' This will take MEM outputs and simulate sediment elevation table and marker horizon data.
 #' 
-#' @param cohorts a dataframe, one output from runMemWithCohorts 
-#' @param scenario a dataframe, a second output from runMemWithCohorts
+#' @param cohorts a data frame, ouptut from runCohortMem, tracking mineral and organic mass cohorts over each year of the simulation
+#' @param scenario a data frame, second ouptut from runCohortMem, tracking annualized summaries of drivers and marsh profiles dynamics
 #' @param markerHorizonYear an integer, the year a marker horizon was lain down, that were using to simulate an accretion measurement 
 #' 
 #' @return a dataframe of net elevation changes and accretion rates relative to year

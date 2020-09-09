@@ -10,7 +10,7 @@ simulateSoilCore(cohorts, coreYear, coreDepth = 100,
   mineralPackingDensity = 1.99, rootPackingDensity = omPackingDensity)
 }
 \arguments{
-\item{cohorts}{a data frame}
+\item{cohorts}{a data frame, ouptut from runCohortMem, tracking mineral and organic mass cohorts over each year of the simulation}
 
 \item{coreYear}{an integer, year in form YYYY, specify a year to simulate taking a sediment core}
 

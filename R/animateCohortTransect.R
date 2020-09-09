@@ -1,8 +1,8 @@
 #' Animate sediment cohorts accross an elevation transect
 #' 
-#' This function takes two runMemWithCohortsAccrossTransect outputs, cohortsTransect and scenarioTransect tables, as inputs and visualizes soil formation as an animated .gif 
-#' @param cohortsTransect data frame, annually tracked soil mass cohorts output from runMemWithCohortsAccrossTransect
-#' @param scenarioTransect data frame, annual summaries of inputs and outputs from runMemWithCohortsAccrossTransect
+#' This function takes two runCohortMemTransect outputs, cohortsTransect and scenarioTransect tables, as inputs and visualizes soil formation as an animated .gif 
+#' @param cohortsTransect data frame, annually tracked soil mass cohorts output from runCohortMemTransect
+#' @param scenarioTransect data frame, annual summaries of inputs and outputs from runCohortMemTransect
 #' @param filename, character, name of the output file
 #' @param savePath character, filepath to save animation to
 #' @param duration numeric, length in seconds of the animation
@@ -10,7 +10,7 @@
 #' @param height numeric, height in inches of the .gif
 #' 
 #' @export
-animateCohortsAccrossTransect <- function(scenarioTransect, cohortsTransect,
+animateCohortTransect <- function(scenarioTransect, cohortsTransect,
                                           duration = 30,
                                           width = 5,
                                           height = 3,

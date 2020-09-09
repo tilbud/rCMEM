@@ -260,7 +260,7 @@ Summary if < Highest Tide and
 ``` {r graph MEM-CTM output}
 # First we'll profile the script
 start_time <- Sys.time()
-memCohortExample <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
+memCohortExample <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
                                       initElv=21.9, meanSeaLevel=7.4, 
                                       meanHighWaterDatum=16.9, meanHighHighWaterDatum=25.4,
                                       meanHighHighWaterSpringDatum=31.2, 
@@ -413,7 +413,7 @@ plot(x=salinityPlot, y=salEffect, type = "l",
 
 ```{r simulate fluxes}
 
-memCohortExample <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
+memCohortExample <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
                                       initElv=21.9, meanSeaLevel=7.4, 
                                       meanHighWaterDatum=16.9, meanHighHighWaterDatum=25.4,
                                       meanHighHighWaterSpringDatum=31.2, 
@@ -476,9 +476,9 @@ ggsave("../../../Desktop/MEM_CH4_DepthSeries.jpg",
 ## Try out Animate Cohorts Function
 
 ``` {r try out animate cohorts}
-animateCohorts(scenario = scenario, cohorts = cohorts,
-               filename = "MEM-CTM-example.gif",
-               savePath="../temp")
+#animateCohorts(scenario = scenario, cohorts = cohorts,
+#               filename = "MEM-CTM-example.gif",
+#               savePath="../temp")
 
 knitr::include_graphics("../temp/MEM-CTM-example.gif")
 
@@ -491,7 +491,7 @@ You can also batch run chortsMEM accross a transect like in Schile et al. (2014)
 ```{r batch runs}
 
 # Generic input will run from mean sea level to highest tide + sea-level rise 
-transectoutput <- runMemWithCohortsAccrossTransect(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
+transectoutput <- runCohortMemTransect(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
                                       initElv=21.9, meanSeaLevel=7.4, 
                                       meanHighWaterDatum=16.9, meanHighHighWaterDatum=25.4,
                                       meanHighHighWaterSpringDatum=31.2, 
@@ -511,14 +511,14 @@ transectoutput <- runMemWithCohortsAccrossTransect(startYear=2015, relSeaLevelRi
    
   ggplot(data=scenarioTransectGraph, aes(x=year, y=surfaceElevation, color=above_below_msl)) +
      geom_line(aes(group=as.character(initElv))) +
-     geom_point() +
+     geom_point()
     
 ```
 
 ```{r animate Transect}
-animateCohortsAccrossTransect(scenarioTransect = transectoutput[[1]], cohortsTransect = transectoutput[[2]],
-               filename = "MEM-Transect-example.gif",
-               savePath="../temp")
+#animateCohortTransect(scenarioTransect = transectoutput[[1]], cohortsTransect = transectoutput[[2]],
+#               filename = "MEM-Transect-example.gif",
+#               savePath="../temp")
 
 knitr::include_graphics("../temp/MEM-Transect-example.gif")
 ```
@@ -636,7 +636,7 @@ ggplot(totalDf, aes(x=z, y=aboveground_biomass)) +
   geom_point(aes(color=speciesCode))
 
 start_time <- Sys.time()
-memCohortExampleMultiSpp <- runMemWithCohorts(startYear=startYear, relSeaLevelRiseInit=relSeaLevelRiseInit, relSeaLevelRiseTotal=relSeaLevelRiseTotal,
+memCohortExampleMultiSpp <- runCohortMem(startYear=startYear, relSeaLevelRiseInit=relSeaLevelRiseInit, relSeaLevelRiseTotal=relSeaLevelRiseTotal,
                                       initElv=initElv, meanSeaLevel=meanSeaLevel, 
                                       meanHighWaterDatum=meanHighWaterDatum, meanHighHighWaterDatum=meanHighHighWaterDatum,
                                       meanHighHighWaterSpringDatum=meanHighHighWaterSpringDatum, 
@@ -678,7 +678,7 @@ plot(craggyCurve$year, craggyCurve$meanSeaLevel2, type="l")
 
 # First we'll profile the script
 start_time <- Sys.time()
-memCohortExampleCraggySlr <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
+memCohortExampleCraggySlr <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
                                       initElv=21.9, meanSeaLevel=craggyCurve$meanSeaLevel2, 
                                       meanHighWaterDatum=16.9, meanHighHighWaterDatum=25.4,
                                       meanHighHighWaterSpringDatum=31.2, 
@@ -717,7 +717,7 @@ plot(2015:2114,sscScenario, type="l")
 
 # First we'll profile the script
 start_time <- Sys.time()
-memCohortExampleCraggySlr <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
+memCohortExampleCraggySlr <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
                                       initElv=21.9, meanSeaLevel=craggyCurve$meanSeaLevel2, 
                                       meanHighWaterDatum=16.9, meanHighHighWaterDatum=25.4,
                                       meanHighHighWaterSpringDatum=31.2, 
@@ -797,7 +797,7 @@ pastSlrDatum <- pastSLR + 7.14
 
 # First we'll profile the script
 start_time <- Sys.time()
-memCohortHindCast <- runMemWithCohorts(startYear=1915,
+memCohortHindCast <- runCohortMem(startYear=1915,
                                       initElv=21.9-(max(pastSlrDatum)-min(pastSlrDatum)), 
                                       meanSeaLevel=pastSlrDatum,
                                       meanSeaLevelDatum=7.14,
@@ -825,7 +825,7 @@ ggplot(data=hindcastChange, aes(x=year, y=Elevation)) +
 hindcastCohorts <- memCohortHindCast[[2]] %>% filter(year == 2014) 
 
 start_time <- Sys.time()
-memCohortExampleForecast <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
+memCohortExampleForecast <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
                                       initElv=memCohortHindCast[[1]]$surfaceElevation[100],
                                       meanSeaLevel=memCohortHindCast[[1]]$meanSeaLevel[100],
                                       meanHighWaterDatum=16.9, meanHighHighWaterDatum=25.4,
@@ -872,7 +872,7 @@ knitr::include_graphics("../temp/MEM-CTM-hindcast-forecast.gif")
 
 # First we'll profile the script
 start_time <- Sys.time()
-memCohortExample <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
+memCohortExample <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
                                       initElv=21.9, meanSeaLevel=7.4, 
                                       meanHighWaterDatum=weightedMHW, 
                                       suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
@@ -888,15 +888,15 @@ head(scenario)
 cohorts <- memCohortExample$cohorts
 head(cohorts)
 
-animateCohorts(scenario = scenario, cohorts = cohorts,
-               filename = "MEM-CTM-simple-module.gif",
-               savePath="../temp")
+#animateCohorts(scenario = scenario, cohorts = cohorts,
+#               filename = "MEM-CTM-simple-module.gif",
+#               savePath="../temp")
 
 knitr::include_graphics("../temp/MEM-CTM-simple-module.gif")
 
 # What about MHW and MHHW?
 start_time <- Sys.time()
-memCohortExample <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
+memCohortExample <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
                                       initElv=21.9, meanSeaLevel=7.4, 
                                       meanHighWaterDatum=meanHighWaterDatum, 
                                       meanHighHighWaterDatum=meanHighHighWaterDatum,
@@ -913,9 +913,9 @@ head(scenario)
 cohorts <- memCohortExample$cohorts
 head(cohorts)
 
-animateCohorts(scenario = scenario, cohorts = cohorts,
-               filename = "MEM-CTM-MHW-MHHW.gif",
-               savePath="../temp")
+#animateCohorts(scenario = scenario, cohorts = cohorts,
+#               filename = "MEM-CTM-MHW-MHHW.gif",
+#               savePath="../temp")
 
 knitr::include_graphics("../temp/MEM-CTM-MHW-MHHW.gif")
 
