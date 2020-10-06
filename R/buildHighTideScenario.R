@@ -7,10 +7,13 @@
 #' @param meanHighHighWaterDatum a numeric, Mean Higher High Water level over the last datum period
 #' @param meanHighHighWaterSpringDatum a numeric, Mean Higher High Spring Tide Water level over the last datum period
 #' @param lunarNodalAmp the amplitude of the 18-year lunar nodal cycle
+#' @param lunarNodalPhase a numeric, in decimal years (YYYY) the start year of the sine wave representing the lunar nodal cycle 
 #' 
 #' @return a data frame, including the sea-level and suspended sediment concentraiton scenario inputted, with annual high tide datum(s) added
 #' @export
-buildHighTideScenario <- function(scenarioCurve, meanSeaLevelDatum=scenarioCurve$meanSeaLevel[1], meanHighWaterDatum, meanHighHighWaterDatum, meanHighHighWaterSpringDatum, lunarNodalAmp) {
+buildHighTideScenario <- function(scenarioCurve, meanSeaLevelDatum=scenarioCurve$meanSeaLevel[1], 
+                                  meanHighWaterDatum, meanHighHighWaterDatum, meanHighHighWaterSpringDatum, 
+                                  lunarNodalAmp, lunarNodalPhase=2011.181) {
   
   # In create a meanHighWater and add it to the scenario
   scenarioCurve$meanHighWater <- predictLunarNodalCycle(year = scenarioCurve$year, meanSeaLevel= scenarioCurve$meanSeaLevel, 

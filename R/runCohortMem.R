@@ -13,7 +13,10 @@
 #' @param meanHighHighWaterSpringDatum a numeric (optional), Mean Higher High Spring Tide Water level over the last datum period
 #' @param suspendedSediment a numeric, suspended sediment concentration of the water column
 #' @param lunarNodalAmp a numeric, the amplitude of the 18-year lunar nodal cycle
-#' @param settlingVelocity a numeric, the number of times a water column will clear per tidal cycle
+#' @param lunarNodalPhase a numeric, in decimal years (YYYY) the start year of the sine wave representing the lunar nodal cycle 
+#' @param captureRate a numeric, the number of times a water column will clear per tidal cycle
+#' @param nFloods a numeric, the number of tidal flooding events per year
+#' @param floodTime.fn a function, specify the method used to calculate flooding time per tidal cycle
 #' @param bMax a numeric, or vector of numerics, maximum biomass
 #' @param zVegMax a numeric, or vector of numerics, upper elevation of biomass limit
 #' @param zVegMin a numeric, or vector of numerics, lower elevation of biomass limit
@@ -40,18 +43,19 @@
 #' @return a list of data frames, including the annualized summaries, and mapped cohorts tracked for every year of the simulation.
 #' @export
 runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, relSeaLevelRiseTotal, initElv,
-                              meanSeaLevel, meanSeaLevelDatum=meanSeaLevel[1], meanHighWaterDatum, meanHighHighWaterDatum=NA, meanHighHighWaterSpringDatum=NA, 
-                              suspendedSediment, lunarNodalAmp,
-                              bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
-                              rootToShoot, rootTurnover, abovegroundTurnover=NA, speciesCode=NA, rootDepthMax, shape="linear",
-                              omDecayRate, recalcitrantFrac, settlingVelocity,
-                              omPackingDensity=0.085, mineralPackingDensity=1.99,
-                              rootPackingDensity=omPackingDensity,
-                              initialCohorts=NA,
-                              uplandCohorts=NA,
-                              supertidalCohorts=NA,
-                              supertidalSedimentInput=NA,
-                              ...) {
+                         meanSeaLevel, meanSeaLevelDatum=meanSeaLevel[1], meanHighWaterDatum, meanHighHighWaterDatum=NA, meanHighHighWaterSpringDatum=NA, 
+                         suspendedSediment, lunarNodalAmp, lunarNodalPhase=2011.181,
+                         nFloods = 705.79, floodTime.fn = floodTimeLinear,
+                         bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
+                         rootToShoot, rootTurnover, abovegroundTurnover=NA, speciesCode=NA, rootDepthMax, shape="linear",
+                         omDecayRate, recalcitrantFrac, captureRate,
+                         omPackingDensity=0.085, mineralPackingDensity=1.99,
+                         rootPackingDensity=omPackingDensity,
+                         initialCohorts=NA,
+                         uplandCohorts=NA,
+                         supertidalCohorts=NA,
+                         supertidalSedimentInput=NA,
+                         ...) {
   
   # Make sure tidyverse is there
   ##TODO move this to the package description
@@ -70,7 +74,8 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
                                     meanHighWaterDatum=meanHighWaterDatum, 
                                     meanHighHighWaterDatum=meanHighHighWaterDatum, 
                                     meanHighHighWaterSpringDatum=meanHighHighWaterSpringDatum, 
-                                    lunarNodalAmp = lunarNodalAmp)
+                                    lunarNodalAmp = lunarNodalAmp,
+                                    lunarNodalPhase=lunarNodalPhase)
   
   # Add blank colums for attributes we will add later
   scenario$surfaceElevation <- as.numeric(rep(NA, nrow(scenario)))
@@ -90,6 +95,7 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
                                                meanHighHighWater=scenario$meanHighHighWater[1], 
                                                meanHighHighWaterSpring=scenario$meanHighHighWaterSpring[1],
                                                suspendedSediment=scenario$suspendedSediment[1],
+                                               nFloods = nFloods, floodTime.fn = floodTime.fn,
                                                bMax=bMax, zVegMin=zVegMin, zVegMax=zVegMax, zVegPeak=zVegPeak, 
                                                plantElevationType=plantElevationType,
                                                rootToShoot=rootToShoot, rootTurnover=rootTurnover, 
@@ -97,7 +103,7 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
                                                abovegroundTurnover=abovegroundTurnover,
                                                omDecayRate=omDecayRate, 
                                                recalcitrantFrac=recalcitrantFrac, 
-                                               settlingVelocity=settlingVelocity,
+                                               captureRate=captureRate,
                                                omPackingDensity=omPackingDensity, 
                                                mineralPackingDensity=mineralPackingDensity,
                                                rootPackingDensity=omPackingDensity,
@@ -172,13 +178,15 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
                                         speciesCode=speciesCode)    
     
     # Calculate Mineral pool
-    dynamicMineralPool <- deliverSedimentFlexibly(z=scenario$surfaceElevation[i-1], 
-                                                  suspendedSediment=scenario$suspendedSediment[i], 
-                                                  meanSeaLevel=scenario$meanSeaLevel[i], 
-                                                  meanHighWater=scenario$meanHighWater[i], 
-                                                  meanHighHighWater = scenario$meanHighHighWater[i], 
-                                                  meanHighHighWaterSpring = scenario$meanHighHighWaterSpring[i], 
-                                                  settlingVelocity=settlingVelocity)
+    dynamicMineralPool <- deliverSediment(z=scenario$surfaceElevation[i-1], 
+                                          suspendedSediment=scenario$suspendedSediment[i], 
+                                          meanSeaLevel=scenario$meanSeaLevel[i], 
+                                          meanHighWater=scenario$meanHighWater[i], 
+                                          meanHighHighWater = scenario$meanHighHighWater[i], 
+                                          meanHighHighWaterSpring = scenario$meanHighHighWaterSpring[i], 
+                                          captureRate=captureRate,
+                                          nFloods=nFloods,
+                                          floodTime.fn=floodTime.fn)
     
    
     # Add a the new inorganic sediment cohort,

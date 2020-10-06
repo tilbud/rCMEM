@@ -5,19 +5,21 @@
 \title{Run Marsh Equilibrium Model with Cohorts Accross an Elevation Transect}
 \usage{
 runCohortMemTransect(startYear, endYear = startYear + 99,
-  relSeaLevelRiseInit, relSeaLevelRiseTotal, meanSeaLevel,
+  relSeaLevelRiseInit, relSeaLevelRiseTotal, initElv, meanSeaLevel,
   meanSeaLevelDatum = meanSeaLevel[1], meanHighWaterDatum,
   meanHighHighWaterDatum = NA, meanHighHighWaterSpringDatum = NA,
-  suspendedSediment, lunarNodalAmp, settlingVelocity, bMax, zVegMin,
+  suspendedSediment, lunarNodalAmp, lunarNodalPhase = 2011.181,
+  nFloods = 705.79, floodTime.fn = floodTimeLinear, bMax, zVegMin,
   zVegMax, zVegPeak, plantElevationType, rootToShoot, rootTurnover,
-  rootDepthMax, shape = "linear", omDecayRate, recalcitrantFrac,
+  abovegroundTurnover = NA, speciesCode = NA, rootDepthMax,
+  shape = "linear", omDecayRate, recalcitrantFrac, captureRate,
   omPackingDensity = 0.085, mineralPackingDensity = 1.99,
-  rootPackingDensity = omPackingDensity, abovegroundTurnover = NA,
-  speciesCode = NA, initialCohorts = NA, uplandCohorts = NA,
-  supertidalCohorts = NA, supertidalSedimentInput = NA,
-  initElvMin = meanSeaLevel[1], initElvMax = max(meanHighWaterDatum,
-  meanHighHighWaterDatum, meanHighHighWaterSpringDatum, na.rm = T) +
-  relSeaLevelRiseTotal, elvIntervals = 4, ...)
+  rootPackingDensity = omPackingDensity, initialCohorts = NA,
+  uplandCohorts = NA, supertidalCohorts = NA,
+  supertidalSedimentInput = NA, initElvMin = meanSeaLevel[1],
+  initElvMax = max(meanHighWaterDatum, meanHighHighWaterDatum,
+  meanHighHighWaterSpringDatum, na.rm = T) + relSeaLevelRiseTotal,
+  elvIntervals = 4, ...)
 }
 \arguments{
 \item{startYear}{an integer, year in form YYYY, the start year of the scenario}
@@ -27,6 +29,8 @@ runCohortMemTransect(startYear, endYear = startYear + 99,
 \item{relSeaLevelRiseInit}{a numeric, initial rate of relative sea-level rise}
 
 \item{relSeaLevelRiseTotal}{a numeric, total relative sea-level rise over the course of the scanario}
+
+\item{initElv}{a numeric, the initial elevation of the marsh at the start of the scenario}
 
 \item{meanSeaLevel}{a numeric or a vector, Mean Sea Level at the start of the scenario, or a vector of Mean Sea Levels the same length as the number of years in a scenario}
 
@@ -42,7 +46,11 @@ runCohortMemTransect(startYear, endYear = startYear + 99,
 
 \item{lunarNodalAmp}{a numeric, the amplitude of the 18-year lunar nodal cycle}
 
-\item{settlingVelocity}{a numeric, the number of times a water column will clear per tidal cycle}
+\item{lunarNodalPhase}{a numeric, in decimal years (YYYY) the start year of the sine wave representing the lunar nodal cycle}
+
+\item{nFloods}{a numeric, the number of tidal flooding events per year}
+
+\item{floodTime.fn}{a function, specify the method used to calculate flooding time per tidal cycle}
 
 \item{bMax}{a numeric, or vector of numerics, maximum biomass}
 
@@ -58,6 +66,10 @@ runCohortMemTransect(startYear, endYear = startYear + 99,
 
 \item{rootTurnover}{a numeric, or vector of numerics, belowground biomass annual turnover rate}
 
+\item{abovegroundTurnover}{(optional) a numeric, or vector of numerics, aboveground biomass annual turnover rate}
+
+\item{speciesCode}{(optional) a character, or vector of characters, species names or codes associated with biological inputs}
+
 \item{rootDepthMax}{a numeric, or vector of numerics, maximum (95\%) rooting depth}
 
 \item{shape}{a character, "linear" or "exponential" describing the shape of the relationship between depth and root mass}
@@ -66,23 +78,19 @@ runCohortMemTransect(startYear, endYear = startYear + 99,
 
 \item{recalcitrantFrac}{a numeric, fraction of organic matter resistant to decay}
 
+\item{captureRate}{a numeric, the number of times a water column will clear per tidal cycle}
+
 \item{omPackingDensity}{a numeric, the bulk density of pure organic matter}
 
 \item{mineralPackingDensity}{a numeric, the bulk density of pure mineral matter}
 
 \item{rootPackingDensity}{a numeric, the bulk density of pure root matter}
 
-\item{abovegroundTurnover}{(optional) a numeric, or vector of numerics, aboveground biomass annual turnover rate}
-
-\item{speciesCode}{(optional) a character, or vector of characters, species names or codes associated with biological inputs}
-
 \item{initialCohorts}{a data frame, (optional) custom set of mass cohorts that will override any decision making this function does}
 
 \item{uplandCohorts}{a data frame,  (optional) custom set of mass cohorts to be used if intiial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance}
 
-\item{supertidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
-
-\item{supertidalSedimentInput}{a numeric, (optional) grams per cm^2 per year, an optional parameter which will define annual suspended sediment delivery to a sediment column that is is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
+\item{supertidalSedimentInput, }{a numeric, (optional) grams per cm^2 per year, an optional parameter which will define annual suspended sediment delivery to a sediment column that is is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 
 \item{initElvMin}{a numeric, the lowest initial elevation over which to batch run the model}
 
@@ -91,6 +99,10 @@ runCohortMemTransect(startYear, endYear = startYear + 99,
 \item{elvIntervals}{a numeric, the elevation intervals of the transect}
 
 \item{...}{}
+
+\item{abovegroundTurnover}{(optional) a numeric or vector of numerics, aboveground biomass annual turnover rate}
+
+\item{superTidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 }
 \value{
 a list of data frames, including the annualized summaries, and mapped cohorts tracked for every year, and every depth interval, of the simulation.

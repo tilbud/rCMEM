@@ -63,7 +63,7 @@ rootTurnover <- 0.5 # n / year
 rootDepthMax <- 30 # cm from surface
 omDecayRate <- 0.8
 recalcitrantFrac <- 0.2
-settlingVelocity <- 2.8 # n clearences / tidal cycle
+captureRate <- 2.8 # n clearences / tidal cycle
 
 ```
 
@@ -159,8 +159,8 @@ springTidesPerYear <- 24.720
 weightedMHW <- sum(meanHighHighWaterSpringDatum*springTidesPerYear + meanHighHighWaterDatum*higherHighTidesPerYear + meanHighWaterDatum*highTidesPerYear) /
   sum(highTidesPerYear, higherHighTidesPerYear, springTidesPerYear)
 
-deliveredSedimentExample <- mapply(deliverSedimentSimple, z=targetElevation, meanSeaLevel=meanSeaLevel, meanHighWater=weightedMHW,
-                                   settlingVelocity = settlingVelocity, suspendedSediment=suspendedSediment)
+deliveredSedimentExample <- mapply(deliverSediment, z=targetElevation, meanSeaLevel=meanSeaLevel, meanHighWater=weightedMHW,
+                                   captureRate=captureRate, suspendedSediment=suspendedSediment)
 
 simpleSedimentPlotData <- data.frame(elevation=targetElevation,
                                      deliveredSediment=deliveredSedimentExample)
@@ -174,17 +174,37 @@ ggplot(data=simpleSedimentPlotData, aes(x=elevation, y=deliveredSediment)) +
 Let's see how the simple vs two tidal cycle modules compare. 
 
 ```{r example of simple vs complex sedimentation modules, warning=FALSE, fig.height=3.54, fig.width=7}
+deliveredSedimentExample2 <- c()
+for(i in 1:length(targetElevation)) {
+  deliveredSedimentExample2[i] <- deliverSediment(z=targetElevation[i], suspendedSediment=suspendedSediment, meanSeaLevel=meanSeaLevel,
+                                    meanHighWater=meanHighWaterDatum, meanHighHighWater=meanHighHighWaterDatum, 
+                                    meanHighHighWaterSpring=meanHighHighWaterSpringDatum, 
+                                    captureRate=captureRate, floodTime.fn=floodTimeTrig)
 
-deliveredSedimentExample2 <- mapply(deliverSediment3TidalCycle, z=targetElevation, suspendedSediment=suspendedSediment, meanSeaLevel=meanSeaLevel,
-                                    meanHighWater=meanHighWaterDatum, meanHighHighWater=meanHighHighWaterDatum, meanHighHighWaterSpring=meanHighHighWaterSpringDatum, settlingVelocity=settlingVelocity)
-
+}
+  
 threeTideSedimentPlotData <- data.frame(elevation=targetElevation,
                                         deliveredSediment = deliveredSedimentExample2,
-                                        moduleType = rep("3 tide", length(targetElevation)))
+                                        moduleType = rep("3 tide - trig", length(targetElevation)))
+
+deliveredSedimentExample3 <-c()
+for(i in 1:length(targetElevation)) {
+  deliveredSedimentExample3[i] <- deliverSediment(z=targetElevation[i], suspendedSediment=suspendedSediment, meanSeaLevel=meanSeaLevel,
+                                    meanHighWater=meanHighWaterDatum, meanHighHighWater=meanHighHighWaterDatum, 
+                                    meanHighHighWaterSpring=meanHighHighWaterSpringDatum, 
+                                    captureRate=captureRate, floodTime.fn=floodTimeLinear)
+
+}
+  
+threeTideSedimentPlotData2 <- data.frame(elevation=targetElevation,
+                                        deliveredSediment = deliveredSedimentExample3,
+                                        moduleType = rep("3 tide - linear", length(targetElevation)))
 
 simpleSedimentPlotData$moduleType <- rep("simple ", nrow(simpleSedimentPlotData))
 
-sedimentComparisonPlot <- threeTideSedimentPlotData %>%  bind_rows(simpleSedimentPlotData)
+sedimentComparisonPlot <- threeTideSedimentPlotData %>%  
+  bind_rows(simpleSedimentPlotData) %>% 
+  bind_rows(threeTideSedimentPlotData2)
 
 totalRange <- ggplot(data=sedimentComparisonPlot, aes(x=elevation, y=deliveredSediment)) +
   geom_line(lwd=1.25, aes(color=moduleType), alpha=0.6) +
@@ -253,6 +273,8 @@ Summary if < Highest Tide and
 
 ``` {r set initial conditions}
 
+
+
 ```
 
 ## Run all functions together
@@ -268,7 +290,7 @@ memCohortExample <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3, relSea
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
-                                      recalcitrantFrac=0.2, settlingVelocity=2.8)
+                                      recalcitrantFrac=0.2, captureRate=2.8)
 print(Sys.time()-start_time)
 
 scenario <- memCohortExample$annualTimeSteps
@@ -413,63 +435,63 @@ plot(x=salinityPlot, y=salEffect, type = "l",
 
 ```{r simulate fluxes}
 
-memCohortExample <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
-                                      initElv=21.9, meanSeaLevel=7.4, 
-                                      meanHighWaterDatum=16.9, meanHighHighWaterDatum=25.4,
-                                      meanHighHighWaterSpringDatum=31.2, 
-                                      suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
-                                      zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
-                                      plantElevationType="orthometric", rootToShoot=2,
-                                      rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
-                                      recalcitrantFrac=0.2, settlingVelocity=2.8,
-                                      abovegroundTurnover=1.5 # note that you can include above ground turnover too.
-                                      # If you don't include it here, it will just end up being NA in the final output.
-                                      )
-
-
-scenario <- memCohortExample$annualTimeSteps
-cohorts <- memCohortExample$cohorts
-
-output_fluxes <- simulateFluxes(cohorts=cohorts, scenario=scenario,
-                                omToOcParams = list(B0=0, B1=0.48),
-                                salinity = 2,
-                                salThreshold = 18,
-                                salRate = 0.5,
-                                maxCh4ToCo2 = 1/5)
-
-ghgFluxesAnnualPlot <- output_fluxes[[2]] %>%
-  select(year, belowgroundNPP:sequestered_CO2) %>% 
-  gather(value = "flux", key = "gas", -year) %>% 
-  filter(complete.cases(.)) %>% 
-  mutate(flux = flux * 10000)
-
-ggplot(data = ghgFluxesAnnualPlot, aes(x=year, y=flux, color = gas)) +
-  geom_line() +
-  geom_point() +
-  ylab(expression(paste("flux (g m"^"-2", " yr"^"-1", ")")))
-
-ggsave("../../../Desktop/MEM_CH4_Attempt_Flux.jpg",
-       width=4,
-       height=3)
-
-subsetOfYears <- seq(min(output_fluxes[[1]]$year),
-                     max(output_fluxes[[1]]$year),
-                     4)
-ghgFluxesCohortsPlot <- filter(output_fluxes[[1]],
-                               year %in% subsetOfYears) %>% 
-  ungroup() %>% 
-  mutate(year = as.character(year))
-
-ggplot(ghgFluxesCohortsPlot, aes(x=layer_mid, y=respired_CH4)) +
-  geom_line(aes(color = year), alpha=0.6, lwd=0.75) +
-  coord_flip() +
-  scale_x_reverse() +
-  xlab("Profile Depth (cm)") +
-  ylab(expression(paste("CH"[4], " Flux (g cm"^"-2", " yr"^"-1", ")")))
-
-ggsave("../../../Desktop/MEM_CH4_DepthSeries.jpg",
-       width=4,
-       height=3)
+# memCohortExample <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
+#                                       initElv=21.9, meanSeaLevel=7.4, 
+#                                       meanHighWaterDatum=16.9, meanHighHighWaterDatum=25.4,
+#                                       meanHighHighWaterSpringDatum=31.2, 
+#                                       suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
+#                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
+#                                       plantElevationType="orthometric", rootToShoot=2,
+#                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
+#                                       recalcitrantFrac=0.2, captureRate=captureRate,
+#                                       abovegroundTurnover=1.5 # note that you can include above ground turnover too.
+#                                       # If you don't include it here, it will just end up being NA in the final output.
+#                                       )
+# 
+# 
+# scenario <- memCohortExample$annualTimeSteps
+# cohorts <- memCohortExample$cohorts
+# 
+# output_fluxes <- simulateFluxes(cohorts=cohorts, scenario=scenario,
+#                                 omToOcParams = list(B0=0, B1=0.48),
+#                                 salinity = 2,
+#                                 salThreshold = 18,
+#                                 salRate = 0.5,
+#                                 maxCh4ToCo2 = 1/5)
+# 
+# ghgFluxesAnnualPlot <- output_fluxes[[2]] %>%
+#   select(year, belowgroundNPP:sequestered_CO2) %>% 
+#   gather(value = "flux", key = "gas", -year) %>% 
+#   filter(complete.cases(.)) %>% 
+#   mutate(flux = flux * 10000)
+# 
+# ggplot(data = ghgFluxesAnnualPlot, aes(x=year, y=flux, color = gas)) +
+#   geom_line() +
+#   geom_point() +
+#   ylab(expression(paste("flux (g m"^"-2", " yr"^"-1", ")")))
+# 
+# ggsave("../../../Desktop/MEM_CH4_Attempt_Flux.jpg",
+#        width=4,
+#        height=3)
+# 
+# subsetOfYears <- seq(min(output_fluxes[[1]]$year),
+#                      max(output_fluxes[[1]]$year),
+#                      4)
+# ghgFluxesCohortsPlot <- filter(output_fluxes[[1]],
+#                                year %in% subsetOfYears) %>% 
+#   ungroup() %>% 
+#   mutate(year = as.character(year))
+# 
+# ggplot(ghgFluxesCohortsPlot, aes(x=layer_mid, y=respired_CH4)) +
+#   geom_line(aes(color = year), alpha=0.6, lwd=0.75) +
+#   coord_flip() +
+#   scale_x_reverse() +
+#   xlab("Profile Depth (cm)") +
+#   ylab(expression(paste("CH"[4], " Flux (g cm"^"-2", " yr"^"-1", ")")))
+# 
+# ggsave("../../../Desktop/MEM_CH4_DepthSeries.jpg",
+#        width=4,
+#        height=3)
 
 ```
 
@@ -499,7 +521,7 @@ transectoutput <- runCohortMemTransect(startYear=2015, relSeaLevelRiseInit=0.3, 
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
-                                      recalcitrantFrac=0.2, settlingVelocity=2.8,
+                                      recalcitrantFrac=0.2, captureRate=2.8,
                                       abovegroundTurnover=1.5,
                                       initElvMin=7,
                                       initElvMax=132,
@@ -515,15 +537,15 @@ transectoutput <- runCohortMemTransect(startYear=2015, relSeaLevelRiseInit=0.3, 
     
 ```
 
+You can also animate this. 
+
 ```{r animate Transect}
-#animateCohortTransect(scenarioTransect = transectoutput[[1]], cohortsTransect = transectoutput[[2]],
-#               filename = "MEM-Transect-example.gif",
-#               savePath="../temp")
+animateCohortTransect(scenarioTransect = transectoutput[[1]], cohortsTransect = transectoutput[[2]],
+               filename = "MEM-Transect-example.gif",
+               savePath="../temp")
 
 knitr::include_graphics("../temp/MEM-Transect-example.gif")
 ```
-
-You can also animate this. 
 
 ## Some other special features
 
@@ -644,7 +666,7 @@ memCohortExampleMultiSpp <- runCohortMem(startYear=startYear, relSeaLevelRiseIni
                                       zVegMin=zVegMin, zVegMax=zVegMax, zVegPeak=zVegPeak,
                                       plantElevationType="orthometric", rootToShoot=rootToShoot,
                                       rootTurnover=rootTurnover, rootDepthMax=rootDepthMax, omDecayRate=omDecayRate,
-                                      recalcitrantFrac=recalcitrantFrac, settlingVelocity=settlingVelocity,
+                                      recalcitrantFrac=recalcitrantFrac, captureRate=captureRate,
                                       speciesCode=speciesCode)
 print(Sys.time()-start_time)
 
@@ -686,7 +708,7 @@ memCohortExampleCraggySlr <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
-                                      recalcitrantFrac=0.2, settlingVelocity=2.8)
+                                      recalcitrantFrac=0.2, captureRate=captureRate)
 print(Sys.time()-start_time)
 
 craggySLRelevationChange <- memCohortExampleCraggySlr[[1]] %>%
@@ -700,7 +722,7 @@ ggplot(data=craggySLRelevationChange, aes(x=year, y=Elevation)) +
         legend.position="top")
 
 
-#animateCohorts(scenario = memCohortExampleCraggySlr[[1]], cohorts = memCohortExampleCraggySlr[[2]],
+# animateCohorts(scenario = memCohortExampleCraggySlr[[1]], cohorts = memCohortExampleCraggySlr[[2]],
 #               filename = "MEM-CTM-slr-craggy.gif",
 #               savePath="../temp")
 
@@ -725,7 +747,7 @@ memCohortExampleCraggySlr <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
-                                      recalcitrantFrac=0.2, settlingVelocity=2.8)
+                                      recalcitrantFrac=0.2, captureRate=2.8)
 print(Sys.time()-start_time)
 
 craggySLRelevationSscScenarioChange <- memCohortExampleCraggySlr[[1]] %>%
@@ -807,7 +829,7 @@ memCohortHindCast <- runCohortMem(startYear=1915,
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
-                                      recalcitrantFrac=0.2, settlingVelocity=2.8)
+                                      recalcitrantFrac=0.2, captureRate=2.8)
 print(Sys.time()-start_time)
 
 # A future scenario 100 years of 1 m sea-level rise
@@ -834,7 +856,7 @@ memCohortExampleForecast <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
-                                      recalcitrantFrac=0.2, settlingVelocity=2.8,
+                                      recalcitrantFrac=0.2, captureRate=2.8,
                                       initialCohorts = hindcastCohorts)
 print(Sys.time()-start_time)
 
@@ -879,7 +901,7 @@ memCohortExample <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3, relSea
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
-                                      recalcitrantFrac=0.2, settlingVelocity=2.8)
+                                      recalcitrantFrac=0.2, captureRate=2.8)
 print(Sys.time()-start_time)
 
 scenario <- memCohortExample$annualTimeSteps
@@ -904,7 +926,7 @@ memCohortExample <- runCohortMem(startYear=2015, relSeaLevelRiseInit=0.3, relSea
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                       plantElevationType="orthometric", rootToShoot=2,
                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
-                                      recalcitrantFrac=0.2, settlingVelocity=2.8)
+                                      recalcitrantFrac=0.2, captureRate=2.8)
 print(Sys.time()-start_time)
 
 scenario <- memCohortExample$annualTimeSteps

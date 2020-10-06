@@ -5,7 +5,9 @@
 #' @param meanHighHighWater a numeric (optional), Mean Higher High Water level
 #' @param meanHighHighWaterSpring a numeric (optional), Mean Higher High Spring Tide Water level
 #' @param suspendedSediment a numeric, suspended sediment concentration of the water column
-#' @param settlingVelocity a numeric, the number of times a water column will clear per tidal cycle
+#' @param captureRate a numeric, the number of times a water column will clear per tidal cycle
+#' @param nFloods a numeric, the number of tidal flooding events per year
+#' @param floodTime.fn a function, specify the method used to calculate flooding time per tidal cycle
 #' @param bMax a numeric or vector of numerics, maximum biomass
 #' @param zVegMax a numeric or vector of numerics, upper elevation of biomass limit
 #' @param zVegMin a numeric or vector of numerics, lower elevation of biomass limit
@@ -32,10 +34,11 @@
 determineInitialCohorts <- function(initElv,
                                  meanSeaLevel, meanHighWater, meanHighHighWater=NA, 
                                  meanHighHighWaterSpring=NA, suspendedSediment,
+                                 nFloods = 705.79, floodTime.fn = floodTimeLinear,
                                  bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
                                  rootToShoot, rootTurnover, rootDepthMax, shape="linear",
                                  abovegroundTurnover=NA, speciesCode=NA,
-                                 omDecayRate, recalcitrantFrac, settlingVelocity,
+                                 omDecayRate, recalcitrantFrac, captureRate,
                                  omPackingDensity=0.085, mineralPackingDensity=1.99,
                                  rootPackingDensity=omPackingDensity,
                                  initialCohorts=NA,
@@ -94,10 +97,11 @@ determineInitialCohorts <- function(initElv,
     if ((initElv <= max(meanHighWater, meanHighHighWater, meanHighHighWaterSpring, na.rm=T)) & (initElv <= max(zVegMax))) {
 
       # Initial Sediment
-      initSediment <- deliverSedimentFlexibly(z=initElv, suspendedSediment=suspendedSediment, 
-                                              meanSeaLevel=meanSeaLevel, meanHighWater=meanHighWater, 
-                                              meanHighHighWater=meanHighHighWater, meanHighHighWaterSpring=meanHighHighWaterSpring,
-                                              settlingVelocity=settlingVelocity)
+      initSediment <- deliverSediment(z=initElv, suspendedSediment=suspendedSediment, nFloods=nFloods,
+                                      meanSeaLevel=meanSeaLevel, meanHighWater=meanHighWater,
+                                      meanHighHighWater=meanHighHighWater, meanHighHighWaterSpring=meanHighHighWaterSpring,
+                                      captureRate=captureRate,
+                                      floodTime.fn=floodTime.fn)
       
       # Run initial conditions to equilibrium
       cohorts <- runToEquilibrium(totalRootMassPerArea=bio_table$belowground_biomass[1], rootDepthMax=bio_table$rootDepthMax[1],
@@ -142,13 +146,15 @@ determineInitialCohorts <- function(initElv,
           
           # Initial Sediment, an arbitrary low number
           # Here I use the annual sediment delivered 1 cm below the highest tide line
-          initSediment <- deliverSedimentFlexibly(z=max(meanHighWater, meanHighHighWater, meanHighHighWaterSpring, na.rm=T)-1, 
-                                                  suspendedSediment=suspendedSediment, 
-                                                  meanSeaLevel=meanSeaLevel, 
-                                                  meanHighWater=meanHighWater, 
-                                                  meanHighHighWater=meanHighHighWater, 
-                                                  meanHighHighWaterSpring=meanHighHighWaterSpring,
-                                                  settlingVelocity=settlingVelocity)
+          initSediment <- deliverSediment(z=max(meanHighWater, meanHighHighWater, meanHighHighWaterSpring, na.rm=T)-1, 
+                                          suspendedSediment=suspendedSediment, 
+                                          meanSeaLevel=meanSeaLevel, 
+                                          meanHighWater=meanHighWater, 
+                                          meanHighHighWater=meanHighHighWater, 
+                                          meanHighHighWaterSpring=meanHighHighWaterSpring,
+                                          nFloods = nFloods,
+                                          captureRate=captureRate,
+                                          floodTime.fn = floodTime.fn)
           
           cohorts <- runToEquilibrium(totalRootMassPerArea=bio_table$belowground_biomass[1], rootDepthMax=bio_table$rootDepthMax[1],
                                       rootTurnover=bio_table$rootTurnover, omDecayRate = list(fast=omDecayRate, slow=0),

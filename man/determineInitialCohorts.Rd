@@ -6,10 +6,11 @@
 \usage{
 determineInitialCohorts(initElv, meanSeaLevel, meanHighWater,
   meanHighHighWater = NA, meanHighHighWaterSpring = NA,
-  suspendedSediment, bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
-  rootToShoot, rootTurnover, rootDepthMax, shape = "linear",
+  suspendedSediment, nFloods = 705.79, floodTime.fn = floodTimeLinear,
+  bMax, zVegMin, zVegMax, zVegPeak, plantElevationType, rootToShoot,
+  rootTurnover, rootDepthMax, shape = "linear",
   abovegroundTurnover = NA, speciesCode = NA, omDecayRate,
-  recalcitrantFrac, settlingVelocity, omPackingDensity = 0.085,
+  recalcitrantFrac, captureRate, omPackingDensity = 0.085,
   mineralPackingDensity = 1.99, rootPackingDensity = omPackingDensity,
   initialCohorts = NA, uplandCohorts = NA, supertidalCohorts = NA,
   supertidalSedimentInput = NA, ...)
@@ -26,6 +27,10 @@ determineInitialCohorts(initElv, meanSeaLevel, meanHighWater,
 \item{meanHighHighWaterSpring}{a numeric (optional), Mean Higher High Spring Tide Water level}
 
 \item{suspendedSediment}{a numeric, suspended sediment concentration of the water column}
+
+\item{nFloods}{a numeric, the number of tidal flooding events per year}
+
+\item{floodTime.fn}{a function, specify the method used to calculate flooding time per tidal cycle}
 
 \item{bMax}{a numeric or vector of numerics, maximum biomass}
 
@@ -53,7 +58,7 @@ determineInitialCohorts(initElv, meanSeaLevel, meanHighWater,
 
 \item{recalcitrantFrac}{a numeric, fraction of organic matter resistant to decay}
 
-\item{settlingVelocity}{a numeric, the number of times a water column will clear per tidal cycle}
+\item{captureRate}{a numeric, the number of times a water column will clear per tidal cycle}
 
 \item{omPackingDensity}{a numeric, the bulk density of pure organic matter}
 

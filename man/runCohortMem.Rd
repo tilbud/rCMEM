@@ -8,10 +8,11 @@ runCohortMem(startYear, endYear = startYear + 99, relSeaLevelRiseInit,
   relSeaLevelRiseTotal, initElv, meanSeaLevel,
   meanSeaLevelDatum = meanSeaLevel[1], meanHighWaterDatum,
   meanHighHighWaterDatum = NA, meanHighHighWaterSpringDatum = NA,
-  suspendedSediment, lunarNodalAmp, bMax, zVegMin, zVegMax, zVegPeak,
-  plantElevationType, rootToShoot, rootTurnover,
+  suspendedSediment, lunarNodalAmp, lunarNodalPhase = 2011.181,
+  nFloods = 705.79, floodTime.fn = floodTimeLinear, bMax, zVegMin,
+  zVegMax, zVegPeak, plantElevationType, rootToShoot, rootTurnover,
   abovegroundTurnover = NA, speciesCode = NA, rootDepthMax,
-  shape = "linear", omDecayRate, recalcitrantFrac, settlingVelocity,
+  shape = "linear", omDecayRate, recalcitrantFrac, captureRate,
   omPackingDensity = 0.085, mineralPackingDensity = 1.99,
   rootPackingDensity = omPackingDensity, initialCohorts = NA,
   uplandCohorts = NA, supertidalCohorts = NA,
@@ -42,6 +43,12 @@ runCohortMem(startYear, endYear = startYear + 99, relSeaLevelRiseInit,
 
 \item{lunarNodalAmp}{a numeric, the amplitude of the 18-year lunar nodal cycle}
 
+\item{lunarNodalPhase}{a numeric, in decimal years (YYYY) the start year of the sine wave representing the lunar nodal cycle}
+
+\item{nFloods}{a numeric, the number of tidal flooding events per year}
+
+\item{floodTime.fn}{a function, specify the method used to calculate flooding time per tidal cycle}
+
 \item{bMax}{a numeric, or vector of numerics, maximum biomass}
 
 \item{zVegMin}{a numeric, or vector of numerics, lower elevation of biomass limit}
@@ -68,7 +75,7 @@ runCohortMem(startYear, endYear = startYear + 99, relSeaLevelRiseInit,
 
 \item{recalcitrantFrac}{a numeric, fraction of organic matter resistant to decay}
 
-\item{settlingVelocity}{a numeric, the number of times a water column will clear per tidal cycle}
+\item{captureRate}{a numeric, the number of times a water column will clear per tidal cycle}
 
 \item{omPackingDensity}{a numeric, the bulk density of pure organic matter}
 
