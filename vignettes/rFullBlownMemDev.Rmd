@@ -271,10 +271,118 @@ ggplot(data=exScenarioCurve) +
 
 Summary if < Highest Tide and
 
-``` {r set initial conditions}
+``` {r set initial conditions, fig.height = 3.5, fig.width = 5}
 
+# startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
+#                                       initElv=21.9, meanSeaLevel=7.4, 
+#                                       meanHighWaterDatum=meanHighWaterDatum, 
+#                                       meanHighHighWaterDatum=meanHighHighWaterDatum,
+#                                       suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
+#                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
+#                                       plantElevationType="orthometric", rootToShoot=2,
+#                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
+#                                       recalcitrantFrac=0.2, captureRate=2.8
 
+below_Zmin = -24.7 - 2
+at_Z_peak = 22.1
+between_MHHWS_and_Zmax <- 31.2 + (44.4 - 31.2)/2
+above_Zmax <- 44.4 + 2
 
+below_Zmin_cohorts <- determineInitialCohorts(initElv=below_Zmin, meanSeaLevel=7.4, 
+                                      meanHighWater=16.9, meanHighHighWater=25.4,
+                                      meanHighHighWaterSpring=31.2, 
+                                      suspendedSediment=3e-05, bMax=0.25, 
+                                      zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
+                                      plantElevationType="orthometric", rootToShoot=2,
+                                      rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
+                                      recalcitrantFrac=0.2, captureRate=2.8)[[1]] %>% 
+  mutate(layer_bottom = below_Zmin - layer_bottom,
+         layer_top = below_Zmin - layer_top,
+         original_height = "below min. plant growing elevation",
+         x_axis_min = 0,
+         x_axis_max = 1) %>% 
+  filter(complete.cases(.))
+
+at_Z_peak_cohorts <- determineInitialCohorts(initElv=at_Z_peak, meanSeaLevel=7.4, 
+                                      meanHighWater=16.9, meanHighHighWater=25.4,
+                                      meanHighHighWaterSpring=31.2, 
+                                      suspendedSediment=3e-05, bMax=0.25, 
+                                      zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
+                                      plantElevationType="orthometric", rootToShoot=2,
+                                      rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
+                                      recalcitrantFrac=0.2, captureRate=2.8)[[1]] %>% 
+  mutate(layer_bottom = at_Z_peak - layer_bottom,
+         layer_top = at_Z_peak - layer_top,
+         original_height = "w/in plant growing elevation range",
+         x_axis_min = 1,
+         x_axis_max = 2) %>% 
+  filter(complete.cases(.))
+
+between_MHHWS_and_Zmax_cohorts <- determineInitialCohorts(initElv=between_MHHWS_and_Zmax, meanSeaLevel=7.4, 
+                                      meanHighWater=16.9, meanHighHighWater=25.4,
+                                      meanHighHighWaterSpring=31.2, 
+                                      suspendedSediment=3e-05, bMax=0.25, 
+                                      zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
+                                      plantElevationType="orthometric", rootToShoot=2,
+                                      rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
+                                      recalcitrantFrac=0.2, captureRate=2.8)[[1]] %>% 
+  mutate(layer_bottom = between_MHHWS_and_Zmax - layer_bottom,
+         layer_top = between_MHHWS_and_Zmax - layer_top,
+         original_height = "supertidal peat",
+         x_axis_min = 2,
+         x_axis_max = 3) %>% 
+  filter(complete.cases(.))
+
+above_Zmax_cohorts <- determineInitialCohorts(initElv=above_Zmax, meanSeaLevel=7.4, 
+                                      meanHighWater=16.9, meanHighHighWater=25.4,
+                                      meanHighHighWaterSpring=31.2, 
+                                      suspendedSediment=3e-05, bMax=0.25, 
+                                      zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
+                                      plantElevationType="orthometric", rootToShoot=2,
+                                      rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
+                                      recalcitrantFrac=0.2, captureRate=2.8)[[1]] %>% 
+  mutate(layer_bottom = above_Zmax - layer_bottom,
+         layer_top = above_Zmax - layer_top,
+         original_height = "upland",
+         x_axis_min = 3,
+         x_axis_max = 4) %>% 
+  filter(complete.cases(.))
+
+allCohortOptions <- above_Zmax_cohorts %>%  
+  bind_rows(between_MHHWS_and_Zmax_cohorts) %>% 
+  bind_rows(at_Z_peak_cohorts) %>% 
+  bind_rows(below_Zmin_cohorts) %>% 
+  mutate(fraction_om = (fast_OM + slow_OM + root_mass) / 
+                    (fast_OM + slow_OM + root_mass + mineral)
+  )
+           
+
+lines_for_plot <- data.frame(elevation = c(-24.7, 31.2, 44.4),
+                             datum=c("lowest veg. elevation",
+                                     "highest tide",
+                                     "highest veg. elevation")) %>% 
+  mutate(datum = factor(datum, levels = rev(c("lowest veg. elevation",
+                                     "highest tide",
+                                     "highest veg. elevation"))))
+
+text_for_plot <- data.frame(text = c("a", "b", "c", "d"),
+                            elevation = c(below_Zmin, at_Z_peak, between_MHHWS_and_Zmax, above_Zmax),
+                            x_position = 0.5:3.5) 
+text_for_plot$elevation <- text_for_plot$elevation + 5
+
+ggplot(data = allCohortOptions) +
+    geom_rect(aes(fill = fraction_om, xmin = x_axis_min, xmax = x_axis_max, ymin = layer_bottom, ymax = layer_top), color = rgb(0,0,0, alpha = 0.1)) +
+    scale_fill_gradient2(low = "darkgrey", mid = "lightgrey", high = "darkgreen", midpoint = 0.5, name = "Organic Matter (fraction)") + 
+    theme_minimal() +
+    geom_hline(data=lines_for_plot, aes(yintercept=elevation, lty=datum), color="blue") +
+    ylab("Depth (cm NAVD88)") +
+  geom_text(data = text_for_plot, aes(x=x_position, y = elevation, label=text)) +
+  ggtitle("Initial conditions for cohortMEM") +
+  labs(lty=NULL) +
+  xlab(NULL) +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+  
 ```
 
 ## Run all functions together
