@@ -57,7 +57,7 @@ scenarioTransect <- ggplot(data=scenarioTransectGraph, aes(x=year, y=surfaceElev
   ylab("Surface Elevation (cm NAVD88)") +
   theme(legend.title = element_blank(), 
         legend.position = "bottom") +
-  ggtitle("A. Batch run of rCMEM Across Elevation Transect")
+  ggtitle("A. cMEM Behavior Over an Elevation Transect")
 
 (scenarioTransect)
 
@@ -125,4 +125,7 @@ graph_mass_cohorts <- ggplot2::ggplot(data = mass_cohorts_almostAll,
 
 grid.arrange(scenarioTransect, graph_mass_cohorts, nrow = 2)
 
-arrangeGrob(scenarioTransect, graph_mass_cohorts)  
+cMemFig <- arrangeGrob(scenarioTransect, graph_mass_cohorts)  
+
+ggsave("temp/cMemBehaviorFig.pdf", width=7.25, height=7.25, dpi=300, cMemFig)
+ggsave("temp/cMemBehaviorFig.jpg", width=7.25, height=7.25, dpi=300, cMemFig)
