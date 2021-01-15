@@ -53,7 +53,7 @@ deliverSediment <- function(z, suspendedSediment, nFloods = 705.79,
                   floodTime = floodTime.fn(z=z, # Call flood time function.
                               datumHigh=datumHigh, 
                               datumLow=datumLow),
-                  # Call available sediment function
+                  # Calculate fraction of sediment captured
                   fractionCaptured = ifelse(floodTime < 1/captureRate, # if the sediment column IS NOT able to clear
                                              # available suspendedSediment is total possible caputre 
                                              captureRate*floodTime, 
