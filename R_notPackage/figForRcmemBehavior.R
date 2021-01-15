@@ -49,15 +49,15 @@ scenarioSubset <- transectoutput[[1]] %>%
 
 scenarioTransect <- ggplot(data=scenarioTransectGraph, aes(x=year, y=surfaceElevation, color=above_below_msl)) +
   geom_line(aes(group=as.character(initElv))) +
-  geom_point(aes(shape=above_below_msl)) +
-  scale_shape_manual(values=c(24, 25)) +
-  geom_point(data = scenarioSubset, size = 1.25, color = "black", aes(shape=above_below_msl)) +
+  #geom_point(aes(shape=above_below_msl)) +
+  #scale_shape_manual(values=c(24, 25)) +
+  geom_point(data = scenarioSubset, size = 1.25, color = "black", shape=1) +
   geom_text(data = scenarioSubset, aes(label = labs1), nudge_x = -2, color = "black") +
   theme_minimal() +
   ylab("Surface Elevation (cm NAVD88)") +
   theme(legend.title = element_blank(), 
         legend.position = "bottom") +
-  ggtitle("A. cMEM Behavior Over an Elevation Transect")
+  ggtitle("A. cMEM Behavior Over Range of Initial Elevations")
 
 (scenarioTransect)
 
