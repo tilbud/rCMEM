@@ -238,15 +238,20 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
     # Apparent Carbon Burial Rate
     # Carbon Sequestration Rate
     carbonFluxTab <- trackCohorts %>%
+      # Total organic matter per cohort
       dplyr::mutate(total_om_perCoh = fast_OM + slow_OM + root_mass) %>%
       dplyr::group_by(year) %>%
+      # Get the total cumulative observed and sequestered organic matter for the profile
       dplyr::summarise(cumulativeTotalOm = sum(total_om_perCoh),
                        cumulativeSequesteredOm = sum(slow_OM)) %>% 
+      # Caluclate fluxes by comparing total at time step i to time step i - 1
       dplyr::mutate(omFlux = cumulativeTotalOm - lag(cumulativeTotalOm),
                     omSequestration = cumulativeSequesteredOm - lag(cumulativeSequesteredOm),
+                    # Convert organic matter to organic carbon using function defined in previous step.
                     cFlux = omToOc(om=omFlux),
                     cSequestration = omToOc(om = omSequestration))
     
+    # Join flux table to annual time step table
     scenario <- scenario %>% 
       dplyr::left_join(carbonFluxTab)
   }
