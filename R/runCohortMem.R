@@ -15,6 +15,7 @@
 #' @param lunarNodalAmp a numeric, the amplitude of the 18-year lunar nodal cycle
 #' @param lunarNodalPhase a numeric, in decimal years (YYYY) the start year of the sine wave representing the lunar nodal cycle 
 #' @param captureRate a numeric, the number of times a water column will clear per tidal cycle
+#' @param omToOcParams a list, of numerics listed B0, B1 and optionally B3. These define a linear or parabolic relationship between organic matter and organic carbon
 #' @param nFloods a numeric, the number of tidal flooding events per year
 #' @param floodTime.fn a function, specify the method used to calculate flooding time per tidal cycle
 #' @param bMax a numeric, or vector of numerics, maximum biomass
@@ -49,6 +50,7 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
                          bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
                          rootToShoot, rootTurnover, abovegroundTurnover=NA, speciesCode=NA, rootDepthMax, shape="linear",
                          omDecayRate, recalcitrantFrac, captureRate,
+                         omToOcParams = list(B0=0, B1=0.48),
                          omPackingDensity=0.085, mineralPackingDensity=1.99,
                          rootPackingDensity=omPackingDensity,
                          initialCohorts=NA,
@@ -215,8 +217,39 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
     
   }
   
-  # Remove NA values from cohorts
-  trackCohorts <- trimCohorts(trackCohorts)
+  # Calculate C sequestration rate from cohorts table and add it to scenario table
+  {
+    # To convert OM to OC
+    # If parmeter list is 2 long then simple linear correlation
+    if (length(omToOcParams) == 2) {
+      omToOc <- function(om, B0=omToOcParams$B0, B1=omToOcParams$B1) {return(B0 + om*B1)}
+    } else if (length(omToOcParams) == 3) {
+      # If parameter list is 3 long, then it's quadratic
+      omToOc <- function(om, B0=omToOcParams$B, B1=omToOcParams$B1,
+                         B2=omToOcParams$B2) {return(B0 + om*B1 + om^2*B2)}
+    } else {
+      # If something else then trip an error message
+      stop("Invalid number of organic matter to organic carbon conversion parameters,")
+    }
+    
+    # Remove NA values from cohorts
+    trackCohorts <- trimCohorts(trackCohorts)
+    
+    # Apparent Carbon Burial Rate
+    # Carbon Sequestration Rate
+    carbonFluxTab <- trackCohorts %>%
+      dplyr::mutate(total_om_perCoh = fast_OM + slow_OM + root_mass) %>%
+      dplyr::group_by(year) %>%
+      dplyr::summarise(cumulativeTotalOm = sum(total_om_perCoh),
+                       cumulativeSequesteredOm = sum(slow_OM)) %>% 
+      dplyr::mutate(omFlux = cumulativeTotalOm - lag(cumulativeTotalOm),
+                    omSequestration = cumulativeSequesteredOm - lag(cumulativeSequesteredOm),
+                    cFlux = omToOc(om=omFlux),
+                    cSequestration = omToOc(om = omSequestration))
+    
+    scenario <- scenario %>% 
+      dplyr::left_join(carbonFluxTab)
+  }
   
   # Return annual time steps and full set of cohorts
   outputsList <- list(annualTimeSteps = scenario, cohorts = trackCohorts)
