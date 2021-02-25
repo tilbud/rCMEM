@@ -74,10 +74,11 @@ mass_cohorts <- cohortSubset %>%
   dplyr::group_by(year, age, cohortIndex, initElv) %>%
   dplyr::mutate(mass_pool = str_replace(mass_pool, "_", " "),
                 mass_pool = factor(mass_pool, 
-                                   levels=c("mineral", 
-                                            "slow OM", 
-                                            "fast OM", 
-                                            "root mass"))) %>%
+                                   levels=c("mineral",
+                                            "root mass",
+                                            "fast OM",
+                                            "slow OM"
+                                            ))) %>%
   dplyr::arrange(year, age, mass_pool) %>%
   dplyr::mutate(max_mass = cumsum(mass_fraction),
                 min_mass = ifelse(mass_pool==first(mass_pool),0,lag(max_mass)),
@@ -116,8 +117,9 @@ graph_mass_cohorts <- ggplot2::ggplot(data = mass_cohorts_almostAll,
   ggplot2::scale_fill_manual(values=chPalette) +
   ggplot2::geom_hline(data=tides, aes(yintercept=WaterLevel, lty=datum), color="blue") +
   ggplot2::ylab("Depth (cm NAVD88)") +
-  ggplot2::xlab("Mass Accumulated Per Cohort (g)") +
+  ggplot2::xlab("Mass Accumulated Per Cohort (g) - log scale") +
   facet_wrap(.~labs2) +
+  scale_x_log10() +
   theme(legend.position = "right",
         legend.title = element_blank())
 
@@ -127,5 +129,5 @@ grid.arrange(scenarioTransect, graph_mass_cohorts, nrow = 2)
 
 cMemFig <- arrangeGrob(scenarioTransect, graph_mass_cohorts)  
 
-ggsave("temp/cMemBehaviorFig.pdf", width=7.25, height=7.25, dpi=300, cMemFig)
-ggsave("temp/cMemBehaviorFig.jpg", width=7.25, height=7.25, dpi=300, cMemFig)
+ggsave("temp/cMemBehaviorFig_210121.pdf", width=7.25, height=7.25, dpi=300, cMemFig)
+ggsave("temp/cMemBehaviorFig_210121.jpg", width=7.25, height=7.25, dpi=300, cMemFig)
