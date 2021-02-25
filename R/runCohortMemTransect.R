@@ -15,6 +15,7 @@
 #' @param lunarNodalAmp a numeric, the amplitude of the 18-year lunar nodal cycle
 #' @param lunarNodalPhase a numeric, in decimal years (YYYY) the start year of the sine wave representing the lunar nodal cycle 
 #' @param captureRate a numeric, the number of times a water column will clear per tidal cycle
+#' @param omToOcParams a list, of numerics listed B0, B1 and optionally B3. These define a linear or parabolic relationship between organic matter and organic carbon
 #' @param nFloods a numeric, the number of tidal flooding events per year
 #' @param floodTime.fn a function, specify the method used to calculate flooding time per tidal cycle
 #' @param bMax a numeric, or vector of numerics, maximum biomass
@@ -32,7 +33,6 @@
 #' @param omPackingDensity a numeric, the bulk density of pure organic matter
 #' @param mineralPackingDensity a numeric, the bulk density of pure mineral matter
 #' @param rootPackingDensity a numeric, the bulk density of pure root matter
-#' @param abovegroundTurnover (optional) a numeric or vector of numerics, aboveground biomass annual turnover rate
 #' @param speciesCode (optional) a character, or vector of characters, species names or codes associated with biological inputs
 #' @param initialCohorts a data frame, (optional) custom set of mass cohorts that will override any decision making this function does
 #' @param uplandCohorts a data frame,  (optional) custom set of mass cohorts to be used if intiial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance
@@ -52,6 +52,7 @@ runCohortMemTransect <- function(startYear, endYear=startYear+99, relSeaLevelRis
                                   bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
                                   rootToShoot, rootTurnover, abovegroundTurnover=NA, speciesCode=NA, rootDepthMax, shape="linear",
                                   omDecayRate, recalcitrantFrac, captureRate,
+                                  omToOcParams = list(B0=0, B1=0.48),
                                   omPackingDensity=0.085, mineralPackingDensity=1.99,
                                   rootPackingDensity=omPackingDensity,
                                   initialCohorts=NA,
@@ -80,6 +81,7 @@ runCohortMemTransect <- function(startYear, endYear=startYear+99, relSeaLevelRis
                                rootToShoot=rootToShoot, rootTurnover=rootTurnover, rootDepthMax=rootDepthMax, shape=shape,
                                omDecayRate=omDecayRate, recalcitrantFrac=recalcitrantFrac, 
                                captureRate=captureRate,
+                               omToOcParams=omToOcParams,
                                omPackingDensity=omPackingDensity, mineralPackingDensity=mineralPackingDensity,
                                rootPackingDensity=rootPackingDensity,
                                abovegroundTurnover=abovegroundTurnover,
