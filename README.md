@@ -8,27 +8,21 @@ This repository corresponds to the R package in development for use of the Cohor
 ```
 # Uninstall and reinstall developer branch from GitHub
 
-# 1. If rCTM is already installed, uninstall rCTM
-if ("rCTM" %in% installed.packages()) {
-  remove.packages('rCTM')
-}
-
-# 2. If rCTM is loaded and in the memory, forget rCTM
+# 1. If rCTM is loaded and in the memory, forget rCTM
 if ("rCTM" %in% (.packages())){
   detach("package:rCTM", unload=TRUE) 
 }
 
-# 3a. If devtools is not already installed, install it
-if (! ("devtools" %in% installed.packages())) {
-  install.packages('devtools')
+# 2. If remotes is not already installed, install it
+if (! ("remotes" %in% installed.packages())) {
+  install.packages("remotes")
 }
 
 # 3. Install package from developer branch of GitHub
 devtools::install_github("https://github.com/tilbud/rCTM/tree/JimH-dev")
 
-# 4. Load most current version in the memory
+# 4. Load most current version into memory
 library(rCTM)
-
 ```
 
 ## To Make Sure You Have The Needed Dependencies
@@ -41,18 +35,9 @@ dependencies <- c("tidyverse",
                   "gifski",
                   "png")
 
-# Iterate through the necessary packages
-for (i in 1:length(dependencies)) {
-  print(paste(dependencies[i], " ...", sep=""))
-  # If the package is not in the installed package ...
-  if (! (dependencies[i] %in% installed.packages())) {
-    # .. install it.
-    install.packages(dependencies[i])
-  } else {
-    print("... already installed.")
-  }
-}
-
+# Figure out which dependencies are not installed and install them
+needed <- setdiff(dependencies, rownames(installed.packages()))
+install.packages(needed)
 ```
 
 ## Quick Example to Run MEM with Cohorts and Animate
