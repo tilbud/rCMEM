@@ -3,6 +3,7 @@
 # Libraries
 # rMEM package
 library(rCTM)
+library(gridExtra)
 
 # Helper scripts
 # Crunch local datums
@@ -640,10 +641,20 @@ library(rCTM)
   
 }
 
-## 0.A. Download Annapolis Tide Gauge Data for 2001 to 2020
 
+## 0.A. Download Sab Francisco Tide Gauge Data for 2001 to 2020
+
+# One Month of 6 min
+LA_2016 <- download6minWlData(station_id = 9410660)
+
+# plot(LA_2016$dateTime, LA_2016$waterLevel, type="l")
+
+# One Month of HL
+LA_2016_HL <- downloadHLData(station_id = 9410660)
+
+# Lunar Nodal Cycle
 for (i in 1983:2020) {
-  datums <- getDatumsForGaugeHl(station_id = 8575512,
+  datums <- getDatumsForGaugeHl(station_id = 9410660,
                               startDate = paste(i, "-01-01 00:00", sep=""),
                               endDate = paste(i, "-12-31 23:59", sep=""),
                               graph = T,
@@ -680,27 +691,157 @@ ggplot(datumsPlot2, aes(x = year, y = amplitude)) +
   geom_point() +
   geom_line()
 
+fit1 <-  nls(amplitude ~ meanAmp + lunarNodalAmp * sin(2 * pi * (year - lunarNodalPhase)/18.61), 
+             data = datumsPlot2)
+
+summary(fit1)
+
+c_tidal_amplitude <- ggplot() +
+  geom_point(data = datumsPlot2, color = "lightgrey", aes(x = year, y = amplitude)) +
+  geom_line(data = data.frame(year = 1983:2020,
+                              amplitude = predict(fit1, data = data.frame(year = 1983:2020))),
+            aes(x = year, y = amplitude)) +
+  ylab("Tidal Amplitude (m)") +
+  xlab(NULL) +
+  theme_minimal() +
+  ggtitle("C. 18.6 year cycle") +
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+c_tidal_amplitude
+
+# Daily Cycle
+
+NYD_LA_2016 <- LA_2016 %>% 
+  filter(dateTime <= ymd_hms("2016-01-02 00:50:00"))
+
+a_lunar_day <- ggplot(data = NYD_LA_2016, aes(x = dateTime, y = waterLevel)) +
+  geom_line(color="darkblue") +
+  # geom_point() +
+  theme_minimal() +
+  ggtitle("A. Lunar Day (24.83 hours)") +
+  ylab("Water Level (m)") +
+  xlab(NULL)  +
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+(a_lunar_day)
+
+# Annual Cycle 
+
+b_2016_datums <- all_datums %>% 
+  filter(startDate == "2016-01-01 00:00",
+         Datum %in% c("MHHWS", "MHHW", "MLHW", "MTL")) %>% 
+  mutate(Datum = recode(Datum, "MLHW"="MHW", "MTL"="MSL"),
+         Datum = factor(Datum, levels = c("MSL", "MHW", "MHHW", "MHHWS")))
+
+b_annual_cycle <- ggplot(LA_2016, aes(x = dateTime, y = waterLevel)) +
+  geom_line(color="blue", alpha = 0.45) +
+  geom_hline(data = b_2016_datums, aes(yintercept = meters, lty = Datum)) +
+  # geom_point() +
+  theme_minimal() +
+  ggtitle("B. Annual Time Step") +
+  ylab("Water Level (m)") +
+  xlab(NULL)  +
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+  
+(b_annual_cycle)
+
+## Centennial forecast
+## Total SLR 
+totalRCP8p5 = 67 # Kopp et al median, RCP 
+totalRCP4p5 = 49
+totalRCP2p6 = 40
+
+# What is MSL0
+msl_t0 <- all_datums %>% 
+  filter(startDate == "2000-01-01 00:00",
+         Datum == "MTL")
+msl_t0 <- msl_t0$meters[1]*100
+
+# What is initial RSLR? 
+msl_83to99 <- all_datums %>% 
+  filter(startDate <= ymd_hms("2000-01-01 00:00:00"),
+         Datum == "MTL") %>% 
+  mutate(year = year(startDate),
+         centimeters = meters * 100)
+
+rslr_model = lm(centimeters~year, data = msl_83to99)
+summary(rslr_model)
+
+rcp8p5 <- rCTM::buildScenarioCurve(startYear = 2000,
+                         relSeaLevelRiseInit = 0,
+                         meanSeaLevel = msl_t0,
+                         suspendedSediment = 0,
+                         relSeaLevelRiseTotal = totalRCP8p5)
+rcp8p5 <- mutate(rcp8p5, Scenario = "RCP 8.5")
 
 
-## 0.B. Run Same Scenario that we've been running using CTM.
+plot(rcp8p5$year, rcp8p5$meanSeaLevel)
+
+rcp4p5 <- rCTM::buildScenarioCurve(startYear = 2000,
+                                   relSeaLevelRiseInit = 0,
+                                   meanSeaLevel = msl_t0,
+                                   suspendedSediment = 0,
+                                   relSeaLevelRiseTotal = totalRCP4p5)
+rcp4p5 <- mutate(rcp4p5, Scenario = "RCP 4.5")
+
+plot(rcp4p5$year, rcp4p5$meanSeaLevel)
+
+rcp2p6 <- rCTM::buildScenarioCurve(startYear = 2000,
+                                   relSeaLevelRiseInit = 0,
+                                   meanSeaLevel = msl_t0,
+                                   suspendedSediment = 0,
+                                   relSeaLevelRiseTotal = totalRCP2p6)
+rcp2p6 <- mutate(rcp2p6, Scenario = "RCP 2.6")
 
 
-# Which day is closest to average?
+plot(rcp2p6$year, rcp2p6$meanSeaLevel)
+
+# What is initial RSLR? 
+msl_gauge <- all_datums %>% 
+  filter(Datum == "MTL") %>% 
+  mutate(year = year(startDate),
+         Scenario = "Historical Gauge") %>% 
+  mutate(meanSeaLevel = meters*100) %>% 
+  select(year, meanSeaLevel, Scenario)
+  
+
+LA_RCPS <- rcp2p6 %>% 
+  bind_rows(rcp4p5) %>% 
+  bind_rows(rcp8p5) %>% 
+  select(year, meanSeaLevel, Scenario) %>% 
+  bind_rows(msl_gauge)
+
+d_rcps <- ggplot(data = LA_RCPS, aes(x = year, y = meanSeaLevel/100)) +
+  geom_line(aes(color = Scenario, lty = Scenario)) +
+  scale_color_manual(values = c("grey", "green", "orange", "red")) +
+  ylab("Mean Sea Level (m)") +
+  xlab(NULL) +
+  theme_minimal() +
+  ggtitle("D. Centennial Forecast") +
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+(d_rcps)
 
 ## 1. Daily scale
 
+
+grid.arrange(a_lunar_day, b_annual_cycle, c_tidal_amplitude, d_rcps, 
+             nrow = 2, ncol = 2)
+
+outputFig <- arrangeGrob(grobs = list(a_lunar_day, b_annual_cycle, c_tidal_amplitude, d_rcps),
+            nrow = 2, ncol = 2)
+
+ggsave("temp/Water Level Drivers.pdf", height = 7.25, width = 7.25, outputFig)
+ggsave("temp/Water Level Drivers.jpg", height = 7.25, width = 7.25, outputFig)
+
 # show high and higher water events
 
-# 2. Monthly scale 
+# 2. Annual scale
 
 # show high spring tides
-
-# 3. Annual scale
-
 # show number of floods
 
 # 4. Lunar nodal cycle 
-
 # show 18.6 expansion and contraction of the tidal amplitude
 
 # 5. Show the acceleration of a sea-level rise curve
