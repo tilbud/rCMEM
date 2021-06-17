@@ -12,7 +12,7 @@ transectoutput <- runCohortMemTransect(startYear=2015, relSeaLevelRiseInit=0.3, 
                                        suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
                                        zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
                                        plantElevationType="orthometric", rootToShoot=2,
-                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
+                                       rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.5, # Lowered OM decay rate from 0.8 to 0.5 so that we could see fast pool OM in figure
                                        recalcitrantFrac=0.2, captureRate=2.8,
                                        abovegroundTurnover=1.5,
                                        initElvMin=7,

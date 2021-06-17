@@ -76,7 +76,7 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
                                     meanHighWaterDatum=meanHighWaterDatum, 
                                     meanHighHighWaterDatum=meanHighHighWaterDatum, 
                                     meanHighHighWaterSpringDatum=meanHighHighWaterSpringDatum, 
-                                    lunarNodalAmp = lunarNodalAmp,
+                                    lunarNodalAmp=lunarNodalAmp,
                                     lunarNodalPhase=lunarNodalPhase)
   
   # Add blank colums for attributes we will add later

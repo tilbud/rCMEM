@@ -57,21 +57,36 @@ addCohort <- function(massPools,
   
   ans$age <- ans$age + timeStep #age the cohorts
   
+  # Convert decay rates to decay coefficients (k) in case in the future we want
+  ## to model decay at sub-annual time steps
+  ## C_t = C0 * exp(kt)
+  k_fast<-log(1-omDecayRate$fast)
+  k_slow<-log(1-omDecayRate$slow)
 
   # track respiration
-  ans$respired_OM <- ans$fast_OM +
-    (ans$root_mass * rootOmFrac$fast * rootTurnover * timeStep) -
-    ans$fast_OM * omDecayRate$fast * timeStep
-
-  #add and decay the organic matter
-  ans$fast_OM <- ans$fast_OM + 
-             ans$root_mass * rootOmFrac$fast * rootTurnover * timeStep -
-             ans$fast_OM * omDecayRate$fast * timeStep
+  ## total respired belowground OM = ((cumulative fast OM from previous time steps + fast OM from this time step) * fraction lost to decay) +
+  ## ((sumulative slow pool OM from previous time steps + slow pool from this time step) * fraction lost to decay)
+  ## Fraction slow pool lost to decay will be 0 the way the inputs to this function are set
+  ## but this formulation sets us up to integrate slow pool organic matter decay in a future iteration.
+  ans$respired_OM <- ((ans$fast_OM +
+    (ans$root_mass * rootOmFrac$fast * rootTurnover * timeStep)) * 
+    (1-exp(k_fast*timeStep))) +
+    ((ans$slow_OM + 
+       ans$root_mass * rootOmFrac$slow * rootTurnover * timeStep) *
+    (1-exp(k_slow*timeStep)))
   
-  ans$slow_OM <- ans$slow_OM + 
-             ans$root_mass * rootOmFrac$slow * rootTurnover * timeStep -
-             ans$slow_OM * omDecayRate$slow * timeStep
-    
+  # add and decay the organic matter
+  ## New fast pool OM = (cumulative fast OM from previous time steps + new fast OM) * fraction remaining after decay
+  ans$fast_OM <- (ans$fast_OM +
+                    (ans$root_mass * rootOmFrac$fast * rootTurnover * timeStep)) * 
+    exp(k_fast*timeStep)
+  
+  # New slow pool OM = (cumulative slow OM from previous time steps + new slow OM) * fraction remaining after decay
+  ## Fraction remaining after decay will be 1 unless we add flexibiltiy in inputs upstream of this function in a future version
+  ans$slow_OM <- (ans$slow_OM + 
+             ans$root_mass * rootOmFrac$slow * rootTurnover * timeStep) *
+    exp(k_slow*timeStep)
+             
   # Check to see if mineral input is a static value or a function
   if (is.na(mineralInput)) {
     mineralInput <- mineralInput.fn(...)

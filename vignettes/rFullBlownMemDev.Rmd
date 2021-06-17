@@ -606,9 +606,9 @@ plot(x=salinityPlot, y=salEffect, type = "l",
 ## Try out Animate Cohorts Function
 
 ``` {r try out animate cohorts}
-#animateCohorts(scenario = scenario, cohorts = cohorts,
-#               filename = "MEM-CTM-example.gif",
-#               savePath="../temp")
+animateCohorts(scenario = scenario, cohorts = cohorts,
+               filename = "MEM-CTM-example.gif",
+               savePath="../temp")
 
 knitr::include_graphics("../temp/MEM-CTM-example.gif")
 
@@ -830,9 +830,9 @@ ggplot(data=craggySLRelevationChange, aes(x=year, y=Elevation)) +
         legend.position="top")
 
 
-# animateCohorts(scenario = memCohortExampleCraggySlr[[1]], cohorts = memCohortExampleCraggySlr[[2]],
-#               filename = "MEM-CTM-slr-craggy.gif",
-#               savePath="../temp")
+animateCohorts(scenario = memCohortExampleCraggySlr[[1]], cohorts = memCohortExampleCraggySlr[[2]],
+               filename = "MEM-CTM-slr-craggy.gif",
+               savePath="../temp")
 
 knitr::include_graphics("../temp/MEM-CTM-slr-craggy.gif")
 
