@@ -33,27 +33,6 @@ Overall the function `runCohortMem` is a wrapper function that organizes inputs 
 
 The `runCohortMem` function can be used to create both forecasts and hindcasts depending on the amount and type of data that are use to inform the simulation as we highlight below. For example, a user can input a historical tide gauge record or use information from a core sampled from marsh soil to create a hindcast of marsh accretion and carbon accumulation. 
 
-
-## Determining initial cohorts
-
-`runCohortMem` produces forecasts (or hindcasts) of marsh accretion and carbon accumulation via tracking the change of volume and carbon density of "cohorts" of mineral and organic matter. For the numerical model produce realistic predictions, the model requires an initialization of cohorts at equilibrium (\emph{i.e.} until the oldest cohorts have mass pools that are not significantly different) given that the oldest cohort is above a minimum age (default = 50 years), below a maximum age (default = 12000 years), and spans up to a minimum depth. In practice, this initialization is completed by the [`runToEquilibrium()`] function, where in new cohorts are repeatedly added to a soil profile. The initialization of soil cohorts is informed by the initial belowground biomass (applying the function [`predictBiomass()`] at the initial elevation `initElv` and multiplying by the root-to-shoot ratio), fast and slow pool decay rates `omDecayRate`, recalcitrant fraction of organic material `recalcitrantFrac`, the organic and mineral self-packing densities (`omPackingDensity`, `mineralPackingDensity`), the shape of the belowground biomass distribution (`shape`; "linear" or "exponential"), the initial mineral input (`mineralInput_g_per_yr`; calculated using the [`deliverSedimentFlexibly()`] function), and the minimum depth for which the cohorts must be initialize which set to a default of the maximum rooting depth `rootDepthMax` plus 0.5cm, rounded to the nearest cm. 
-
-totalRootMass_per_area=initBgb, rootDepthMax=rootDepthMax,
-                                  rootTurnover=rootTurnover, omDecayRate = list(fast=omDecayRate, slow=0),
-                                  rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
-                                  packing=list(organic=omPackingDensity, mineral=mineralPackingDensity),
-                                  rootDensity=rootPackingDensity, shape=shape, 
-                                  mineralInput_g_per_yr = initSediment,
-                                  minDepth = round(rootDepthMax+0.5)
-
-
-
-If the initial elevation is above the highest tidal flooding elevation, but below the maximum growing elevation `zVegMax`, then there will be no mineral sedimentation to lay down annualized layers, and [`runToEquilibrium()`] will fail with an error message. In this case [`determineInitialCohorts()`] will form a supertidal peat. The user has some options; a user can provide their own supertidal sediment input (g $\text{cm}^{-2}$ $\text{year}^{-1}$). If this is not supplied, then [`determineInitialCohorts()`] will calculate sediment input at 1 cm below the highest tide and use that. The [`runToEquilibrium()`] function then runs the same as if initial elevation were at flooding elevation.
-
-If the initial elevation is above the heights tidal flooding elevation and the maximum growing elevation `zVegMax` of plants, then the initial condition is an upland soil. This is possible when modeling a marsh traversing into an adjacent upland as sea-level rises. A user can supply their own upland soil cohorts as an input, as long as it takes the form of a table with minimum and maximum depths, and ages of a stack of soil cohorts, each with mineral, root, fast and slow pool organic matter pool masses. If this argument is not provided, then [`determineInitialCohorts()`] will initialize an adjacent upland as a stack of 1 cm wide cohorts, each with 0 as their age, and each with 50% slow pool organic matter and 50% mineral matter.
-
-Finally, an alternative to letting [`determineInitialCohorts()`] make the decisions about how to initialize a sediment column, a user can specify their own `initialCohorts`. This will cause the function to jump over all of the previously described decisions and return the `initialCohorts` file. This is useful when you are pairing a hindcast with a forecast.
-
 ## Building a tidal scenario
 
 argument | class | units | description
@@ -624,7 +603,232 @@ b <- biomass_pred_plot %>%
 a+b
 
 ```
+
+## Specifying additional plant trait parameters
+
+argument | class | units | description
+-------- | :---: | :---: | -----------
+|`rootToShoot`| numeric | g/g | root and rhizome to shoot ratio
+|`rootTurnover` | numeric | $\text{yr}^{-1}$ | belowground biomass annual turnover rate
+|`abovegroundTurnover` | numeric | $\text{yr}^{-1}$ | aboveground biomass annual turnover rate
+| `speciesCode` | character | - | (optional) species names or codes associated with biological inputs
+| `rootDepthMax` | numeric | cm | depth of 95% cumulative belowground biomass 
+|`shape`| numeric | g $\text{cm}^2$ | "linear" or "exponential" to describe the shape of the relationship between depth and belowground biomass
+|`omDecayRate` | numeric | $\text{yr}^{-1}$ | annual fractional mass lost due to decay
+|`recalcitrantFrac` | numeric | g/g | fraction of organic matter resistant to decay
+
+## Multi-species functionality (optional)
+
+The `rCMEM` package allows for multiple species with different elevation limits and biomass parameters to be included in the modeling framework. The [`runMultiSpeciesBiomass()`] function will accept vectors of biological inputs, run [`predictBiomass()`] on each set, and will return a single set of parameters based on a competition function (\emph{sensu} @morris2006competition). In short, [`runMultiSpeciesBiomass()`] predicts aboveground biomass for multiple species given the relative tidal elevation at the current timestep and then selects the species that has the largest aboveground biomass (\emph{i.e.} the dominant species). Then the rest of the plant trait parameters (\emph{e.g.} root-to-shoot ratio, root turnover) are those assigned to that species. In the case where multiple species have the same predicted aboveground biomass at a given elevation, for example, at an intersection of the two parabolas, the rest of the plant trait parameters are an average across the number of species that share the same predicted biomass. 
+
+In practice, for a multi-species prediction, the following inputs in `runCohortMem()` should be a vector with a length equal to the number of species and including either numeric or character values based on the argument description:
+
+* `bMax`
+* `zVegMin`
+* `zVegMax`
+* `zVegPeak` (optional)
+* `rootToShoot`
+* `rootTurnover`
+* `rootDepthMax`
+* `abovegroundTurnover` (optional)
+* `speciesCode` (optional)
+
+Users can specify species names or codes if they want to explicitly track the change in the dominant species over the course of the simulation via the argument `speciesCode`. If these are not specified, they will either be labeled sequentially \emph{species1}, \emph{species2}, etc. or \emph{unvegetated}. Users can specify their own competition function as long as they result in a one-row table with each column representing a biological parameter; users could potentially simulate competitive exclusion or facilitation by using species weighted averages of the biological parameters based on aboveground biomass, rather than selecting the set of parameters that produces the maximum. Currently there is not an example implementation of custom competition function.
+
+```{r runMultiSpeciesBiomass, echo = F}
+runMultiSpeciesBiomass <- function(z, bMax, zVegMax, zVegMin, zVegPeak=NA,
+                                   rootToShoot, rootTurnover, abovegroundTurnover=NA, rootDepthMax, 
+                                   speciesCode=NA, competition.fn=NA) {
+   # If a custom competition function is not specified ...
+   if (is.na(competition.fn)) {
+     # Generic competition function filters the inputed bio_table maximum aboveground biomass
+     competition.fn <- function(bio_table) {
+       return(dplyr::filter(bio_table, aboveground_biomass == max(bio_table$aboveground_biomass)))
+     }
+   }
+    
+   # make a list of all the biological inputs
+   bio_inputs <- list(bMax, zVegMax, zVegMin, zVegPeak, rootToShoot, 
+                     rootTurnover, abovegroundTurnover, rootDepthMax, speciesCode)
+   
+   # Get the length of each input
+   input_lengths <- sapply(bio_inputs, length)
+   
+   # All the lengths either need to be 1 or equal to the number of species that are inputted
+   if (all(input_lengths == 1 | input_lengths==max(input_lengths))) {
+     # If species codes are not specified ... 
+     if (all(is.na(speciesCode)) | length(speciesCode)==max(input_lengths)) {
+       if (any(is.na(speciesCode))) {
+         # ... then assign them 1,2,3,etc.
+         speciesCode <- as.character(1:max(input_lengths))
+       }
+       # Create a table with all the biological inputs
+       bio_table <- data.frame(speciesCode=speciesCode, 
+                               stringsAsFactors = F) %>%
+         # Using mutate will add vectors for all mutliple values and repeat single values
+         # so all the columns will be the same length.
+         dplyr::mutate(bMax = bMax,
+                       zVegMax=zVegMax,
+                       zVegPeak=zVegPeak,
+                       zVegMin=zVegMin,
+                       rootToShoot=rootToShoot, 
+                       rootTurnover=rootTurnover,
+                       abovegroundTurnover=abovegroundTurnover,
+                       rootDepthMax=rootDepthMax)
+     } else {
+       stop("Species codes either need to be blank, or have the same number as biomass inputs.")
+     }
+   } else {
+     stop("The number of biomass inputs either need to be the same length for multiple species or singular.")
+   }
+   
+   # Run the parabolic biomass function on the table
+   bio_table$aboveground_biomass <- mapply(predictBiomass, z=z, 
+                                          bMax=bio_table$bMax,
+                                          zVegMax = bio_table$zVegMax, 
+                                          zVegMin = bio_table$zVegMin, 
+                                          zVegPeak = bio_table$zVegPeak)
+   
+   bio_table$belowground_biomass <- bio_table$aboveground_biomass * bio_table$rootToShoot
+   
+   # If all aboveground biomass values are 0 ...
+   if (all(bio_table$aboveground_biomass == 0)) {
+     # ... then make all bio params 0 and changes species name to unvegetated.
+     bio_table[,6:9] <- 0
+     bio_table[,1] <- "unvegetated"
+     bio_table <- bio_table[1,]
+     bio_table
+   }
+   
+   # If the returned dataframe is more than one row long ...
+   if (nrow(bio_table)>1) {
+     
+     # ... then run the competition function.
+     bio_table <- competition.fn(bio_table)
+  
+     }
+     
+   # If more than one agb have exactly the same value ... 
+   if (nrow(bio_table)>1) {
+     # ... then simplify the table to being one row.
+     bio_table <- bio_table %>% 
+       dplyr::group_by() %>% 
+       # Group the species name into a single string ...
+       dplyr::summarise(speciesCode = paste(bio_table$speciesCode, collapse="; "), 
+                        # ... and average all the parameters.
+                        rootToShoot=mean(rootToShoot), 
+                        rootTurnover=mean(rootTurnover),
+                        rootDepthMax=mean(rootDepthMax),
+                        aboveground_biomass=first(aboveground_biomass)) %>% 
+       dplyr::ungroup()
+   }
+   
+   bio_table <- bio_table[, ! names(bio_table) %in% c("bMax","zVegMax","zVegPeak","zVegMin")]
+
+   # Return the data frame.
+   return(bio_table)
+}
+```
+
+
+```{r multiSpeciesPlot, fig.align='center', fig.width=8, fig.height=3.5, echo = F}
+pred_elev <- -30:60
+out <- NULL
+out_species1 <- NULL
+out_species2 <- NULL
+
+bio_table <- tibble(bMax = c(0.25, 0.15),
+                    zVegMax = c(50,40),
+                    zVegMin = c(0,-20),
+                    zVegPeak = c(20,10),
+                    rootToShoot = c(2,3),
+                    rootTurnover = c(0.5,0.5),
+                    abovegroundTurnover = c(NA, NA),
+                    rootDepthMax = c(30,30),
+                    speciesCode = c("species1", "species2"))
+
+for (i in 1:length(pred_elev)){
+  out[i] <- runMultiSpeciesBiomass(pred_elev[i],
+                                   bMax = bio_table$bMax,
+                                   zVegMax = bio_table$zVegMax,
+                                   zVegMin = bio_table$zVegMin,
+                                   zVegPeak = bio_table$zVegPeak,
+                                   rootToShoot = bio_table$rootToShoot,
+                                   rootTurnover = bio_table$rootTurnover,
+                                   abovegroundTurnover=bio_table$abovegroundTurnover,
+                                   rootDepthMax = bio_table$rootDepthMax, 
+                                   speciesCode=bio_table$speciesCode,
+                                   competition.fn=NA)[6] 
+  
+  out_species1[i] <- runMultiSpeciesBiomass(pred_elev[i],
+                                   bMax = bio_table$bMax[1],
+                                   zVegMax = bio_table$zVegMax[1],
+                                   zVegMin = bio_table$zVegMin[1],
+                                   zVegPeak = bio_table$zVegPeak[1],
+                                   rootToShoot = bio_table$rootToShoot[1],
+                                   rootTurnover = bio_table$rootTurnover[1],
+                                   abovegroundTurnover=bio_table$abovegroundTurnover[1],
+                                   rootDepthMax = bio_table$rootDepthMax[1], 
+                                   speciesCode=bio_table$speciesCode[1],
+                                   competition.fn=NA)[6] 
+  
+  out_species2[i] <- runMultiSpeciesBiomass(pred_elev[i],
+                                   bMax = bio_table$bMax[2],
+                                   zVegMax = bio_table$zVegMax[2],
+                                   zVegMin = bio_table$zVegMin[2],
+                                   zVegPeak = bio_table$zVegPeak[2],
+                                   rootToShoot = bio_table$rootToShoot[2],
+                                   rootTurnover = bio_table$rootTurnover[2],
+                                   abovegroundTurnover=bio_table$abovegroundTurnover[2],
+                                   rootDepthMax = bio_table$rootDepthMax[2], 
+                                   speciesCode=bio_table$speciesCode[2],
+                                   competition.fn=NA)[6] 
+
+}
+
+tibble(species = rep(c("mix", "species1", "species2"), each = 91),
+       agb = c(as.numeric(out),
+               as.numeric(out_species1),
+               as.numeric(out_species2)),
+       elevation = rep(pred_elev, 3)) -> multispecies_toplot
+
+a <- multispecies_toplot %>% 
+  ggplot(aes(x = elevation, y = agb, group = species, color = species)) +
+  geom_line(size = 2, aes(alpha = species)) +
+  annotate("text", x = c(-15, 45), y=c(0.125,0.2), label = c("species 1", "species 2"),
+           color = c("#78c679","#006837"),size = 3, fontface = 2) +
+  scale_color_manual(values = c("black","#006837", "#78c679")) +
+  scale_alpha_manual(values = c(0.0, 0.8, 0.8)) +
+  theme(legend.position = "none") +
+  xlab("elevation (Z, cm NAVD88)") +
+  ylab(expression(paste("aboveground biomass (g ", cm^-2, ")")))
+  
+b <- multispecies_toplot %>% 
+  ggplot(aes(x = elevation, y = agb, group = species, color = species)) +
+  geom_line(size = 2, aes(alpha = species)) +
+  scale_color_manual(values = c("black","#006837", "#78c679")) +
+  scale_alpha_manual(values = c(0.8, 0.1, 0.1)) +
+  theme(legend.position = "none") +
+  xlab("elevation (Z, cm NAVD88)") +
+  ylab(expression(paste("aboveground biomass (g ", cm^-2, ")")))
+
+a+b
+
+```
+
+
 ## Adding a cohort
+
+
+## Determining initial cohorts
+
+For the numerical model produce realistic predictions, the model requires an initialization of cohorts at equilibrium (\emph{i.e.} until the oldest cohorts have mass pools that are not significantly different) given that the oldest cohort is above a minimum age (default = 50 years), below a maximum age (default = 12000 years), and spans up to a minimum depth. In practice, this initialization is completed by the [`runToEquilibrium()`] function, where in new cohorts are repeatedly added to a soil profile. The initialization of soil cohorts is informed by the initial belowground biomass (applying the function [`predictBiomass()`] at the initial elevation `initElv` and multiplying by the root-to-shoot ratio), fast and slow pool decay rates `omDecayRate`, recalcitrant fraction of organic material `recalcitrantFrac`, the organic and mineral self-packing densities (`omPackingDensity`, `mineralPackingDensity`), the shape of the belowground biomass distribution (`shape`; "linear" or "exponential"), the initial mineral input (`mineralInput_g_per_yr`; calculated using the [`deliverSedimentFlexibly()`] function), and the minimum depth for which the cohorts must be initialize which set to a default of the maximum rooting depth `rootDepthMax` plus 0.5cm, rounded to the nearest cm. 
+
+If the initial elevation is above the highest tidal flooding elevation, but below the maximum growing elevation `zVegMax`, then there will be no mineral sedimentation to lay down annualized layers, and [`runToEquilibrium()`] will fail with an error message. In this case [`determineInitialCohorts()`] will form a supertidal peat. The user has some options; a user can provide their own supertidal sediment input (`superTidalSedimentInput`; g $\text{cm}^{-2}$ $\text{year}^{-1}$). If this is not supplied, then [`determineInitialCohorts()`] will calculate sediment input at 1 cm below the highest tide and use that. The [`runToEquilibrium()`] function then runs the same as if initial elevation were an elevation in which there was flooding elevation. The user also has an option to use their own set of cohorts for super tidal peat, each with mineral, root, fast and slow pool organic matter pool masses via the `superTidalCohorts` input.
+
+If the initial elevation is above the both the highest tidal flooding elevation and the maximum growing elevation `zVegMax` of plants, then the initial condition is an upland soil. This is possible when modeling a marsh traversing into an adjacent upland as sea-level rises (\emph{i.e.} horizontal transgression). A user can supply their own upland soil cohorts as an input, as long as it takes the form of a table with minimum and maximum depths, and ages of a stack of soil cohorts, each with mineral, root, fast and slow pool organic matter pool masses. If this argument is not provided, then [`determineInitialCohorts()`] will initialize an adjacent upland as a stack of 1 cm wide cohorts, each with 0 as their age, and each with 50% slow pool organic matter and 50% mineral matter.
+
+Finally, an alternative to letting [`determineInitialCohorts()`] make the decisions about how to initialize a sediment column, a user can specify their own `initialCohorts`. This will cause the function to jump over all of the previously described decisions and return the `initialCohorts` file. This is useful when you are pairing a hindcast with a forecast.
 
 
 
@@ -1361,4 +1565,101 @@ runToEquilibrium <- function(minAge = 50, maxAge = 12000,
 ```
 
 
+
+
+## `runMultiSpeciesBiomass()`
+```{r runMultiSpeciesBiomass_code, eval = F}
+runMultiSpeciesBiomass <- function(z, bMax, zVegMax, zVegMin, zVegPeak=NA,
+                                   rootToShoot, rootTurnover, abovegroundTurnover=NA, rootDepthMax, 
+                                   speciesCode=NA, competition.fn=NA) {
+   # If a custom competition function is not specified ...
+   if (is.na(competition.fn)) {
+     # Generic competition function filters the inputed bio_table maximum aboveground biomass
+     competition.fn <- function(bio_table) {
+       return(dplyr::filter(bio_table, aboveground_biomass == max(bio_table$aboveground_biomass)))
+     }
+   }
+  
+   # make a list of all the biological inputs
+   bio_inputs <- list(bMax, zVegMax, zVegMin, zVegPeak, rootToShoot, 
+                     rootTurnover, abovegroundTurnover, rootDepthMax, speciesCode)
+   
+   # Get the length of each input
+   input_lengths <- sapply(bio_inputs, length)
+   
+   # All the lengths either need to be 1 or equal to the number of species that are inputted
+   if (all(input_lengths == 1 | input_lengths==max(input_lengths))) {
+     # If species codes are not specified ... 
+     if (all(is.na(speciesCode)) | length(speciesCode)==max(input_lengths)) {
+       if (any(is.na(speciesCode))) {
+         # ... then assign them 1,2,3,etc.
+         speciesCode <- as.character(1:max(input_lengths))
+       }
+       # Create a table with all the biological inputs
+       bio_table <- data.frame(speciesCode=speciesCode, 
+                               stringsAsFactors = F) %>%
+         # Using mutate will add vectors for all mutliple values and repeat single values
+         # so all the columns will be the same length.
+         dplyr::mutate(bMax = bMax,
+                       zVegMax=zVegMax,
+                       zVegPeak=zVegPeak,
+                       zVegMin=zVegMin,
+                       rootToShoot=rootToShoot, 
+                       rootTurnover=rootTurnover,
+                       abovegroundTurnover=abovegroundTurnover,
+                       rootDepthMax=rootDepthMax)
+     } else {
+       stop("Species codes either need to be blank, or have the same number as biomass inputs.")
+     }
+   } else {
+     stop("The number of biomass inputs either need to be the same length for multiple species or singular.")
+   }
+   
+   # Run the parabolic biomass function on the table
+   bio_table$aboveground_biomass <- mapply(predictBiomass, z=z, 
+                                          bMax=bio_table$bMax,
+                                          zVegMax = bio_table$zVegMax, 
+                                          zVegMin = bio_table$zVegMin, 
+                                          zVegPeak = bio_table$zVegPeak)
+   
+   bio_table$belowground_biomass <- bio_table$aboveground_biomass * bio_table$rootToShoot
+   
+   # If all aboveground biomass values are 0 ...
+   if (all(bio_table$aboveground_biomass == 0)) {
+     # ... then make all bio params 0 and changes species name to unvegetated.
+     bio_table[,6:9] <- 0
+     bio_table[,1] <- "unvegetated"
+     bio_table <- bio_table[1,]
+     bio_table
+   }
+   
+   # If the returned dataframe is more than one row long ...
+   if (nrow(bio_table)>1) {
+     
+     # ... then run the competition function.
+     bio_table <- competition.fn(bio_table)
+  
+     }
+     
+   # If more than one agb have exactly the same value ... 
+   if (nrow(bio_table)>1) {
+     # ... then simplify the table to being one row.
+     bio_table <- bio_table %>% 
+       dplyr::group_by() %>% 
+       # Group the species name into a single string ...
+       dplyr::summarise(speciesCode = paste(bio_table$speciesCode, collapse="; "), 
+                        # ... and average all the parameters.
+                        rootToShoot=mean(rootToShoot), 
+                        rootTurnover=mean(rootTurnover),
+                        rootDepthMax=mean(rootDepthMax),
+                        aboveground_biomass=first(aboveground_biomass)) %>% 
+       dplyr::ungroup()
+   }
+   
+   bio_table <- bio_table[, ! names(bio_table) %in% c("bMax","zVegMax","zVegPeak","zVegMin")]
+
+   # Return the data frame.
+   return(bio_table)
+}
+```
 
