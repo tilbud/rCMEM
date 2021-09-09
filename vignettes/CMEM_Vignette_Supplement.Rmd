@@ -1,0 +1,1352 @@
+---
+title: "CMEM Vignette Supplement"
+author: "Megan Vahsen"
+date: "8/26/2021"
+output:
+  bookdown::pdf_document2: default
+urlcolor: blue
+bibliography: CMEM_Vignette.bib
+link-citations: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse); library(patchwork)
+theme_set(theme_bw())
+```
+
+```{r, include = F}
+# Helpful links
+# https://ulyngs.github.io/oxforddown/cites-and-refs.html
+#
+```
+
+
+# Overview
+
+The following vignette walks through the implementation and optionality of the Cohort Marsh Equilibrium Model R package (version XX). This vignette complements the numerical modeling section of the main text of the manuscript.
+
+# Predicting marsh accretion and carbon accumulation with `runCohortMem`
+
+## About `runCohortMem`
+Overall the function `runCohortMem` is a wrapper function that organizes inputs and parameters of CMEM and runs a series of functions to execute a single simulation (\emph{i.e.} a prediction of marsh surface elevation and carbon accumulation across a specified time period). First the function will build a scenario that is characterized by an annualized time series of sea-level, tidal height, and suspended sediment concentration. Second, the function will initialize the scenario, building a sediment profile to serve as the sediment column at time step t = 1. Third, the function will at each year of the simulation and will lay down a mineral cohort based on elevation and flooding depth, the suspended sediment concentration, and flooding time. Simultaneously the function calculates biomass based on relative tidal elevation, adds roots to each cohort in the sediment profile, and ages the organic matter cohorts. For each year the function calculates and tracks net elevation change of the profile making it a dynamic model. The function has two main output structures: (1) a table that has reports of inputs and outputs for each annual time step and (2) a table which tracks the mass of the four mass pools (\emph{i.e.} mineral, fast organic, slow oragnic, roots) for each cohort and each year of the simulation. Finally, output table of each cohort also reports the depth of the top and bottom of each cohort relative to the surface and the cumulative volume of the cohorts by depth.
+
+The `runCohortMem` function can be used to create both forecasts and hindcasts depending on the amount and type of data that are use to inform the simulation as we highlight below. For example, a user can input a historical tide gauge record or use information from a core sampled from marsh soil to create a hindcast of marsh accretion and carbon accumulation. 
+
+
+## Determining initial cohorts
+
+If the initial elevation is above the highest tidal flooding elevation, but below the maximum growing elevation `zVegMax`, then there will be no mineral sedimentation to lay down annualized layers, and [`runToEquilibrium()`] will fail with an error message. In this case [`determineInitialCohorts()`] will form a supertidal peat. The user has some options; a user can provide their own supertidal sediment input (g $\text{cm}^{-2}$ $\text{year}^{-1}$). If this is not supplied, then [`determineInitialCohorts()`] will calculate sediment input at 1 cm below the highest tide and use that. The [`runToEquilibrium()`] function then runs the same as if initial elevation were at flooding elevation.
+
+If the initial elevation is above the heights tidal flooding elevation and the maximum growing elevation `zVegMax` of plants, then the initial condition is an upland soil. This is possible when modeling a marsh traversing into an adjacent upland as sea-level rises. A user can supply their own upland soil cohorts as an input, as long as it takes the form of a table with minimum and maximum depths, and ages of a stack of soil cohorts, each with mineral, root, fast and slow pool organic matter pool masses. If this argument is not provided, then [`determineInitialCohorts()`] will initialize an adjacent upland as a stack of 1 cm wide cohorts, each with 0 as their age, and each with 50% slow pool organic matter and 50% mineral matter.
+
+Finally, an alternative to letting [`determineInitialCohorts()`] make the decisions about how to initialize a sediment column, a user can specify their own `initialCohorts`. This will cause the function to jump over all of the previously described decisions and return the `initialCohorts` file. This is useful when you are pairing a hindcast with a forecast.
+
+## Building a tidal scenario
+
+argument | class | units | description
+-------- | :---: | :---: | -----------
+|`startYear`| integer | - | the start year of the scenario (YYYY)
+|`endYear` | integer | - | the end year of the scenario (YYYY)
+|`relSeaLevelRiseInit` | numeric | cm $\text{yr}^{-1}$ | initial rate of of sea-level rise
+|`relSeaLevelRiseTotal` | numeric | cm | total relative sea-level rise over the course of the simulation
+|`meanSeaLevel`| numeric | cm | initial mean sea level 
+| | vector | cm | mean sea level for each year of the simulation
+| `meanSeaLevelDatum` | numeric | cm | mean sea level over the last datum period
+| `meanHighWaterDatum` | numeric | cm | mean high water level over the last datum period
+
+The first step in the workflow is to build the tidal scenario that the simulation will iterate over. This works in two phases: building a sea-level curve and building a high-tide scenario. The function [`runCohortMem()`] takes a `startYear` and `endYear` (which is ported to the function [`buildScenarioCurve()`]), in the form YYYY. There is some more flexibility in this R-package than in previous online interfaces (\emph{i.e.} [MEM online interface](http://129.252.139.226/model/marsh/mem2.asp?t_zero=1991&centu_sea_level=24&mean_high_water=70&mean_sea_level=-2&init_rate_slr=0.24&susp_sed_conc=20&marsh_elev=43&max_elev=90&min_elev=-20&max_peak_biomass=1017&om_decay_rate=-0.8&bg_input_mult=3&bg_turnover=3&Drmax=10&LN_amp=3.1&kr=0.02&ks=.0322&q=.0015&chkSeas_Bio=on&default=1)). Note that this is not fixed at a 100 year forecast.
+
+The user then should set the initial rate of sea-level rise `relSeaLevelRiseInit` and the total relative sea-level rise over the course of the scenario `relSeaLevelRiseTotal`. These two inputs control how the rate of sea-level rise accelerates over the course of the simulation, or if it stays constant, depending on the number of years of the simulation (`endYear` - `startYear`). These inputs are only required if the simulation is informed by a single value of mean sea-level at the beginning of the simulation to then predict sea-level at further time points in the simulation (see below). The function [`buildScenarioCurve()`] will build a sea-level rise scenario assuming acceleration of sea-level rise [@stocker2013ipcc, @sweet2017global]. Conversely, if a vector of mean sea-levels is to be used to inform the tidal record (see below), these inputs should not be specified.
+
+\begin{align}
+S_{\mu}(t) &= S_{\mu}(0) + At + Bt^2\\
+A &= [S_{\mu}(1) - S_{\mu}(0)] - B\\
+B &= \frac{\frac{S_{\mu}(T) - S_{\mu}(0)}{T} - [S_{\mu}(1) - S_{\mu}(0)]}{T - 1}
+\end{align}
+
+Given the previous equations and specified inputs, we can substitute `relSeaLevelRiseInit` = $S_{\mu}(1) - S_{\mu}(0)$, `relSeaLevelRiseTotal` = $S_{\mu}(T) - S_{\mu}(0)$, and `endYear` - `startYear` = $T$.  
+
+\begin{align}
+B &= \frac{\frac{\textbf{relSeaLevelRiseTotal}}{\textbf{endYear} - \textbf{startYear}} - [\textbf{relSeaLevelRiseInit}]}{\textbf{endYear} - \textbf{startYear} - 1}\\
+A &= \textbf{relSeaLevelRiseInit} - B
+\end{align}
+
+The user will then input `meanSeaLevel` as either a numeric or a vector. The function [`buildScenarioCurve()`] will make a decision about what type of analysis you are trying to run based on the structure of the input `meanSeaLevel`. `meanSeaLevel` can either be an initial mean sea-level or a vector of mean sea-levels, as long as the vector is the same length as the number of years in the simulation. The vector can be useful for hindcasting using a tide gauge record, or running simulations using random walks.
+
+Finally, the user will input the mean sea level over the last datum period `meanSeaLevelDatum` and the mean high water over the last datum period `meanHighWaterDatum`. Tidal datums should represent long term averages over a datum period. The last complete epoch was 1981-2001, released by NOAA [for example](https://tidesandcurrents.noaa.gov/datums.html?datum=NAVD88&units=1&epoch=0&id=8575512&name=Annapolis&state=MD). In our examples we present tidal datums from NOAA tide gauges as cm relative to the North American Vertical Datum of 1988 (NAVD88). If high tide datums represent tidal amplitudes, then the user should set `meanSeaLevelDatum` to 0. 
+
+## Modifying the tidal scenario to account for mean high high water and spring tides (optional)
+
+argument | class | units | description
+-------- | :---: | :---: | -----------
+|`meanHighHighWaterDatum`| numeric | cm | (optional) mean higher high tide water level over the last datum period
+|`meanHighHighWaterSpringDatum` | numeric | cm | (optional) mean higher high spring tide water level over the last datum period
+
+If a user specifies only the average high tide level `meanHighWaterDatum`, then all the tidal floods in the simulation are apportioned to that datum. If a user specifies separate daily high tides (`meanHighWaterDatum` and `meanHighHighWaterDatum`), then half the tidal flood events are apportioned to each. The user can also specify spring tides (\emph{i.e.} monthly tidal events where there is the greatest differences between high and low tide) via `meanHighHighWaterSpringDatum`. If all three types of tides are defined (`meanHighWaterDatum`, `meanHighHighWaterDatum`, and `meanHighHighWaterSpringDatum`) then 50\% of the flood events are apportioned to the lower daily high tides, 46.5\% apportioned to daily higher high tides, and 3.5\% apportioned to bimonthly spring tides. As before, all high tide datums should be relative to long-term gauge averages or if they represent tidal amplitudes relative to mean sea level, the user should make sure that `meanSeaLevelDatum` is set to 0.
+
+The choice of how many tidal data to use and the inundation time function seem to have a marginal effect on annual sedimentation at the higher end of the elevation gradient. Given the parameter set used on this paper, more sedimentation is modeled higher in the tidal frame when all three tidal datums are defined as inputs compared to simply using only the weighted average mean high tide, and more still when the trigonometric function is used to calculate inundation time, compared to the linear function. 
+
+## Suspended sediment, the lunar nodal cycle, and annualized flooding events
+
+argument | class | units | description
+-------- | :---: | :---: | -----------
+|`suspendedSediment`| numeric | g $\text{cm}^{-3}$ | suspended sediment concentration of the water column
+|`lunarNodalAmp` | numeric | - | amplitude of the 18-year lunar nodal cycle
+|`lunarNodalPhase` | numeric | decimal years | the start year of the sine wave representing the lunar nodal cycle (YYYY)
+| `nFloods` | numeric | - | number of tidal flooding events per year
+| `floodTime.fn` | function | - | method used to calculate flooding time per tidal cycle (`floodTimeLinear` or `floodTimeTrig`)
+
+The user specifies the suspended sediment concentration (g $\text{cm}^{-3}$) `suspendedSediment` which is assumed to be constant across the course of the simulation. Similar to mean sea-level, suspended sediment concentration can be either a single value, if assumed the same for each year of the scenario, or a vector of values, as long as it is the same length as number of years in the simulation. This could be useful for hindcasting using a record of suspended sediment concentration, using random walks to hindcast or forecast, or to build scenarios such as those involving sediment augmentation, dam removals, or sediment diversions. The function [`buildScenarioCurve()`] outputs a table with a row for each year of the simulation that will be used to track inputs, as well as stores some annualized outputs.
+
+```{r buildScenarioCurve, echo = F}
+buildScenarioCurve <- function(startYear, endYear, meanSeaLevel, 
+                               relSeaLevelRiseInit, relSeaLevelRiseTotal, 
+                               suspendedSediment) {
+  
+  # Create a sequence of the years of the simulation
+  years <- startYear:endYear
+  # Calculate the total number of years of the simulation
+  nYearsOfSim <- length(years) 
+  
+  # Create an empty dataframe to hold values of mean sea-level and suspended
+  # sediment concentration
+  scenario <- data.frame(index = 1:nYearsOfSim, years = years,
+                         meanSeaLevel = rep(NA, nYearsOfSim),
+                         suspendedSediment = rep(NA, nYearsOfSim))
+  
+  ## Build the mean sea level scenario
+  # If the input only specifies an initial mean sea level at time = 0 ... 
+  if (length(meanSeaLevel) == 1) {
+    # ... create a sea-level rise scenario based on total sea-level rise and
+    # initial relative sea-level rise rate 
+    scenario$meanSeaLevel[1] <- meanSeaLevel
+    B <- (relSeaLevelRiseTotal/nYearsOfSim-relSeaLevelRiseInit)/(nYearsOfSim-1)
+    A <- relSeaLevelRiseInit - B
+    # Calculate the mean sea-level for each year of the simulation given A and B
+    scenario$meanSeaLevel[2:nYearsOfSim] <- scenario$meanSeaLevel[1] +
+      A*scenario$index[2:nYearsOfSim] + B*scenario$index[2:nYearsOfSim]^2
+    # If the user enters in a vector of meanSeaLevel that is equal to the number
+    # of years in the simulation.
+  } else if (length(meanSeaLevel) == length(years)) {
+    scenario$meanSeaLevel <- meanSeaLevel
+  } else {
+    stop("RSLR input is incorrect. Either enter a value at for 
+         the beginning and ending of the scenario, or a vector
+         of RSLR one for each year of the scenario.")
+  }
+  
+  # Add suspended sediment concentration as either a single value...
+  if (length(suspendedSediment) == 1) {
+    # If suspendedSediment is a single value.
+    scenario$suspendedSediment <- rep(suspendedSediment, nYearsOfSim)
+    # ... or as a vector
+  } else if (length(suspendedSediment) == nYearsOfSim) {
+    # If suspendedSediment is a vector in equal length to the number of years of
+    # the simulation.
+    scenario$suspendedSediment <- suspendedSediment
+  } else {
+    stop("SSC input is incorrect. Either enter a single average value,
+         or a vector equal in length to the number of years in the scenario.")
+  }
+  return(scenario)
+}
+
+```
+For example, here is a mean sea-level scenario for a 100-year simulation starting in 2016 (Fig \ref{fig:MSLPlot}).
+```{r MSLPlot, fig.align='center', echo = F, fig.cap = "Mean sea-level", fig.height=3, fig.width=5, include = F}
+## Example mean sea-level scenario
+scenarioCurve <- buildScenarioCurve(startYear = 2016, endYear = 2115, 
+                                    meanSeaLevel = 7.4,
+                                    relSeaLevelRiseInit = 0.34, 
+                                    relSeaLevelRiseTotal = 100,
+                                    suspendedSediment = 3e-05)
+
+# Plot tidal scenario
+scenarioCurve %>% 
+  ggplot(aes(x = years, y = meanSeaLevel)) + 
+  geom_line(size = 2) +
+  ylab("mean sea-level (cm)") + xlab("year")
+```
+
+```{r buildHighTideScenario, echo = F}
+predictLunarNodalCycle <- function(year, floodElv, meanSeaLevelDatum,
+                                   meanSeaLevel, lunarNodalAmp) {
+  # Build meanHighWater lines based on meanSeaLevel, long-term tidal range and lunar nodal amplitude
+  meanHighWater <- meanSeaLevel + (floodElv-meanSeaLevelDatum) + (lunarNodalAmp * (sin(2*pi*(year-1983)/18.61)))
+  return(meanHighWater)
+}
+
+buildHighTideScenario<-function(scenarioCurve, 
+                                meanSeaLevelDatum=scenarioCurve$meanSeaLevel[1], 
+                                meanHighWaterDatum, meanHighHighWaterDatum, 
+                                meanHighHighWaterSpringDatum, lunarNodalAmp) {
+  
+  # In scenarioCurve object create a meanHighWater and add it to the scenario
+  scenarioCurve$meanHighWater<-
+    predictLunarNodalCycle(year =scenarioCurve$years,
+                           meanSeaLevel= scenarioCurve$meanSeaLevel, 
+                           meanSeaLevelDatum = meanSeaLevelDatum,
+                           floodElv=meanHighWaterDatum, 
+                           lunarNodalAmp=lunarNodalAmp)
+  
+  # If meanHighHighWater and meanHighHighWaterSpring are arguments add them to
+  # the scenario table too
+  if (!missing(meanHighHighWaterDatum)& !missing(meanHighHighWaterSpringDatum)){
+    scenarioCurve$meanHighHighWater <- 
+      predictLunarNodalCycle(year = scenarioCurve$years,
+                             meanSeaLevel=scenarioCurve$meanSeaLevel,
+                             meanSeaLevelDatum = meanSeaLevelDatum,
+                             floodElv=meanHighHighWaterDatum,
+                             lunarNodalAmp=lunarNodalAmp)
+    
+    scenarioCurve$meanHighHighWaterSpring <- 
+      predictLunarNodalCycle(year = scenarioCurve$years,
+      meanSeaLevel= scenarioCurve$meanSeaLevel,
+      meanSeaLevelDatum = meanSeaLevelDatum,
+      floodElv=meanHighHighWaterSpringDatum, 
+      lunarNodalAmp=lunarNodalAmp)
+  }
+  return(scenarioCurve)
+}
+```
+And here is an example of a high tide scenario taking into account the lunar nodal cycle (Fig \ref{fig:highTide}).
+```{r highTide, fig.align='center', echo = F, fig.cap = "High tide scenario", fig.height=3, fig.width=7}
+scenarioCurve <- buildHighTideScenario(scenarioCurve, meanSeaLevelDatum = 7.4,
+                                       meanHighWaterDatum = 16.9, 
+                                       meanHighHighWaterDatum = 25.4,
+                                       meanHighHighWaterSpringDatum = 31.2,
+                                       lunarNodalAmp = 2.5)
+
+scenarioCurve %>% 
+  select(years,
+         `mean sea level` = meanSeaLevel,
+         `mean high water` = meanHighWater,
+         `mean high high water` = meanHighHighWater,
+         `mean high high water (spring tide)` = meanHighHighWaterSpring) %>% 
+  gather(key = tide, value = level,
+         `mean sea level`:`mean high high water (spring tide)`) %>%
+  mutate(tide = factor(tide, levels = c("mean high high water (spring tide)",
+                                        "mean high high water",
+                                        "mean high water",
+                                        "mean sea level"))) %>% 
+  ggplot(aes(x = years, y = level, group = tide, color = tide)) +
+  geom_line(size = 2) +
+  ylab("elevation (cm NAVD88)") +
+  scale_color_manual(values = c("#bdc9e1", "#74a9cf", "#2b8cbe", "#045a8d"))
+```
+
+Parameters for the lunar nodal cycle need to be specified locally. A reasonable range for lunar nodal amplitudes is 2 to 10 cm [@peng2019tide]. Absolute lunar nodal amplitude generally increases with latitude and with tidal range, but decreases when considered as a fraction of tidal range [@peng2019tide]. @peng2019tide found two clusters of phase for the 18.61 lunar nodal cycle one for semi-diurnal and mixed tides, which last peaked October of 2015, and one for diurnal tides, which last peaked in June of 2006 [@peng2019tide]. Reasonable phase values to set for `lunarNodalPhase` are 2001.848 +/- 0.5169 for diurnal tides and 2011.181 +/- 0.56 for mixed and semi-diurnal tides [@peng2019tide].
+
+In CMEM the user inputs the number of floods in a year `nFloods` rather than having the number of tides be a fixed constant (as in previous versions of MEM), as the number of tides can vary regionally. The `nFloods` input can be specified as any numeric value we recommend the following values: for diurnal tides we recommend 352.89 tidal cycles per year. There are 365.25 days per year (accounting for leap years), 24 hours per day, and a diurnal tidal cycle which is 24.84 hours long ($\frac{365.25 \times 24}{24.84} \approx 352.89$). For semi-diurnal or mixed semi-diurnal tide regimes, we recommend 705.80 tidal cycles per year, since a mixed or semi-diurnal tidal cycle is 12.42 hours long ($\frac{365.25 \times 24}{12.42} \approx 705.80$). 
+
+There are two methods for calculating fractional flooding time in this R-package. Users can specify a flood time function by setting the input `floodTime.fn` to the function name; users use the generic linear method [`floodTimeLinear()`], or specify the trigonometric function [`floodTimeTrig()`].  This formulation is used in XX versions of MEM (need particulars). Both functions apply a tidal flooding function $f(Z)$, where $Z$ is the elevation of the marsh surface, if the elevation is between the flood and ebb levels. For both methods, fractional flooding time is capped at 1 if $Z$ is lower than lowest flood elevation (100% flooded), and 0 (0% flooded) if the elevation is greater than the highest water level. For the simpler linear method, fractional inundation time is assumed to have a linear relationship to the relative tidal range, 0 above the average flood depth, 1 below the average ebb depth, and a linear interpolation in between. 
+
+\begin{equation}
+\label{eqn:tidalflood}
+f(Z) = \frac{H_{i} - Z}{H_i-L_i}
+\end{equation}
+
+Fraction flooding time for tidal class $i$ ($t_{f,i}$) is calculated as:
+
+\begin{equation} 
+\label{eqn:fracflood}
+t_{f,i} = \left\{
+        \begin{array}{ll}
+            0 & \quad  Z_{H,i} < Z \\
+             f(Z) & \quad Z_{L,i} \leq  Z \leq Z_{H,i} \\
+             1 & \quad  Z < Z_{L,i} 
+        \end{array}
+    \right.  
+\end{equation}
+
+Alternatively, we present the trigonometric function option [\emph{sensu} @hickey2019tidal] which allows sedimentation processes to be more sensitive for high marshes (that are not frequently flooded) without substantially affecting run time. Flooding time is calculated as the product of the absolute value of the rising time $t_r$ minus $\phi$, which is the time of one half of a tidal cycle, and the falling time $t_l$ for tidal cycle class $i$. 
+
+\begin{align} 
+t_{f,i} &= f(Z) = |t_{r,i} - \phi| + t_{l,i} \\
+t_{r,i} &=  \sin\left(\phi \left[\frac{A_{1,i}}{\pi}\right] - 1 \right) \\
+A_{1,i} &= 2 \pi - \arccos\left(2 \left[\frac{Z-L_i}{H_i-L_i}\right] - 1\right)\\
+t_{l,i} &=  \sin\left(\phi \left[\frac{A_{2,i}}{\pi}\right] - 1\right) \\
+A_{2,i} &= 2 \pi - \arccos\left(2 \left[\frac{Z-H_i}{L_i-H_i}\right] - 1\right)
+\end{align}
+
+Here, we $\phi$ to 0.5 (\emph{i.e.} half of a tidal cycle), which allows the output to be equal to the fraction for which an elevation is flooded (\emph{i.e.} fractional flooding time). The [`floodTimeTrig()`] function calculates flooding time as the product of the absolute value of the rising time $t_r$ minus $\Phi$ (the time of one half of a tidal cycle), and the falling time $t_l$ for tidal cycle class $i$. 
+
+The function [`deliverSediment()`] organizes inputs and in the cases where daily higher high tides and monthly high spring tides are specified, proportions the number of tidal floods among the types of tides specified.
+
+```{r deliveredSedimentSimple, echo = F}
+# First create function to calculate the available sediment
+  availableSediment <- function(floodPct, suspendedSediment, 
+                                settlingVelocity, capturedSediment=1) {
+  
+  # if the sediment column IS NOT able to clear... 
+  availableSSC <- 
+    ifelse(floodPct < 1/settlingVelocity, 
+    # available suspendedSediment is total possible capture 
+    suspendedSediment * floodPct/(1/settlingVelocity) * capturedSediment, 
+    # if the sediment column IS able to clear
+    suspendedSediment * capturedSediment)
+  
+  return(availableSSC)
+  }
+
+# Then create a function to calculate flood time from datum if flood time is
+# calculated linearly
+floodTimeLinear <- function(z, datumHigh, datumLow, tidalCycleLength = 1) {
+  floodFract <- ifelse(z >= datumHigh, 0, 
+                       ifelse(z <= datumLow, 1, 
+                              (datumHigh-z)/(datumHigh-datumLow)))
+  floodTime <- floodFract * tidalCycleLength
+  return(floodTime)
+}
+
+# Second function if flood time is calculated trigonometrically
+floodTimeTrig <- function(z, datumHigh, datumLow, tidalCycleLength = 1) {
+  
+  # If elevation is above the tidal range indation time is 0
+  datumHigh <- ifelse(z>=datumHigh, z, datumHigh)
+  
+  # If elevation is below inundation time is a full tidal cycle
+  datumLow <- ifelse(z<=datumLow, z, datumLow)
+  
+  # Rising time over cell = 6.21 (A/pi - 1) where A = 2* pi - cos-1 [2 (height
+  # of cell – meanLowWater) / (meanHighWater – meanLowWater) - 1] radians
+  A1 <- 2 * pi - acos(2 * (z-datumLow) / (datumHigh-datumLow) - 1)
+  risingTime <- tidalCycleLength/2 * (A1/pi - 1)
+  
+  # Falling time over cell = 6.21 (A/pi - 1) where A = 2* - cos-1 [2 (height of
+  # cell – meanHighWater) / (meanLowWater – meanHighWater) - 1] radians
+  A2 <- 2 * pi - acos(2 * (z-datumHigh) / (datumLow-datumHigh) - 1)
+  fallingTime <- tidalCycleLength/2 * (A2/pi - 1)
+  
+  # If between inundation time = abs (time rising - 6.21) + time falling
+  inundationTime <- abs(risingTime - tidalCycleLength/2) + fallingTime
+  
+  return(inundationTime)
+}
+
+
+deliverSediment <- function(z, suspendedSediment, nFloods = 705.79,
+                            meanSeaLevel, meanHighWater, meanHighHighWater=NA,
+                            meanHighHighWaterSpring=NA,
+                            meanLowWater=meanSeaLevel-meanHighWater, 
+                            meanLowLowWater=meanSeaLevel-meanHighHighWater, 
+                            meanLowLowWaterSpring=
+                              meanSeaLevel-meanHighHighWaterSpring,
+                            captureRate,
+                            floodTime.fn) {
+
+
+  # If all three tidal datums are present
+  if (all(!is.na(c(meanHighWater,meanHighHighWater,meanHighHighWaterSpring)))) {
+    # Create a data frame operation so we can use tidy functions to speed up
+    tidalCycles <- data.frame(datumHigh = c(meanHighWater, meanHighHighWater,
+                                            meanHighHighWaterSpring), 
+                              datumLow = c(meanLowWater, meanLowLowWater,
+                                           meanLowLowWaterSpring),
+                              nTides = c(0.5, 0.46497542, 0.03502458)) 
+  } else if (all(! is.na(c(meanHighWater, meanHighHighWater)))) {
+    # If only MHW and MHHW are present
+    tidalCycles <- data.frame(datumHigh = c(meanHighWater, meanHighHighWater), 
+                              datumLow = c(meanLowWater, meanLowLowWater),
+                              nTides = c(0.5, 0.5)) 
+  } else {
+    # If only MHW is present
+    tidalCycles <- data.frame(datumHigh = c(meanHighWater), 
+                              datumLow = c(meanLowWater),
+                              nTides = c(1)) 
+  }
+  
+  # Convert fraction of tides to counts of tides based on input
+  tidalCycles$nTides <- tidalCycles$nTides * nFloods
+  
+  tidalCycles <- tidalCycles %>%
+    # Set tidal properties to 0 if surface is above tidal range in each case
+    dplyr::mutate(nTides = ifelse(z>datumHigh, 0, nTides), # number of tides
+                  # Tidal height relative to surface
+                  tidalHeight = ifelse(z>datumHigh, 0, (datumHigh-z)*0.5), 
+                  # Call flood time function.
+                  floodTime = floodTime.fn(z=z, 
+                              datumHigh=datumHigh, 
+                              datumLow=datumLow),
+                  # Calculate fraction of sediment captured
+                        # if the sediment column IS NOT able to clear
+                  fractionCaptured = ifelse(floodTime < 1/captureRate, 
+                        # available suspendedSediment is total possible capture 
+                                             captureRate*floodTime, 
+                                      # if the sediment column IS able to clear
+                                             1),
+                  # Calculate available sediment as a cumulative block of water
+                  availableSediment = suspendedSediment * nTides * tidalHeight,
+                  # Calculated delivered sediment
+                  deliveredSediment = availableSediment * fractionCaptured) 
+  
+  # Sum delivered sediment across tidal cycles
+  totalDeliveredSediment <- sum(tidalCycles$deliveredSediment) 
+  
+  return(totalDeliveredSediment)
+}
+```
+
+Here, we show the calculated sediment delivered as a function of mean sea level and four different possible elevations (10cm, 20cm, 30cm, 40cm) using the tidal data generated in high tide scenario assuming a simple tidal scenario ($i.e.$ the user did not input a value for `meanHighHighWaterDatum` or `meanHighHighWaterSpringDatum`). This does *not* reflect the suspended sediment trajectory of a simulation because elevation changes as a function of vegetation (see below), but rather shows how the amount of sediment delivered depends both on the tidal scenario and the elevation. In particular, for supratidal marshes, the amount of sediment delivered is zero.
+
+```{r, sediment_example, fig.align='center', echo = F, fig.height=3, fig.width=5}
+test_elevations <- c(10,20,30,40)
+
+sediment_example <- matrix(NA, nrow = nrow(scenarioCurve), 
+                            ncol = length(test_elevations))
+
+for (i in 1:length(test_elevations)){
+  for (j in 1:nrow(scenarioCurve)){
+  sediment_example[j,i] <- 
+  deliverSediment(z = test_elevations[i],
+                  suspendedSediment = scenarioCurve$suspendedSediment[j],
+                  meanSeaLevel = scenarioCurve$meanSeaLevel[j],
+                  meanHighWater = scenarioCurve$meanHighWater[j],
+                  meanHighHighWater = NA,
+                  meanHighHighWaterSpring = NA,
+                  captureRate = 2.8,
+                  floodTime.fn = floodTimeLinear)
+  }
+}
+
+
+sediment_example_tibble <- tibble(elevation = rep(paste(test_elevations, "cm", sep = ""),
+                                                   each = nrow(sediment_example)),
+                                   meanSeaLevel = rep(scenarioCurve$meanSeaLevel, 4),
+                                   deliveredSediment = c(sediment_example[,1],
+                                                         sediment_example[,2],
+                                                         sediment_example[,3],
+                                                         sediment_example[,4]))
+
+sediment_example_tibble %>% 
+  ggplot(aes(x = meanSeaLevel, y = deliveredSediment, color = elevation)) +
+  geom_point(alpha = 0.3) +
+  ylab("delivered sediment (g)") +
+  xlab("mean sea level (cm NAVD88)") +
+  ylim(0,1.25) +
+  scale_color_manual(values = c("#fed98e", "#fe9929", "#d95f0e", "#993404"))
+```
+If the user does specify a `meanHighHighWaterDatum` and `meanHighHighWaterSpringDatum`, then the high tides are partitioned before the amount of sediment delivered is calculated.
+
+As seen below with comparison to the previous sediment graph, there is not considerable change between the amount of sediment delivered when using the simple sediment delivery function versus one that takes into account high high tide and spring high high tide.
+```{r, echo = F, fig.align='center', fig.height=3, fig.width=5}
+test_elevations <- c(10,20,30,40)
+
+sediment_example2 <- matrix(NA, nrow = nrow(scenarioCurve), 
+                            ncol = length(test_elevations))
+
+for (i in 1:length(test_elevations)){
+  for (j in 1:nrow(scenarioCurve)){
+  sediment_example2[j,i] <- 
+  deliverSediment(z = test_elevations[i],
+                  suspendedSediment = scenarioCurve$suspendedSediment[j],
+                  meanSeaLevel = scenarioCurve$meanSeaLevel[j],
+                  meanHighWater = scenarioCurve$meanHighWater[j],
+                  meanHighHighWater = scenarioCurve$meanHighHighWater[j],
+                  meanHighHighWaterSpring = scenarioCurve$meanHighHighWaterSpring[j],
+                  captureRate = 2.8,
+                  floodTime.fn = floodTimeLinear)
+  }
+}
+
+sediment_example2_tibble <- tibble(elevation = rep(paste(test_elevations, "cm", sep = ""),
+                                                   each = nrow(sediment_example2)),
+                                   meanSeaLevel = rep(scenarioCurve$meanSeaLevel, 4),
+                                   deliveredSediment = c(sediment_example2[,1],
+                                                         sediment_example2[,2],
+                                                         sediment_example2[,3],
+                                                         sediment_example2[,4]))
+
+sediment_example2_tibble %>% 
+  ggplot(aes(x = meanSeaLevel, y = deliveredSediment, color = elevation)) +
+  geom_point(alpha = 0.3) +
+  ylab("delivered sediment (g)") +
+  xlab("mean sea level (cm NAVD88)") +
+  ylim(0,1.25) +
+  scale_color_manual(values = c("#fed98e", "#fe9929", "#d95f0e", "#993404"))
+```
+
+## Predicting plant biomass given elevation and flooding
+
+argument | class | units | description
+-------- | :---: | :---: | -----------
+|`bMax`| numeric | g $\text{cm}^2$ | peak aboveground biomass
+|`zVegMin` | numeric | cm* | lower elevation of biomass limit
+|`zVegMax` | numeric | cm* | upper elevation of biomass limit
+| `zVegPeak` | numeric | cm* | (optional) elevation of peak biomass
+| `plantElevationType` | character | - | "orthometric" or "dimensionless", specifying elevation reference of the vegetation growing elevations (*)
+
+The user inputs multiple parameters that are related to the relationship between elevation and biomass, such that a given time step, the amount of biomass can be predicted for a given square meter area (10000 $\text{cm}^2$). There is assumed to be a parabolic relationship between elevation and biomass [@morris2002responses] which is parameterized (at a minimum) by a peak biomass `bMax`, a lower elevation limit of biomass `zVegMin`, and a upper elevation limit of biomass `zVegMax`. This specification assumes a symmetrical inverted parabola. If the user also has the option to provide an additional parameter `zVegPeak` which allows for the elevation of peak biomass to be different than the midpoint elevation of the lower and upper elevation limits (\emph{i.e.} an asymmetrical parabola). Finally, the user specifies `plantElevationType` as either "orthometric", which means that the values of 
+`zVegMin`, `zVegMax`, and `zVegPeak` (if provided) are in cm NAVD88, or "dimensionless" which means that the values of `zVegMin`, `zVegMax`, and `zVegPeak` (if provided) are relative to mean sea-level. 
+
+The function [`predictBiomass()`] takes the inputs `bMax`, `zVegMin`, `zVegMax`, and `zVegPeak` (if provided) as well as the the elevation to calculate aboveground biomass. Because regional tidal regimes influence the relationship between elevation and biomass production, elevation values for `zVegMin`, `zVegMax`, and `zVegPeak` (if provided) are converted to dimensionless elevations ($Z^*$) if the elevations are specified orthometrically (`plantElevationType` = "orthometric"). The function [`convertZToZstar()`] completes this conversion before the aboveground biomass is calculated. Similarly, the current surface elevation at the timestep in which the biomass prediction is being made is converted to $Z^*$ using the same function [`convertZToZstar()`]. 
+
+```{r predictBiomass, echo = F}
+convertZToZstar <- function(z, meanHighWater, meanSeaLevel) { 
+  (z-meanSeaLevel)/(meanHighWater-meanSeaLevel) 
+}
+
+predictBiomass <- function(z=0, bMax=2500, zVegMax=3, zVegMin=-1, zVegPeak=NA) {
+
+  # Stop the function if there are invalid parameters
+  if ( (bMax < 0) | # negative peak biomss
+       # or elevations that don't make sense
+       (zVegMax <= max(zVegMin, zVegPeak, na.rm=T)) |
+       ((zVegMin >= min(zVegMax, zVegPeak, na.rm=T)))
+       ) {
+    stop("invalid biomass parameters")
+  }
+  
+  # If there is no peak elevation for vegetation parabola is symmetric.
+  if (is.na(zVegPeak)) { 
+    
+    # Elevation of the veg. peak is halfway between the min and max limits
+    zVegPeak<-(zVegMax+zVegMin)/2
+  
+    # From bmax, min, and max elevation limits, solve for parameters of a parabola.
+    a <- -((-zVegMin * bMax - zVegMax * bMax) /
+             ((zVegMin - zVegPeak) * (-zVegMax + zVegPeak)))
+    b <- -(bMax / ((zVegMin - zVegPeak) * (-zVegMax + zVegPeak)))
+    c <- (zVegMin * zVegMax * bMax) /
+      ((zVegMin - zVegPeak) * (zVegMax - zVegPeak))
+    
+    # Apply parabolic function to elevation to calulate above ground biomass.
+    agb <- a*z + b*z^2 + c
+  
+  # If elevation of peak biomass is specified the curve can be more flexible ...
+  } else {
+    # ... but we need to split it into two curves.
+    
+    # For the curve applied on the 'upper end' create a new minimum elevation
+    # mirroring  upper elevation limit accross the peak biomass elevation.
+    zVegMin_up <- zVegPeak-((zVegMax-zVegPeak)) 
+    
+    # For the curve applied at the 'lower end', same. Create new maximum
+    # elevation tolerance mirroring, lower elevation limit accros the peak
+    # biomass elevation.
+    zVegMax_low <-zVegPeak+((zVegPeak-zVegMin))
+    
+    # Solve for the parameters of the upper curve.
+    a_up <- -((-zVegMin_up * bMax - zVegMax * bMax) / 
+                ((zVegMin_up - zVegPeak) * (-zVegMax + zVegPeak)))
+    b_up <- -(bMax / ((zVegMin_up - zVegPeak) * (-zVegMax + zVegPeak)))
+    c_up <- (zVegMin_up * zVegMax * bMax) / 
+      ((zVegMin_up - zVegPeak) * (zVegMax - zVegPeak))
+    
+    # Solve for the parametrs of the lower curve.
+    a_low <- -((-zVegMin * bMax - zVegMax_low * bMax) / 
+                 ((zVegMin - zVegPeak) * (-zVegMax_low + zVegPeak)))
+    b_low <- -(bMax / ((zVegMin - zVegPeak) * (-zVegMax_low + zVegPeak)))
+    c_low <- (zVegMin * zVegMax_low * bMax) / 
+      ((zVegMin - zVegPeak) * (zVegMax_low - zVegPeak))
+    
+    # If elevation is above the specified peak biomass elevation, apply the
+    # upper curve, if it's under apply the lower curve
+    agb <- ifelse(z>zVegPeak, a_up*z + b_up*z^2 +
+                    c_up, a_low*z + b_low*z^2 + c_low)
+    
+  }
+  
+  # Recast any negative values as 0, since biomass can't be negative.
+  agb <- ifelse(agb>0,agb,0) 
+  return(agb) # Return biomass as a function of elevation.
+  
+}
+```
+
+Here we show both a symmetric and asymmetric parabola. 
+
+```{r echo = F, fig.align='center', fig.height=3, fig.width=7}
+zVegMin <- -24.7
+zVegMax <- 44.4
+zVegPeak <- 22.1
+
+zVegMin_Zstar <- convertZToZstar(zVegMin, meanHighWater = 16.9, meanSeaLevel = 7.4)
+zVegMax_Zstar <- convertZToZstar(zVegMax, meanHighWater = 16.9, meanSeaLevel = 7.4)
+zVegPeak_Zstar <- convertZToZstar(zVegPeak, meanHighWater = 16.9, meanSeaLevel = 7.4)
+
+surfaceElev_Zstar <- convertZToZstar(z = 20, meanHighWater = 16.9, meanSeaLevel = 7.4)
+
+Zstars_pred <- apply(matrix(-30:50), MARGIN = 2,FUN = convertZToZstar, meanHighWater = 16.9, meanSeaLevel = 7.4)
+
+# Predict with asymmetrical parabola
+biomass_asym <- predictBiomass(z = Zstars_pred, bMax = 0.25,
+               zVegMin = zVegMin_Zstar,
+               zVegMax = zVegMax_Zstar,
+               zVegPeak = zVegPeak_Zstar)
+
+# Predict with symmetrical parabola
+biomass_sym <- predictBiomass(z = Zstars_pred, bMax = 0.25,
+               zVegMin = zVegMin_Zstar,
+               zVegMax = zVegMax_Zstar,
+               zVegPeak = NA)
+
+# Create tibble and make a plot
+biomass_pred_plot <- tibble(z_pred = -30:50,
+                            zstar_pred = Zstars_pred,
+                            biomass_asym = biomass_asym,
+                            biomass_sym = biomass_sym)
+
+
+a <- biomass_pred_plot %>% 
+  gather(key = sym, value = biomass, biomass_asym:biomass_sym) %>% 
+  ggplot(aes(x = z_pred, y = biomass, group = sym, color = sym)) +
+  geom_line(size = 2) +
+   xlab("elevation (Z, cm NAVD88)") +
+  ylab(expression(paste("aboveground biomass (g ", cm^-2, ")"))) +
+  theme(legend.position = "none") +
+  geom_vline(aes(xintercept = 16.9), linetype = "dashed", color = "#2b8cbe", size = 1.5)+
+  geom_vline(aes(xintercept = 7.4), linetype = "dashed", color = "#045a8d", size = 1.5) +
+  scale_color_manual(values = c("#006837", "#78c679"))
+
+b <- biomass_pred_plot %>% 
+  gather(key = sym, value = biomass, biomass_asym:biomass_sym) %>% 
+  ggplot(aes(x = zstar_pred, y = biomass, group = sym, color = sym)) +
+  geom_line(size = 2) +
+  xlab("elevation (Z*, dimensionless)") +
+  ylab(expression(paste("aboveground biomass (g ", cm^-2, ")"))) +
+  theme(legend.position = "none")+
+  scale_color_manual(values = c("#006837", "#78c679"))
+
+a+b
+
+```
+## Adding a cohort
+
+
+
+
+
+
+# Reference code
+## `addCohort()`
+```{r addCohort_code}
+addCohort <- function(massPools,
+                      rootTurnover, rootOmFrac, omDecayRate, #decay paraemters
+                      packing, #packing densities
+                      mineralInput = NA,
+                      mineralInput.fn = sedimentInputs, 
+                      massLiveRoots.fn = massLiveRoots,
+                      calculateDepthOfNonRootVolume.fn = calculateDepthOfNonRootVolume,
+                      timeStep=1, ...){
+  
+  #Sanity check the inputs
+  if(!all(c('age', 'fast_OM', 'slow_OM', 'mineral', 'layer_top', 'layer_bottom',
+            'root_mass') %in% 
+          names(massPools))){
+    stop('Badly named massPools')
+  }
+  
+  if(!all(c('organic', 'mineral') %in% names(packing))){
+    stop('Can not find expected packing densities.')
+  }
+  
+  if(!all(c('fast', 'slow') %in% names(rootOmFrac))){
+    stop('Can not find expected root fraction splits.')
+  }
+  
+  if(!all(c('fast', 'slow') %in% names(omDecayRate))){
+    stop('Can not find expected organic matter decay rates.')
+  }
+  
+  #copy over to an answer data frame
+  ans <- massPools
+  
+  ans$age <- ans$age + timeStep #age the cohorts
+  
+  # Convert decay rates to decay coefficients (k) in case in the future we want
+  ## to model decay at sub-annual time steps
+  ## C_t = C0 * exp(kt)
+  k_fast<-log(1-omDecayRate$fast)
+  k_slow<-log(1-omDecayRate$slow)
+
+  # track respiration
+  
+  ## total respired belowground OM = ((cumulative fast OM from previous time
+  ## steps + fast OM from this time step) * fraction lost to decay) +
+  ## ((sumulative slow pool OM from previous time steps + slow pool from this
+  ## time step) * fraction lost to decay)
+  
+  ## Fraction slow pool lost to decay will be 0 the way the inputs to this
+  ## function are set but this formulation sets us up to integrate slow pool
+  ## organic matter decay in a future iteration.
+  ans$respired_OM <- ((ans$fast_OM +
+    (ans$root_mass * rootOmFrac$fast * rootTurnover * timeStep)) * 
+    (1-exp(k_fast*timeStep))) +
+    ((ans$slow_OM + 
+       ans$root_mass * rootOmFrac$slow * rootTurnover * timeStep) *
+    (1-exp(k_slow*timeStep)))
+  
+  #add and decay the organic matter # New fast pool OM = (cumulative fast OM
+  #from previous time steps + new fast OM) * fraction remaining after decay
+  ans$fast_OM <- (ans$fast_OM +
+                  (ans$root_mass * rootOmFrac$fast * rootTurnover * timeStep)) * 
+    exp(k_fast*timeStep)
+  
+  #New slow pool OM = (cumulative slow OM from previous time steps + new slow
+  #OM) * fraction remaining after decay # Fraction remaining after decay will be
+  #1 unless we add flexibiltiy in inputs upstream of this function in a future
+  #version
+  ans$slow_OM <- (ans$slow_OM + 
+             ans$root_mass * rootOmFrac$slow * rootTurnover * timeStep) *
+    exp(k_slow*timeStep)
+             
+  # Check to see if mineral input is a static value or a function
+  if (is.na(mineralInput)) {
+    mineralInput <- mineralInput.fn(...)
+  }
+  
+  #if we are laying down a new cohort
+  if(mineralInput > 0){
+    if(!any(is.na(ans$age))){ #if there aren't any empty cohort slots
+      bufferAns <- ans
+      bufferAns[TRUE] <- NA
+      ans <- rbind(bufferAns, ans) #double the number of slots
+    }
+    
+    #Take the last empty cohort slot
+    
+    ##Note that by buffering the profile with empty cohort slots we do not need
+    ##to copy over the ...entire data frame when adding a single cohort. This
+    ##increases runtime when this function is ...embedided in interative runs.
+    newCohortIndex <- max(which(is.na(ans$age)))
+    
+    #initalize the age and organic carbon pools to 0
+    ans$age[newCohortIndex] <- 0
+    ans$fast_OM[newCohortIndex] <- 0
+    ans$slow_OM[newCohortIndex] <- 0
+
+    ans$respired_OM[newCohortIndex] <- 0
+    
+    #lay down the new mineral inputs
+    ans$mineral[newCohortIndex] <- mineralInput * timeStep
+    
+  }
+  
+  #calculate the volume of each cohort
+  temp_Vol <- (ans$fast_OM + ans$slow_OM)/packing$organic +
+    ans$mineral/packing$mineral
+  #replace NA with 0 so we can calculate cumulative volume
+  temp_Vol[is.na(temp_Vol)] <- 0 
+  ans$cumCohortVol <- cumsum(temp_Vol)
+  
+  #calculate depth profile
+  ans$layer_bottom <- calculateDepthOfNonRootVolume.fn(nonRootVolume =
+                                                         ans$cumCohortVol,
+                          massLiveRoots.fn=massLiveRoots.fn,
+                          soilLength=1, soilWidth=1,
+                          relTol = 1e-6,
+                                              ...)
+  ans$layer_top <- c(0, ans$layer_bottom[-length(ans$layer_bottom)])
+  
+  #recalculate the root mass
+  ans$root_mass <- massLiveRoots.fn(layerBottom = ans$layer_bottom,
+                                    layerTop = ans$layer_top, ...)
+  
+  return(ans)
+}
+```
+
+
+## `availableSediment()`
+```{r availableSediment_code, eval = F}
+# First create function to calculate the available sediment
+  availableSediment <- function(floodPct, suspendedSediment, 
+                                settlingVelocity, capturedSediment=1) {
+  
+  # if the sediment column IS NOT able to clear... 
+  availableSSC <- 
+    ifelse(floodPct < 1/settlingVelocity, 
+    # available suspendedSediment is total possible capture 
+    suspendedSediment * floodPct/(1/settlingVelocity) * capturedSediment, 
+    # if the sediment column IS able to clear
+    suspendedSediment * capturedSediment)
+  
+  return(availableSSC)
+  }
+```
+## `buildHighTideScenario()`
+```{r buildHighTideScenario_code, eval = F}
+buildHighTideScenario<-function(scenarioCurve, 
+                                meanSeaLevelDatum=scenarioCurve$meanSeaLevel[1], 
+                                meanHighWaterDatum, meanHighHighWaterDatum, 
+                                meanHighHighWaterSpringDatum, lunarNodalAmp) {
+  
+  # In scenarioCurve object create a meanHighWater and add it to the scenario
+  scenarioCurve$meanHighWater<-
+    predictLunarNodalCycle(year =scenarioCurve$years,
+                           meanSeaLevel= scenarioCurve$meanSeaLevel, 
+                           meanSeaLevelDatum = meanSeaLevelDatum,
+                           floodElv=meanHighWaterDatum, 
+                           lunarNodalAmp=lunarNodalAmp)
+  
+  # If meanHighHighWater and meanHighHighWaterSpring are arguments add them to
+  # the scenario table too
+  if (!missing(meanHighHighWaterDatum)& !missing(meanHighHighWaterSpringDatum)){
+    scenarioCurve$meanHighHighWater <- 
+      predictLunarNodalCycle(year = scenarioCurve$years,
+                             meanSeaLevel=scenarioCurve$meanSeaLevel,
+                             meanSeaLevelDatum = meanSeaLevelDatum,
+                             floodElv=meanHighHighWaterDatum,
+                             lunarNodalAmp=lunarNodalAmp)
+    
+    scenarioCurve$meanHighHighWaterSpring <- 
+      predictLunarNodalCycle(year = scenarioCurve$years,
+      meanSeaLevel= scenarioCurve$meanSeaLevel,
+      meanSeaLevelDatum = meanSeaLevelDatum,
+      floodElv=meanHighHighWaterSpringDatum, 
+      lunarNodalAmp=lunarNodalAmp)
+  }
+  return(scenarioCurve)
+}
+
+```
+
+
+## `buildScenarioCurve()`
+```{r buildScenarioCurve_code, eval = F}
+buildScenarioCurve <- function(startYear, endYear, meanSeaLevel, 
+                               relSeaLevelRiseInit, relSeaLevelRiseTotal, 
+                               suspendedSediment) {
+  
+  # Create a sequence of the years of the simulation
+  years <- startYear:endYear
+  # Calculate the total number of years of the simulation
+  nYearsOfSim <- length(years) 
+  
+  # Create an empty dataframe to hold values of mean sea-level and suspended
+  # sediment concentration
+  scenario <- data.frame(index = 1:nYearsOfSim, years = years,
+                         meanSeaLevel = rep(NA, nYearsOfSim),
+                         suspendedSediment = rep(NA, nYearsOfSim))
+  
+  ## Build the mean sea level scenario
+  # If the input only specifies an initial mean sea level at time = 0 ... 
+  if (length(meanSeaLevel) == 1) {
+    # ... create a sea-level rise scenario based on total sea-level rise and
+    # initial relative sea-level rise rate 
+    scenario$meanSeaLevel[1] <- meanSeaLevel
+    B <- (relSeaLevelRiseTotal/nYearsOfSim-relSeaLevelRiseInit)/(nYearsOfSim-1)
+    A <- relSeaLevelRiseInit - B
+    # Calculate the mean sea-level for each year of the simulation given A and B
+    scenario$meanSeaLevel[2:nYearsOfSim] <- scenario$meanSeaLevel[1] +
+      A*scenario$index[2:nYearsOfSim] + B*scenario$index[2:nYearsOfSim]^2
+    # If the user enters in a vector of meanSeaLevel that is equal to the number
+    # of years in the simulation.
+  } else if (length(meanSeaLevel) == length(years)) {
+    scenario$meanSeaLevel <- meanSeaLevel
+  } else {
+    stop("RSLR input is incorrect. Either enter a value at for 
+         the beginning and ending of the scenario, or a vector
+         of RSLR one for each year of the scenario.")
+  }
+  
+  # Add suspended sediment concentration as either a single value...
+  if (length(suspendedSediment) == 1) {
+    # If suspendedSediment is a single value.
+    scenario$suspendedSediment <- rep(suspendedSediment, nYearsOfSim)
+    # ... or as a vector
+  } else if (length(suspendedSediment) == nYearsOfSim) {
+    # If suspendedSediment is a vector in equal length to the number of years of
+    # the simulation.
+    scenario$suspendedSediment <- suspendedSediment
+  } else {
+    stop("SSC input is incorrect. Either enter a single average value,
+         or a vector equal in length to the number of years in the scenario.")
+  }
+  return(scenario)
+}
+
+```
+
+## `convertZToZstar()`
+```{r convertZToZstar_code, eval = F}
+convertZToZstar <- function(z, meanHighWater, meanSeaLevel) { 
+  (z-meanSeaLevel)/(meanHighWater-meanSeaLevel) 
+}
+
+```
+## `deliverSediment()`
+```{r deliverSediment_code, eval = F}
+deliverSediment <- function(z, suspendedSediment, nFloods = 705.79,
+                            meanSeaLevel, meanHighWater, meanHighHighWater=NA,
+                            meanHighHighWaterSpring=NA,
+                            meanLowWater=meanSeaLevel-meanHighWater, 
+                            meanLowLowWater=meanSeaLevel-meanHighHighWater, 
+                            meanLowLowWaterSpring=
+                              meanSeaLevel-meanHighHighWaterSpring,
+                            captureRate,
+                            floodTime.fn) {
+
+
+  # If all three tidal datums are present
+  if (all(!is.na(c(meanHighWater,meanHighHighWater,meanHighHighWaterSpring)))) {
+    # Create a data frame operation so we can use tidy functions to speed up
+    tidalCycles <- data.frame(datumHigh = c(meanHighWater, meanHighHighWater,
+                                            meanHighHighWaterSpring), 
+                              datumLow = c(meanLowWater, meanLowLowWater,
+                                           meanLowLowWaterSpring),
+                              nTides = c(0.5, 0.46497542, 0.03502458)) 
+  } else if (all(! is.na(c(meanHighWater, meanHighHighWater)))) {
+    # If only MHW and MHHW are present
+    tidalCycles <- data.frame(datumHigh = c(meanHighWater, meanHighHighWater), 
+                              datumLow = c(meanLowWater, meanLowLowWater),
+                              nTides = c(0.5, 0.5)) 
+  } else {
+    # If only MHW is present
+    tidalCycles <- data.frame(datumHigh = c(meanHighWater), 
+                              datumLow = c(meanLowWater),
+                              nTides = c(1)) 
+  }
+  
+  # Convert fraction of tides to counts of tides based on input
+  tidalCycles$nTides <- tidalCycles$nTides * nFloods
+  
+  tidalCycles <- tidalCycles %>%
+    # Set tidal properties to 0 if surface is above tidal range in each case
+    dplyr::mutate(nTides = ifelse(z>datumHigh, 0, nTides), # number of tides
+                  # Tidal height relative to surface
+                  tidalHeight = ifelse(z>datumHigh, 0, (datumHigh-z)*0.5), 
+                  # Call flood time function.
+                  floodTime = floodTime.fn(z=z, 
+                              datumHigh=datumHigh, 
+                              datumLow=datumLow),
+                  # Calculate fraction of sediment captured
+                        # if the sediment column IS NOT able to clear
+                  fractionCaptured = ifelse(floodTime < 1/captureRate, 
+                        # available suspendedSediment is total possible capture 
+                                             captureRate*floodTime, 
+                                      # if the sediment column IS able to clear
+                                             1),
+                  # Calculate available sediment as a cumulative block of water
+                  availableSediment = suspendedSediment * nTides * tidalHeight,
+                  # Calculated delivered sediment
+                  deliveredSediment = availableSediment * fractionCaptured) 
+  
+  # Sum delivered sediment across tidal cycles
+  totalDeliveredSediment <- sum(tidalCycles$deliveredSediment) 
+  
+  return(totalDeliveredSediment)
+}
+```
+
+
+## `determineInitialCohorts()`
+```{r determineInitialCohorts_code, eval = F}
+determineInitialCohorts <- function(initElv,
+                                 meanSeaLevel, meanHighWater,
+                                 meanHighHighWater=NA, 
+                                 meanHighHighWaterSpring=NA, 
+                                 suspendedSediment,
+                                 nFloods = 705.79,
+                                 floodTime.fn = floodTimeLinear,
+                                 bMax, zVegMin, zVegMax, zVegPeak,
+                                 plantElevationType,
+                                 rootToShoot, rootTurnover, rootDepthMax,
+                                 shape="linear",
+                                 abovegroundTurnover=NA, speciesCode=NA,
+                                 omDecayRate, recalcitrantFrac, captureRate,
+                                 omPackingDensity=0.085,
+                                 mineralPackingDensity=1.99,
+                                 rootPackingDensity=omPackingDensity,
+                                 initialCohorts=NA,
+                                 uplandCohorts=NA,
+                                 supertidalCohorts=NA,
+                                 supertidalSedimentInput=NA,
+                                 ...) {
+  
+  # If initialCohorts is defined as an input then it overrides all other
+  # arguments.
+  if (is.data.frame(initialCohorts)) {
+    # If it does,
+    # Return initial cohorts
+    cohorts <- initialCohorts
+    bio_table <- data.frame(speciesCode=NA,
+                            rootToShoot=NA,
+                            rootTurnover=NA,
+                            abovegroundTurnover=NA,
+                            rootDepthMax=NA,
+                            aboveground_biomass=NA,
+                            belowground_biomass=NA)
+    initSediment <- NA
+  } else { # If initial cohorts are not supplied
+    
+    # Convert real growing elevations to dimensionless growing elevations
+    if (! plantElevationType %in% c("dimensionless", "zStar", "Z*", "zstar")) {
+      zStarVegMin <- convertZToZstar(zVegMin, meanHighWater, meanSeaLevel)
+      zStarVegMax <- convertZToZstar(zVegMax, meanHighWater, meanSeaLevel)
+      zStarVegPeak <- convertZToZstar(zVegPeak, meanHighWater, meanSeaLevel)
+    } else {
+      zStarVegMin <- zVegMin
+      zStarVegMax <- zVegMax
+      zStarVegPeak <- zVegPeak
+    }
+    
+    # Convert dimensionless plant growing elevations to real growing elevations
+    if (plantElevationType %in% c("dimensionless", "zStar", "Z*", "zstar")) {
+      zVegMin <- convertZStarToZ(zVegMin, meanHighWater, meanSeaLevel)
+      zVegMax <- convertZStarToZ(zVegMax, meanHighWater, meanSeaLevel)
+      zVegPeak <- convertZStarToZ(zVegPeak, meanHighWater, meanSeaLevel)
+    }
+    
+    # Set initial conditions
+    # Calculate initial z star
+    initElvStar <- convertZToZstar(z=initElv, meanSeaLevel=meanSeaLevel,
+                                   meanHighWater=meanHighWater)
+    
+    # Initial Above Ground Biomass
+    bio_table <- runMultiSpeciesBiomass(initElvStar, bMax = bMax,
+                                        zVegMax = zStarVegMax, 
+                                        zVegMin = zStarVegMin,
+                                        zVegPeak = zStarVegPeak,
+                                        rootToShoot=rootToShoot,
+                                        rootTurnover=rootTurnover, 
+                                        abovegroundTurnover=abovegroundTurnover, 
+                                        rootDepthMax=rootDepthMax,
+                                        speciesCode=speciesCode)
+    
+    # If elevation is lower than highest tide provided, and lower than maximum
+    # growing elevation Generate 1 m or more of sediment given equilibrium
+    # conditions
+    if ((initElv <= max(meanHighWater, meanHighHighWater,
+                        meanHighHighWaterSpring, na.rm=T)) &
+        (initElv <= max(zVegMax))) {
+
+      # Initial Sediment
+      initSediment <- deliverSediment(z=initElv, 
+                                      suspendedSediment=suspendedSediment,
+                                      nFloods=nFloods,
+                                      meanSeaLevel=meanSeaLevel,
+                                      meanHighWater=meanHighWater,
+                                      meanHighHighWater=meanHighHighWater,
+                                      meanHighHighWaterSpring=
+                                        meanHighHighWaterSpring,
+                                      captureRate=captureRate,
+                                      floodTime.fn=floodTime.fn)
+      
+      # Run initial conditions to equilibrium
+      cohorts <- runToEquilibrium(totalRootMassPerArea=
+                                    bio_table$belowground_biomass[1], 
+                                  rootDepthMax=bio_table$rootDepthMax[1],
+                                  rootTurnover=bio_table$rootTurnover,
+                                  omDecayRate = list(fast=omDecayRate, slow=0),
+                                  rootOmFrac=list(fast=1-recalcitrantFrac,
+                                                  slow=recalcitrantFrac),
+                                  packing=list(organic=omPackingDensity,
+                                               mineral=mineralPackingDensity),
+                                  rootDensity=rootPackingDensity, shape=shape, 
+                                  mineralInput = initSediment,
+                                  minDepth = round(max(rootDepthMax)+0.5))
+      
+    } else if ((initElv >= max(meanHighWater, meanHighHighWater,
+                               meanHighHighWaterSpring, na.rm=T)) & 
+               (initElv <= max(zVegMax))) { 
+      # If elevation is greater than highest tide provided, but lower than
+      # maximum growing elevation Then form super-tidal peat
+      
+      # Check to see if supertidal peat is defined as an input
+      if (is.data.frame(supertidalCohorts)) {
+        # If it is, than pass the input staight to the output
+        cohorts <- supertidalCohorts
+        bio_table <- data.frame(speciesCode=NA,
+                                rootToShoot=NA,
+                                rootTurnover=NA,
+                                abovegroundTurnover=NA,
+                                rootDepthMax=NA,
+                                aboveground_biomass=NA,
+                                belowground_biomass=NA)
+                                initSediment <- NA
+      } else {
+        # If supertidalSedimentInput is defined
+        if (is.data.frame(supertidalSedimentInput)) {
+          # Run initial conditions to equilibrium
+          initSediment <- supertidalSedimentInput
+          cohorts <- runToEquilibrium(totalRootMassPerArea=
+                              bio_table$belowground_biomass[1],
+                              rootDepthMax=bio_table$rootDepthMax[1],
+                              rootTurnover=bio_table$rootTurnover,
+                              omDecayRate = list(fast=omDecayRate,slow=0),
+                              rootOmFrac=list(fast=1-recalcitrantFrac,
+                                              slow=recalcitrantFrac),
+                              packing=list(organic=omPackingDensity,
+                                           mineral=mineralPackingDensity),
+                              rootDensity=rootPackingDensity, shape=shape, 
+                              mineralInput = initSediment,
+                              minDepth = round(max(rootDepthMax)+0.5))
+        } else {
+          # If not, come up with a set with a column of of peat generated with
+          # biomass inputs, and any assumed 0 sediment input.
+          
+          # Initial Sediment, an arbitrary low number. Here I use the annual
+          # sediment delivered 1 cm below the highest tide line
+          initSediment <- deliverSediment(z=max(meanHighWater,
+                                                meanHighHighWater,
+                                                meanHighHighWaterSpring,
+                                                na.rm=T)-1, 
+                                          suspendedSediment=suspendedSediment, 
+                                          meanSeaLevel=meanSeaLevel, 
+                                          meanHighWater=meanHighWater, 
+                                          meanHighHighWater=meanHighHighWater, 
+                                          meanHighHighWaterSpring=
+                                            meanHighHighWaterSpring,
+                                          nFloods = nFloods,
+                                          captureRate=captureRate,
+                                          floodTime.fn = floodTime.fn)
+          
+          cohorts <- runToEquilibrium(totalRootMassPerArea=
+                              bio_table$belowground_biomass[1],
+                              rootDepthMax=bio_table$rootDepthMax[1],
+                              rootTurnover=bio_table$rootTurnover,
+                              omDecayRate = list(fast=omDecayRate, slow=0),
+                              rootOmFrac=list(fast=1-recalcitrantFrac, 
+                                              slow=recalcitrantFrac),
+                              packing=list(organic=omPackingDensity, 
+                                           mineral=mineralPackingDensity),
+                              rootDensity=rootPackingDensity, shape=shape, 
+                              mineralInput = initSediment,
+                              minDepth = round(max(rootDepthMax)+0.5))
+        }
+      }
+    } else if ((initElv >= max(meanHighWater, meanHighHighWater,
+                               meanHighHighWaterSpring, na.rm=T)) &
+               (initElv > zVegMax)) {
+      
+      # If elevation is greater than maximum growing elevation
+      # Then assign it an upland soil
+      # If an upland soil is provided use it.
+      if (! is.na(uplandCohorts)) {
+        cohorts <- uplandCohorts
+        bio_table <- data.frame(speciesCode=NA,
+                                rootToShoot=NA,
+                                rootTurnover=NA,
+                                abovegroundTurnover=NA,
+                                rootDepthMax=NA,
+                                aboveground_biomass=NA,
+                                belowground_biomass=NA)
+        initSediment <- NA
+      } else {
+        # If not assign it an arbitrary 50% organic matter soil
+        cohorts <- data.frame(age=rep(0, round(rootDepthMax+0.6)),
+                              fast_OM=rep(0, round(rootDepthMax+0.6)),
+        slow_OM=rep(0.5*(1/(0.5/mineralPackingDensity+0.5/omPackingDensity)),
+                    round(rootDepthMax+0.6)),
+                              respired_OM=rep(0, round(rootDepthMax+0.6)),
+        mineral=rep(0.5*(1/(0.5/mineralPackingDensity+0.5/omPackingDensity)),
+                                          round(rootDepthMax+0.6)),
+                              root_mass=rep(0,round(rootDepthMax+0.6)),
+                              layer_top=0:((round(rootDepthMax+0.6)-1)),
+                              layer_bottom=1:round(rootDepthMax+0.6)) %>% 
+          dplyr::mutate(cumCohortVol = cumsum(layer_bottom-layer_top))
+        
+        bio_table <- data.frame(speciesCode=NA,
+                                rootToShoot=NA,
+                                rootTurnover=NA,
+                                abovegroundTurnover=NA,
+                                rootDepthMax=NA,
+                                aboveground_biomass=NA,
+                                belowground_biomass=NA)
+        initSediment <- NA
+      }
+    } else {
+      stop("Elevations are invalid for creating initial cohorts.")
+    }
+  }
+  
+  # Check to make sure it has the right column names,
+  # If it does then return it,
+  # If not throw an error message
+  if (! all(c("age", "fast_OM", "slow_OM", 
+              "mineral", "root_mass", 
+              "layer_top", "layer_bottom", "cumCohortVol")%in%names(cohorts))) {
+    missing <- paste(c("age", "fast_OM", "slow_OM", 
+                       "mineral", "root_mass", 
+                       "layer_top", "layer_bottom")[!c("age", "fast_OM",
+                                                       "slow_OM", "mineral", 
+                                                       "root_mass", "layer_top",
+                                                       "layer_bottom",
+                                            "cumCohortVol")%in%names(cohorts)],
+                     collapse = ", ")
+    stop(paste("Initial cohorts table is missing ", missing, ".", sep=""))
+  }
+  
+  return(list(cohorts,
+              bio_table,
+              initSediment))
+}
+
+```
+
+
+
+
+## `floodTimeLinear()`
+```{r floodTimeLinear_code, eval = F}
+floodTimeLinear <- function(z, datumHigh, datumLow, tidalCycleLength = 1) {
+  floodFract <- ifelse(z >= datumHigh, 0, 
+                       ifelse(z <= datumLow, 1, 
+                              (datumHigh-z)/(datumHigh-datumLow)))
+  floodTime <- floodFract * tidalCycleLength
+  return(floodTime)
+}
+```
+
+## `floodTimeTrig()`
+```{r floodTimeTrig_code, eval = F}
+# Second function if flood time is calculated trigonometrically
+floodTimeTrig <- function(z, datumHigh, datumLow, tidalCycleLength = 1) {
+  
+  # If elevation is above the tidal range indation time is 0
+  datumHigh <- ifelse(z>=datumHigh, z, datumHigh)
+  
+  # If elevation is below inundation time is a full tidal cycle
+  datumLow <- ifelse(z<=datumLow, z, datumLow)
+  
+  # Rising time over cell = 6.21 (A/pi - 1) where A = 2* pi - cos-1 [2 (height
+  # of cell – meanLowWater) / (meanHighWater – meanLowWater) - 1] radians
+  A1 <- 2 * pi - acos(2 * (z-datumLow) / (datumHigh-datumLow) - 1)
+  risingTime <- tidalCycleLength/2 * (A1/pi - 1)
+  
+  # Falling time over cell = 6.21 (A/pi - 1) where A = 2* - cos-1 [2 (height of
+  # cell – meanHighWater) / (meanLowWater – meanHighWater) - 1] radians
+  A2 <- 2 * pi - acos(2 * (z-datumHigh) / (datumLow-datumHigh) - 1)
+  fallingTime <- tidalCycleLength/2 * (A2/pi - 1)
+  
+  # If between inundation time = abs (time rising - 6.21) + time falling
+  inundationTime <- abs(risingTime - tidalCycleLength/2) + fallingTime
+  
+  return(inundationTime)
+}
+
+```
+
+## `predictBiomass()`
+```{r predictBiomass_code, eval = F}
+predictBiomass <- function(z=0, bMax=2500, zVegMax=3, zVegMin=-1, zVegPeak=NA) {
+
+  # Stop the function if there are invalid parameters
+  if ( (bMax < 0) | # negative peak biomss
+       # or elevations that don't make sense
+       (zVegMax <= max(zVegMin, zVegPeak, na.rm=T)) |
+       ((zVegMin >= min(zVegMax, zVegPeak, na.rm=T)))
+       ) {
+    stop("invalid biomass parameters")
+  }
+  
+  # If there is no peak elevation for vegetation parabola is symmetric.
+  if (is.na(zVegPeak)) { 
+    
+    # Elevation of the veg. peak is halfway between the min and max limits
+    zVegPeak<-(zVegMax+zVegMin)/2
+  
+    # From bmax, min, and max elevation limits, solve for parameters of a parabola.
+    a <- -((-zVegMin * bMax - zVegMax * bMax) /
+             ((zVegMin - zVegPeak) * (-zVegMax + zVegPeak)))
+    b <- -(bMax / ((zVegMin - zVegPeak) * (-zVegMax + zVegPeak)))
+    c <- (zVegMin * zVegMax * bMax) /
+      ((zVegMin - zVegPeak) * (zVegMax - zVegPeak))
+    
+    # Apply parabolic function to elevation to calulate above ground biomass.
+    agb <- a*z + b*z^2 + c
+  
+  # If elevation of peak biomass is specified the curve can be more flexible ...
+  } else {
+    # ... but we need to split it into two curves.
+    
+    # For the curve applied on the 'upper end' create a new minimum elevation
+    # mirroring  upper elevation limit accross the peak biomass elevation.
+    zVegMin_up <- zVegPeak-((zVegMax-zVegPeak)) 
+    
+    # For the curve applied at the 'lower end', same. Create new maximum
+    # elevation tolerance mirroring, lower elevation limit accros the peak
+    # biomass elevation.
+    zVegMax_low <-zVegPeak+((zVegPeak-zVegMin))
+    
+    # Solve for the parameters of the upper curve.
+    a_up <- -((-zVegMin_up * bMax - zVegMax * bMax) / 
+                ((zVegMin_up - zVegPeak) * (-zVegMax + zVegPeak)))
+    b_up <- -(bMax / ((zVegMin_up - zVegPeak) * (-zVegMax + zVegPeak)))
+    c_up <- (zVegMin_up * zVegMax * bMax) / 
+      ((zVegMin_up - zVegPeak) * (zVegMax - zVegPeak))
+    
+    # Solve for the parametrs of the lower curve.
+    a_low <- -((-zVegMin * bMax - zVegMax_low * bMax) / 
+                 ((zVegMin - zVegPeak) * (-zVegMax_low + zVegPeak)))
+    b_low <- -(bMax / ((zVegMin - zVegPeak) * (-zVegMax_low + zVegPeak)))
+    c_low <- (zVegMin * zVegMax_low * bMax) / 
+      ((zVegMin - zVegPeak) * (zVegMax_low - zVegPeak))
+    
+    # If elevation is above the specified peak biomass elevation, apply the
+    # upper curve, if it's under apply the lower curve
+    agb <- ifelse(z>zVegPeak, a_up*z + b_up*z^2 +
+                    c_up, a_low*z + b_low*z^2 + c_low)
+    
+  }
+  
+  # Recast any negative values as 0, since biomass can't be negative.
+  agb <- ifelse(agb>0,agb,0) 
+  return(agb) # Return biomass as a function of elevation.
+  
+}
+```
+
+
+## `predictLunarNodalCycle()`
+```{r predictLunarNodalCycle_code, eval = F}
+predictLunarNodalCycle <- function(year, floodElv, meanSeaLevelDatum,
+                                   meanSeaLevel, lunarNodalAmp) {
+  # Build meanHighWater lines based on meanSeaLevel, long-term tidal range and
+  # lunar nodal amplitude
+  meanHighWater <- meanSeaLevel + (floodElv-meanSeaLevelDatum) +
+    (lunarNodalAmp * (sin(2*pi*(year-1983)/18.61)))
+  return(meanHighWater)
+}
+```
+## `runToEquilibrium()`
+```{r runToEquilibrium, eval = F}
+runToEquilibrium <- function(minAge = 50, maxAge = 12000,
+                             minDepth,
+                             recordEvolution = FALSE,
+                             relTol = 1e-6, absTol = 1e-8, ...){
+  
+  #initalize things to empty
+
+  cohortProfile <- data.frame(age=NA, fast_OM=NA, slow_OM=NA, 
+                              respired_OM=NA,
+                              mineral=NA, root_mass=NA,
+                              layer_top=NA, layer_bottom=NA)
+  
+  if(recordEvolution){
+    record.ls <- list(cohortProfile)
+  }
+  for(ii in 2:maxAge){
+    if(recordEvolution){
+      record.ls[[sprintf('Yr%d', ii)]] <- cohortProfile
+    }
+    #oldCohort <- cohortProfile
+    cohortProfile <- addCohort(massPools = cohortProfile, ...)
+    
+    ##have the last layer OM pools stabilized?
+    if((ii > minAge) & (max(cohortProfile$layer_bottom)>minDepth)){
+      if((abs(diff(cohortProfile$fast_OM[ii-c(1:2)] +
+                   cohortProfile$slow_OM[ii-c(1:2)])) < absTol |
+         abs(diff(cohortProfile$fast_OM[ii-c(1:2)] +
+                  cohortProfile$slow_OM[ii-c(1:2)] ) /
+             (cohortProfile$fast_OM[ii-1] +
+              cohortProfile$slow_OM[ii-1])) < relTol)){
+        break
+      }
+    }
+  }
+  
+  if(recordEvolution){
+    return(record.ls)
+  }else{
+    return(cohortProfile)
+  }
+}
+
+```
+
+
+
