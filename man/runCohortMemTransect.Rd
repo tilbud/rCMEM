@@ -13,9 +13,9 @@ runCohortMemTransect(startYear, endYear = startYear + 99,
   zVegMax, zVegPeak, plantElevationType, rootToShoot, rootTurnover,
   abovegroundTurnover = NA, speciesCode = NA, rootDepthMax,
   shape = "linear", omDecayRate, recalcitrantFrac, captureRate,
-  omPackingDensity = 0.085, mineralPackingDensity = 1.99,
-  rootPackingDensity = omPackingDensity, initialCohorts = NA,
-  uplandCohorts = NA, supertidalCohorts = NA,
+  omToOcParams = list(B0 = 0, B1 = 0.48), omPackingDensity = 0.085,
+  mineralPackingDensity = 1.99, rootPackingDensity = omPackingDensity,
+  initialCohorts = NA, uplandCohorts = NA, supertidalCohorts = NA,
   supertidalSedimentInput = NA, initElvMin = meanSeaLevel[1],
   initElvMax = max(meanHighWaterDatum, meanHighHighWaterDatum,
   meanHighHighWaterSpringDatum, na.rm = T) + relSeaLevelRiseTotal,
@@ -80,6 +80,8 @@ runCohortMemTransect(startYear, endYear = startYear + 99,
 
 \item{captureRate}{a numeric, the number of times a water column will clear per tidal cycle}
 
+\item{omToOcParams}{a list, of numerics listed B0, B1 and optionally B3. These define a linear or parabolic relationship between organic matter and organic carbon}
+
 \item{omPackingDensity}{a numeric, the bulk density of pure organic matter}
 
 \item{mineralPackingDensity}{a numeric, the bulk density of pure mineral matter}
@@ -99,8 +101,6 @@ runCohortMemTransect(startYear, endYear = startYear + 99,
 \item{elvIntervals}{a numeric, the elevation intervals of the transect}
 
 \item{...}{}
-
-\item{abovegroundTurnover}{(optional) a numeric or vector of numerics, aboveground biomass annual turnover rate}
 
 \item{superTidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 }

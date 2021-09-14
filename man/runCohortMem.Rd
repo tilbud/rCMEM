@@ -13,9 +13,9 @@ runCohortMem(startYear, endYear = startYear + 99, relSeaLevelRiseInit,
   zVegMax, zVegPeak, plantElevationType, rootToShoot, rootTurnover,
   abovegroundTurnover = NA, speciesCode = NA, rootDepthMax,
   shape = "linear", omDecayRate, recalcitrantFrac, captureRate,
-  omPackingDensity = 0.085, mineralPackingDensity = 1.99,
-  rootPackingDensity = omPackingDensity, initialCohorts = NA,
-  uplandCohorts = NA, supertidalCohorts = NA,
+  omToOcParams = list(B0 = 0, B1 = 0.48), omPackingDensity = 0.085,
+  mineralPackingDensity = 1.99, rootPackingDensity = omPackingDensity,
+  initialCohorts = NA, uplandCohorts = NA, supertidalCohorts = NA,
   supertidalSedimentInput = NA, ...)
 }
 \arguments{
@@ -76,6 +76,8 @@ runCohortMem(startYear, endYear = startYear + 99, relSeaLevelRiseInit,
 \item{recalcitrantFrac}{a numeric, fraction of organic matter resistant to decay}
 
 \item{captureRate}{a numeric, the number of times a water column will clear per tidal cycle}
+
+\item{omToOcParams}{a list, of numerics listed B0, B1 and optionally B3. These define a linear or parabolic relationship between organic matter and organic carbon}
 
 \item{omPackingDensity}{a numeric, the bulk density of pure organic matter}
 

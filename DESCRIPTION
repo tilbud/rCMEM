@@ -1,6 +1,6 @@
-Package: rCTM
+Package: rCMEM
 Type: Package
-Title: Cohort Theory Model
+Title: R-Version Cohort Marsh Equilibrium Model
 Version: 6.1.1
 Author: J.T. Morris
 Maintainer: The package maintainer <yourself@somewhere.net>
