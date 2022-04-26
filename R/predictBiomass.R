@@ -16,10 +16,9 @@
 #' @export
 #'
 #' @examples
-#' predictedBiomass(0, 2500, 3, -1)
-predictedBiomass <- function(z=0, bMax=2500, zVegMax=3, zVegMin=-1, zVegPeak=NA) {
+#' predictBiomass(0, 2500, 3, -1)
+predictBiomass <- function(z=0, bMax=2500, zVegMax=3, zVegMin=-1, zVegPeak=NA) {
 
-  
   # Stop the function if there are invalid parameters
   if ( (bMax < 0) | # negative peak biomss
        # or elevations that don't make sense

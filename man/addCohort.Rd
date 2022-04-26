@@ -4,19 +4,11 @@
 \alias{addCohort}
 \title{Add another cohort to the soil profile}
 \usage{
-addCohort(
-  massPools,
-  rootTurnover,
-  rootOmFrac,
-  omDecayRate,
-  packing,
-  mineralInput = NA,
-  mineralInput.fn = sedimentInputs,
+addCohort(massPools, rootTurnover, rootOmFrac, omDecayRate, packing,
+  mineralInput = NA, mineralInput.fn = sedimentInputs,
   massLiveRoots.fn = massLiveRoots,
   calculateDepthOfNonRootVolume.fn = calculateDepthOfNonRootVolume,
-  timeStep = 1,
-  ...
-)
+  timeStep = 1, ...)
 }
 \arguments{
 \item{massPools}{A data frame containing the following colums: age, fast_OM, slow_OM, mineral, layer_top, layer_bottom, root_mass. Each row of this data frame represents a single cohort. To increase runtime in simulations, the profile is buffered with NA's at the top of the data frame, see code comments for details.}

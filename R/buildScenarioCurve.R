@@ -5,7 +5,7 @@
 #' @param endYear an integer, year in form YYYY, the end year of the scenario  
 #' @param meanSeaLevel a numeric or a vector of numbers, either indicating mean sea-level at the start of scenario, or mean sea-level at each year of the sceanrio
 #' @param relSeaLevelRiseInit a numeric, initial rate of relative sea-level rise
-#' @param rslrTotal a numeric, total relative sea-level rise over the course of the scanario
+#' @param relSeaLevelRiseTotal a numeric, total relative sea-level rise over the course of the scanario
 #' @param suspendedSediment a numeric or a vector of numbers, either average annual suspended sediment concentration, or a vector of annual suspended sediment concentration for each year of the scenario
 #'
 #' @references Sweet, W. V., Kopp, R. E., Weaver, C. P., Obeysekera, J., Horton, R. M., Thieler, E. R., & Zervas, C. (2017). Global and regional sea level rise scenarios for the United States.
@@ -14,13 +14,13 @@
 #' @return a data frame including columns for year, sea-level, and suspended sediment concentration, and rows for each year in the scenario
 #' @export
 buildScenarioCurve <- function(startYear, endYear=startYear+99, meanSeaLevel, 
-                               relSeaLevelRiseInit=0.3, rslrTotal=100, suspendedSediment) {
+                               relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100, suspendedSediment) {
   
-  # Create a sequence of the number of years
+  # Create a sequence of the number of year
   years <- startYear:endYear
   nYearsOfSim <- length(years) # Put this in args. Replace this with yearEnd.
   
-  scenario <- data.frame(index = 1:nYearsOfSim, years = years,
+  scenario <- data.frame(index = 1:nYearsOfSim, year = years,
                          meanSeaLevel = rep(NA, nYearsOfSim),
                          suspendedSediment = rep(NA, nYearsOfSim))
   
@@ -38,7 +38,7 @@ buildScenarioCurve <- function(startYear, endYear=startYear+99, meanSeaLevel,
     # Coefficient B is the acceleration term 
     # B = {[meanSeaLevel(T)-meanSeaLevel(0)] / T - [meanSeaLevel(1)-meanSeaLevelDatum] } / (T-1) where T - length of the simulation
     
-    B <- ((rslrTotal)/nYearsOfSim - relSeaLevelRiseInit) / (nYearsOfSim-1)
+    B <- ((relSeaLevelRiseTotal)/nYearsOfSim - relSeaLevelRiseInit) / (nYearsOfSim-1)
     A <- relSeaLevelRiseInit - B
     
     scenario$meanSeaLevel[2:nYearsOfSim] <- scenario$meanSeaLevel[1] + A*scenario$index[2:nYearsOfSim] + B*scenario$index[2:nYearsOfSim]^2

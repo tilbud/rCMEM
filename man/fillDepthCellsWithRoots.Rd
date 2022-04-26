@@ -4,33 +4,29 @@
 \alias{fillDepthCellsWithRoots}
 \title{Calculates a root mass depth profile}
 \usage{
-fillDepthCellsWithRoots(
-  depthMins = 0:149,
-  depthMaxs = 1:150,
-  totalRootBmass = 3000,
-  rootShape = "linear",
-  rootDepthMax = 30,
-  customFunction = function(x) {     exp(-((x - maxRootDepth)^2/lambdaRoot^2)) },
-  customParams = list(lambdaRoot = 33, maxRootDepth = 30)
-)
+fillDepthCellsWithRoots(depthMins = 0:149, depthMaxs = 1:150,
+  totalRootBmass = 3000, rootShape = "linear", rootDepthMax = 30,
+  customFunction = function(x) {     exp(-((x -
+  maxRootDepth)^2/lambdaRoot^2)) }, customParams = list(lambdaRoot = 33,
+  maxRootDepth = 30))
 }
 \arguments{
-\item{depthMins}{}
+\item{depthMins}{a vector of numerics, minimum of depth intervals that the funciton will fill with roots}
 
-\item{depthMaxs}{}
+\item{depthMaxs}{a vector of numerics, maximum of depth intervals that the funciton will fill with roots}
 
-\item{totalRootBmass}{}
+\item{totalRootBmass}{a numeric, total root biomass}
 
-\item{rootShape}{}
+\item{rootShape}{a character, either linear, exponential, or custom, defining the shape of the root profile}
 
-\item{rootDepthMax}{}
+\item{rootDepthMax}{a numeric, maximum depth of root zone}
 
-\item{customFunction}{}
+\item{customFunction}{a function (optional), if root shape is custom, then use a customized function}
 
-\item{customParams}{}
+\item{customParams}{a list (optional), any other parameters required by a custom root shape function}
 }
 \value{
-
+a data frame with minimum and maximum depths and and root biomass within those depths intervals
 }
 \description{
 It will take any root biomass and maximum rooting depth, 

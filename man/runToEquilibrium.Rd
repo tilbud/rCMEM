@@ -4,15 +4,8 @@
 \alias{runToEquilibrium}
 \title{Run to equilbrium with proscribed surface mineral input}
 \usage{
-runToEquilibrium(
-  minAge = 50,
-  maxAge = 12000,
-  minDepth,
-  recordEvolution = FALSE,
-  relTol = 1e-06,
-  absTol = 1e-08,
-  ...
-)
+runToEquilibrium(minAge = 50, maxAge = 12000, minDepth,
+  recordEvolution = FALSE, relTol = 1e-06, absTol = 1e-08, ...)
 }
 \arguments{
 \item{minAge}{run the model for at least these many years}
@@ -21,7 +14,7 @@ runToEquilibrium(
 
 \item{minDepth}{run the model to create a profile at least this deep}
 
-\item{recordEvolution}{a boolean flag to record how the equalibrium profile evolves}
+\item{recordEvolution}{a boolean flag to record how the equilibrium profile evolves}
 
 \item{relTol}{stop the evolution if the relative difference between the two oldest cohorts is less then this}
 

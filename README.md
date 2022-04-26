@@ -44,7 +44,7 @@ install.packages(needed)
 
 ```
 # Run rMEM with Cohorts example
-memCohortExample <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, rslrTotal=100,
+memCohortExample <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
                                       initElv=21.9, meanSeaLevel=7.4, meanHighWater=16.9, meanHighHighWater=25.4, meanHighHighWaterSpring=31.2, 
                                       suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
                                       zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,

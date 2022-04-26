@@ -89,7 +89,7 @@ for (i in 1:iterations) {
   
   # Add to a table
   try({
-  memCohortIteration <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, rslrTotal=100,
+  memCohortIteration <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
                                         initElv=21.9, meanSeaLevel=7.4, meanHighWater=16.9, meanHighHighWater=25.4, meanHighHighWaterSpring=31.2, 
                                         suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=total_iterations$bMax[i], 
                                         zVegMin=total_iterations$zVegMin[i], zVegMax=total_iterations$zVegMax[i], zVegPeak=total_iterations$zVegPeak[i],
@@ -144,7 +144,7 @@ for (j in 1:length(parameter_names)) {
     }
   }
   # Run on high setting
-  memCohortIteration_min <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, rslrTotal=100,
+  memCohortIteration_min <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
                                           initElv=21.9, meanSeaLevel=7.4, meanHighWater=16.9, meanHighHighWater=25.4, meanHighHighWaterSpring=31.2, 
                                           suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=temp_min_bMax, 
                                           zVegMin=temp_min_zVegMin, zVegMax=temp_min_zVegMax, zVegPeak=temp_min_zVegPeak,
@@ -156,7 +156,7 @@ for (j in 1:length(parameter_names)) {
                                      memCohortIteration_min$core$input_yrs, 
                                    na.rm=T) * 10000
   # Run on low setting
-  memCohortIteration_max <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, rslrTotal=100,
+  memCohortIteration_max <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
                                               initElv=21.9, meanSeaLevel=7.4, meanHighWater=16.9, meanHighHighWater=25.4, meanHighHighWaterSpring=31.2, 
                                               suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=temp_max_bMax, 
                                               zVegMin=temp_max_zVegMin, zVegMax=temp_max_zVegMax, zVegPeak=temp_max_zVegPeak,

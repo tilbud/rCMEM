@@ -4,14 +4,9 @@
 \alias{buildScenarioCurve}
 \title{Build scenario sea-level curve}
 \usage{
-buildScenarioCurve(
-  startYear,
-  endYear = startYear + 99,
-  meanSeaLevel,
-  relSeaLevelRiseInit = 0.3,
-  rslrTotal = 100,
-  suspendedSediment
-)
+buildScenarioCurve(startYear, endYear = startYear + 99, meanSeaLevel,
+  relSeaLevelRiseInit = 0.3, relSeaLevelRiseTotal = 100,
+  suspendedSediment)
 }
 \arguments{
 \item{startYear}{an integer, year in form YYYY, the start year of the scenario}
@@ -22,7 +17,7 @@ buildScenarioCurve(
 
 \item{relSeaLevelRiseInit}{a numeric, initial rate of relative sea-level rise}
 
-\item{rslrTotal}{a numeric, total relative sea-level rise over the course of the scanario}
+\item{relSeaLevelRiseTotal}{a numeric, total relative sea-level rise over the course of the scanario}
 
 \item{suspendedSediment}{a numeric or a vector of numbers, either average annual suspended sediment concentration, or a vector of annual suspended sediment concentration for each year of the scenario}
 }
