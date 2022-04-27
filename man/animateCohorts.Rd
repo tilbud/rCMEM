@@ -27,7 +27,7 @@ animateCohorts(
 
 \item{chPalette}{vector, a vector of colors to use to symbolize the different mass cohorts}
 
-\item{trackThresholds}{vector, a vector of characters indicating which water leves in the scenario table to map as horizontal lines}
+\item{trackThresholds}{vector, a vector of characters indicating which water levels in the scenario table to map as horizontal lines}
 
 \item{duration}{numeric, length in seconds of the animation}
 

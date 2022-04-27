@@ -52,7 +52,7 @@ runCohortMem(
 
 \item{relSeaLevelRiseInit}{a numeric, initial rate of relative sea-level rise}
 
-\item{relSeaLevelRiseTotal}{a numeric, total relative sea-level rise over the course of the scanario}
+\item{relSeaLevelRiseTotal}{a numeric, total relative sea-level rise over the course of the scenario}
 
 \item{initElv}{a numeric, the initial elevation of the marsh at the start of the scenario}
 
@@ -114,9 +114,9 @@ runCohortMem(
 
 \item{initialCohorts}{a data frame, (optional) custom set of mass cohorts that will override any decision making this function does}
 
-\item{uplandCohorts}{a data frame,  (optional) custom set of mass cohorts to be used if intiial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance}
+\item{uplandCohorts}{a data frame,  (optional) custom set of mass cohorts to be used if initial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance}
 
-\item{supertidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
+\item{supertidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if initial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 
 \item{supertidalSedimentInput, }{a numeric, (optional) grams per cm^2 per year, an optional parameter which will define annual suspended sediment delivery to a sediment column that is is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 
@@ -126,5 +126,5 @@ runCohortMem(
 a list of data frames, including the annualized summaries, and mapped cohorts tracked for every year of the simulation.
 }
 \description{
-This function takes an initial elevation, average annual suspended sediment concentrtion and tidal properties, plant traits, and decay rates, then builds a scenario, and runs the marsh equilibrium model over that scenario tracking individual sediment mass cohorts including minderal, live root, slow decay organic mater pool and a fast organic matter pool.
+This function takes an initial elevation, average annual suspended sediment concentration and tidal properties, plant traits, and decay rates, then builds a scenario, and runs the marsh equilibrium model over that scenario tracking individual sediment mass cohorts including mineral, live root, slow decay organic mater pool and a fast organic matter pool.
 }

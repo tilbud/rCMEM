@@ -2,7 +2,7 @@
 % Please edit documentation in R/runToEquilibrium.R
 \name{runToEquilibrium}
 \alias{runToEquilibrium}
-\title{Run to equilbrium with proscribed surface mineral input}
+\title{Run to equilibrium with proscribed surface mineral input}
 \usage{
 runToEquilibrium(
   minAge = 50,
@@ -33,5 +33,5 @@ runToEquilibrium(
 a data frame by age cohort with the layer top and bottom depths, age, and mass of the fast organic, slow organic, mineral, and root biomass pools OR a list that is a record of age cohorts
 }
 \description{
-Repeatedly add new cohorts to a soil profile until the oldest layers are not siginficatly different AND the oldest layer are above some minimum age, within some upper bound of soil age.
+Repeatedly add new cohorts to a soil profile until the oldest layers are not significantly different AND the oldest layer are above some minimum age, within some upper bound of soil age.
 }

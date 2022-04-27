@@ -15,9 +15,9 @@ fillDepthCellsWithRoots(
 )
 }
 \arguments{
-\item{depthMins}{a vector of numerics, minimum of depth intervals that the funciton will fill with roots}
+\item{depthMins}{a vector of numerics, minimum of depth intervals that the function will fill with roots}
 
-\item{depthMaxs}{a vector of numerics, maximum of depth intervals that the funciton will fill with roots}
+\item{depthMaxs}{a vector of numerics, maximum of depth intervals that the function will fill with roots}
 
 \item{totalRootBmass}{a numeric, total root biomass}
 

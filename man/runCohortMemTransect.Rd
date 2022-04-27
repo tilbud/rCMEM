@@ -2,7 +2,7 @@
 % Please edit documentation in R/runCohortMemTransect.R
 \name{runCohortMemTransect}
 \alias{runCohortMemTransect}
-\title{Run Marsh Equilibrium Model with Cohorts Accross an Elevation Transect}
+\title{Run Marsh Equilibrium Model with Cohorts Across an Elevation Transect}
 \usage{
 runCohortMemTransect(
   startYear,
@@ -56,7 +56,7 @@ runCohortMemTransect(
 
 \item{relSeaLevelRiseInit}{a numeric, initial rate of relative sea-level rise}
 
-\item{relSeaLevelRiseTotal}{a numeric, total relative sea-level rise over the course of the scanario}
+\item{relSeaLevelRiseTotal}{a numeric, total relative sea-level rise over the course of the scenario}
 
 \item{initElv}{a numeric, the initial elevation of the marsh at the start of the scenario}
 
@@ -118,9 +118,9 @@ runCohortMemTransect(
 
 \item{initialCohorts}{a data frame, (optional) custom set of mass cohorts that will override any decision making this function does}
 
-\item{uplandCohorts}{a data frame,  (optional) custom set of mass cohorts to be used if intiial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance}
+\item{uplandCohorts}{a data frame,  (optional) custom set of mass cohorts to be used if initial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance}
 
-\item{supertidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
+\item{supertidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if initial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 
 \item{supertidalSedimentInput, }{a numeric, (optional) grams per cm^2 per year, an optional parameter which will define annual suspended sediment delivery to a sediment column that is is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 

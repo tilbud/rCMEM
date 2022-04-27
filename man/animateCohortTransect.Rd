@@ -2,7 +2,7 @@
 % Please edit documentation in R/animateCohortTransect.R
 \name{animateCohortTransect}
 \alias{animateCohortTransect}
-\title{Animate sediment cohorts accross an elevation transect}
+\title{Animate sediment cohorts across an elevation transect}
 \usage{
 animateCohortTransect(
   scenarioTransect,

@@ -40,7 +40,7 @@ str(cohortMemExample)
 ```
 # Uninstall and reinstall latest branch from GitHub
 
-# 1. If rCTM is loaded and in the memory, forget rCTM
+# 1. If rCMEM is loaded and in the memory, forget rCMEM
 if ("rCMEM" %in% (.packages())){
   detach("package:rCMEM", unload=TRUE) 
 }

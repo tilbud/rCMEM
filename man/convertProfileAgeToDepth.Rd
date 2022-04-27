@@ -14,7 +14,7 @@ convertProfileAgeToDepth(ageCohort, layerTop, layerBottom)
 \item{layerBottom}{a vector of the bottom of the soil layers we want to convert to.}
 }
 \value{
-a data frame specifying the depth cohoprts. Contains \code{layer_top}, \code{layer_bottom}, \code{age}, \code{fast_OM}, \code{slow_OM}, \code{mineral}, and \code{root_mass}.
+a data frame specifying the depth cohorts. Contains \code{layer_top}, \code{layer_bottom}, \code{age}, \code{fast_OM}, \code{slow_OM}, \code{mineral}, and \code{root_mass}.
 }
 \description{
 This function takes an age cohort soil profile and converts it to a depth based cohort using weighted sums and means.
