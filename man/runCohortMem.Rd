@@ -4,19 +4,46 @@
 \alias{runCohortMem}
 \title{Run Marsh Equilibrium Model with Cohorts}
 \usage{
-runCohortMem(startYear, endYear = startYear + 99, relSeaLevelRiseInit,
-  relSeaLevelRiseTotal, initElv, meanSeaLevel,
-  meanSeaLevelDatum = meanSeaLevel[1], meanHighWaterDatum,
-  meanHighHighWaterDatum = NA, meanHighHighWaterSpringDatum = NA,
-  suspendedSediment, lunarNodalAmp, lunarNodalPhase = 2011.181,
-  nFloods = 705.79, floodTime.fn = floodTimeLinear, bMax, zVegMin,
-  zVegMax, zVegPeak, plantElevationType, rootToShoot, rootTurnover,
-  abovegroundTurnover = NA, speciesCode = NA, rootDepthMax,
-  shape = "linear", omDecayRate, recalcitrantFrac, captureRate,
-  omToOcParams = list(B0 = 0, B1 = 0.48), omPackingDensity = 0.085,
-  mineralPackingDensity = 1.99, rootPackingDensity = omPackingDensity,
-  initialCohorts = NA, uplandCohorts = NA, supertidalCohorts = NA,
-  supertidalSedimentInput = NA, ...)
+runCohortMem(
+  startYear,
+  endYear = startYear + 99,
+  relSeaLevelRiseInit,
+  relSeaLevelRiseTotal,
+  initElv,
+  meanSeaLevel,
+  meanSeaLevelDatum = meanSeaLevel[1],
+  meanHighWaterDatum,
+  meanHighHighWaterDatum = NA,
+  meanHighHighWaterSpringDatum = NA,
+  suspendedSediment,
+  lunarNodalAmp,
+  lunarNodalPhase = 2011.181,
+  nFloods = 705.79,
+  floodTime.fn = floodTimeLinear,
+  bMax,
+  zVegMin,
+  zVegMax,
+  zVegPeak,
+  plantElevationType,
+  rootToShoot,
+  rootTurnover,
+  abovegroundTurnover = NA,
+  speciesCode = NA,
+  rootDepthMax,
+  shape = "linear",
+  omDecayRate,
+  recalcitrantFrac,
+  captureRate,
+  omToOcParams = list(B0 = 0, B1 = 0.48),
+  omPackingDensity = 0.085,
+  mineralPackingDensity = 1.99,
+  rootPackingDensity = omPackingDensity,
+  initialCohorts = NA,
+  uplandCohorts = NA,
+  supertidalCohorts = NA,
+  supertidalSedimentInput = NA,
+  ...
+)
 }
 \arguments{
 \item{startYear}{an integer, year in form YYYY, the start year of the scenario}
@@ -63,7 +90,7 @@ runCohortMem(startYear, endYear = startYear + 99, relSeaLevelRiseInit,
 
 \item{rootTurnover}{a numeric, or vector of numerics, belowground biomass annual turnover rate}
 
-\item{abovegroundTurnover}{(optional) a numeric, or vector of numerics, aboveground biomass annual turnover rate}
+\item{abovegroundTurnover}{(optional) a numeric or vector of numerics, aboveground biomass annual turnover rate}
 
 \item{speciesCode}{(optional) a character, or vector of characters, species names or codes associated with biological inputs}
 
@@ -89,13 +116,11 @@ runCohortMem(startYear, endYear = startYear + 99, relSeaLevelRiseInit,
 
 \item{uplandCohorts}{a data frame,  (optional) custom set of mass cohorts to be used if intiial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance}
 
+\item{supertidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
+
 \item{supertidalSedimentInput, }{a numeric, (optional) grams per cm^2 per year, an optional parameter which will define annual suspended sediment delivery to a sediment column that is is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 
 \item{...}{}
-
-\item{abovegroundTurnover}{(optional) a numeric or vector of numerics, aboveground biomass annual turnover rate}
-
-\item{superTidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 }
 \value{
 a list of data frames, including the annualized summaries, and mapped cohorts tracked for every year of the simulation.

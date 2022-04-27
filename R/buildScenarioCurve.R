@@ -1,11 +1,11 @@
 #' Build scenario sea-level curve
 #'
-#' This function builds an annualied set of MEM inputs including sea-level rise and suspended sediment concentrations. 
+#' This function builds an annualized set of MEM inputs including sea-level rise and suspended sediment concentrations. 
 #' @param startYear an integer, year in form YYYY, the start year of the scenario 
 #' @param endYear an integer, year in form YYYY, the end year of the scenario  
-#' @param meanSeaLevel a numeric or a vector of numbers, either indicating mean sea-level at the start of scenario, or mean sea-level at each year of the sceanrio
+#' @param meanSeaLevel a numeric or a vector of numbers, either indicating mean sea-level at the start of scenario, or mean sea-level at each year of the scenario
 #' @param relSeaLevelRiseInit a numeric, initial rate of relative sea-level rise
-#' @param relSeaLevelRiseTotal a numeric, total relative sea-level rise over the course of the scanario
+#' @param relSeaLevelRiseTotal a numeric, total relative sea-level rise over the course of the scenario
 #' @param suspendedSediment a numeric or a vector of numbers, either average annual suspended sediment concentration, or a vector of annual suspended sediment concentration for each year of the scenario
 #'
 #' @references Sweet, W. V., Kopp, R. E., Weaver, C. P., Obeysekera, J., Horton, R. M., Thieler, E. R., & Zervas, C. (2017). Global and regional sea level rise scenarios for the United States.

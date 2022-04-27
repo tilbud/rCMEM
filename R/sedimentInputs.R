@@ -1,7 +1,7 @@
 #' Annual mineral inputs into marsh surface
 #' 
-#' This function cacluates the annaual sediment input into the marsh surface via the following formula:
-#' Number of tides per year, times the unit area of interest, times the mean tidal volume above the marsh surface in cm$^3$, times the suspended sediment concentration in mg per liter, times 1e-6 conversion factor to convert from liter to cm$^3, resulting in the mineral mass added per year. The number of times (nTidesPerYear), unit area length (soilLength), and unit area width (soilWidth) are included in the consts list (see specific names).
+#' This function calculates the annual sediment input into the marsh surface via the following formula:
+#' Number of tides per year, times the unit area of interest, times the mean tidal volume above the marsh surface in cm$^3$, times the suspended sediment concentration in mg per liter, times 1e-6 conversion factor to convert from liter to cm$^3, resulting in the mineral mass added per year. The number of times (nTidesPerYear), unit area length (soilLength), and unit area width (soilWidth) are included in the constants list (see specific names).
 #'
 #' @param meanTidalHeight annual mean tide above marsh elevation
 #' @param nTidesPerYear number of tides per year

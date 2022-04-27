@@ -4,11 +4,15 @@
 \alias{fillDepthCellsWithRoots}
 \title{Calculates a root mass depth profile}
 \usage{
-fillDepthCellsWithRoots(depthMins = 0:149, depthMaxs = 1:150,
-  totalRootBmass = 3000, rootShape = "linear", rootDepthMax = 30,
-  customFunction = function(x) {     exp(-((x -
-  maxRootDepth)^2/lambdaRoot^2)) }, customParams = list(lambdaRoot = 33,
-  maxRootDepth = 30))
+fillDepthCellsWithRoots(
+  depthMins = 0:149,
+  depthMaxs = 1:150,
+  totalRootBmass = 3000,
+  rootShape = "linear",
+  rootDepthMax = 30,
+  customFunction = function(x) {     exp(-((x - maxRootDepth)^2/lambdaRoot^2)) },
+  customParams = list(lambdaRoot = 33, maxRootDepth = 30)
+)
 }
 \arguments{
 \item{depthMins}{a vector of numerics, minimum of depth intervals that the funciton will fill with roots}

@@ -4,10 +4,17 @@
 \alias{simulateSoilCore}
 \title{Simulate a sediment core from a set of cohorts}
 \usage{
-simulateSoilCore(cohorts, coreYear, coreDepth = 100,
-  coreMaxs = 1:coreDepth, coreMins = coreMaxs - 1,
-  omToOcParams = list(B0 = 0, B1 = 0.48), omPackingDensity = 0.085,
-  mineralPackingDensity = 1.99, rootPackingDensity = omPackingDensity)
+simulateSoilCore(
+  cohorts,
+  coreYear,
+  coreDepth = 100,
+  coreMaxs = 1:coreDepth,
+  coreMins = coreMaxs - 1,
+  omToOcParams = list(B0 = 0, B1 = 0.48),
+  omPackingDensity = 0.085,
+  mineralPackingDensity = 1.99,
+  rootPackingDensity = omPackingDensity
+)
 }
 \arguments{
 \item{cohorts}{a data frame, ouptut from runCohortMem, tracking mineral and organic mass cohorts over each year of the simulation}

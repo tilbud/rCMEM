@@ -8,8 +8,8 @@
 #' a custom parameters list.
 #' The custom function listed here is a gaussian root depth distribution.
 #'
-#' @param depthMins a vector of numerics, minimum of depth intervals that the funciton will fill with roots
-#' @param depthMaxs a vector of numerics, maximum of depth intervals that the funciton will fill with roots
+#' @param depthMins a vector of numerics, minimum of depth intervals that the function will fill with roots
+#' @param depthMaxs a vector of numerics, maximum of depth intervals that the function will fill with roots
 #' @param totalRootBmass a numeric, total root biomass
 #' @param rootShape a character, either linear, exponential, or custom, defining the shape of the root profile
 #' @param rootDepthMax a numeric, maximum depth of root zone

@@ -4,9 +4,19 @@
 \alias{runMultiSpeciesBiomass}
 \title{Run Multiple Species Biomass Functions}
 \usage{
-runMultiSpeciesBiomass(z, bMax, zVegMax, zVegMin, zVegPeak = NA,
-  rootToShoot, rootTurnover, abovegroundTurnover = NA, rootDepthMax,
-  speciesCode = NA, competition.fn = NA)
+runMultiSpeciesBiomass(
+  z,
+  bMax,
+  zVegMax,
+  zVegMin,
+  zVegPeak = NA,
+  rootToShoot,
+  rootTurnover,
+  abovegroundTurnover = NA,
+  rootDepthMax,
+  speciesCode = NA,
+  competition.fn = NA
+)
 }
 \arguments{
 \item{z}{a numeric, elevation}

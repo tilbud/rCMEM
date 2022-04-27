@@ -2,21 +2,21 @@
 #'
 #' This function adds a new cohort to a soil profile. Cohorts are constructed as follows:
 #' \enumerate{
-#'        \item Cohorts are aged by timeStep incrament.
+#'        \item Cohorts are aged by timeStep increment.
 #'        \item Organic matter pools decay
 #'        \item If there are non-zero mineral inputs, they are added to the top of the soil profile as a new cohort.
 #'        \item The top and bottom of the cohort layer is recalculated.
 #'        \item A new root profile is constructed based on the cohort layers.
 #' }
 #'
-#' @param massPools A data frame containing the following colums: age, fast_OM, slow_OM, mineral, layer_top, layer_bottom, root_mass. Each row of this data frame represents a single cohort. To increase runtime in simulations, the profile is buffered with NA's at the top of the data frame, see code comments for details.
+#' @param massPools A data frame containing the following columns: age, fast_OM, slow_OM, mineral, layer_top, layer_bottom, root_mass. Each row of this data frame represents a single cohort. To increase runtime in simulations, the profile is buffered with NA's at the top of the data frame, see code comments for details.
 #' @param packing A list of numerics with mineral and organic arguments representing their respective packing densities. 
 #' @param timeStep A numeric of the time step in years. Typically set to 1 year.
 #' @param rootTurnover A numeric as the root turnover time in faction per year.
 #' @param rootOmFrac A list of numerics called fast and slow which is the allocation fraction between fast and slow organic matter pool respectively for dead roots.
 #' @param omDecayRate A list of numerics called fast and slow which is the decay rate for the fast and slow organic matter pool in fraction per year.
 #' @param massLiveRoots.fn A function that returns the mass of live roots for specified depth layers, must accept \code{layerBottom} and \code{layerTop} as arguments.
-#' @param calculateDepthOfNonRootVolume.fn A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.
+#' @param calculateDepthOfNonRootVolume.fn A function that returns the depth of a specified volume of soil, must accept \code{nonRootVolume} as an argument.
 #' @param mineralInput An optional value for mineral input in grams per year (numeric) if mineralInput.fn is not used
 #' @param mineralInput.fn A function that returns the mineral input in grams per year (numeric)
 #' @param ... arguments to be passed to the specified functions

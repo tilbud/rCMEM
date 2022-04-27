@@ -6,7 +6,7 @@
 #' @param layerTop a vector of the tops of the soil layers we want to convert to.
 #' @param layerBottom a vector of the bottom of the soil layers we want to convert to.
 #'
-#' @return a data frame specifying the depth cohoprts. Contains \code{layer_top}, \code{layer_bottom}, \code{age}, \code{fast_OM}, \code{slow_OM}, \code{mineral}, and \code{root_mass}.
+#' @return a data frame specifying the depth cohorts. Contains \code{layer_top}, \code{layer_bottom}, \code{age}, \code{fast_OM}, \code{slow_OM}, \code{mineral}, and \code{root_mass}.
 #' @export
 #'
 #' @importFrom plyr ddply

@@ -4,7 +4,7 @@
 #' @param z a numeric, elevation of the marsh
 #' @param datumHigh a numeric, highest water level of the tidal period
 #' @param datumLow a numeric, lowest water level of the tidal period
-#' @param tidalCycleLength a numeric, the length of time of the tidal cycle. This is set to 1 so that it esimates fractional flood time
+#' @param tidalCycleLength a numeric, the length of time of the tidal cycle. This is set to 1 so that it estimates fractional flood time
 #' 
 #' @references Hickey, R. (2019). Tidal inundation modeling within GIS. Journal of Coastal Conservation, 23(3), 599-606.
 #' @references Department of the Navy. Hydrographic Branch. 1994. Australian National Tide Tables: Australia, Papua & New Guinea, Australian Hydrographic Publication 11.

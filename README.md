@@ -1,16 +1,48 @@
-# Cohort Theory and Marsh Equilibrium Models
+# R Cohort Marsh Equilibrium Model
 
-This repository corresponds to the R package in development for use of the Cohort Theory Model (CTM) which is a simple method for accounting for volume and mass changes in tidal systems. This package also contains a special implementation of CTM which uses the Marsh Equilibrium Model (MEM) to drive inorganic surface sedimentation and below ground organic matter addition, dynamically as a function of sea-level.
+Tidal marshes maintain some capacity to gain elevation and to sequester carbon in the face of accelerating sea-level rise. These concepts have been conceptualized over time into the Marsh Equilibrium Model (MEM), which describes the biophysical relationships between plant production, inundation, and marsh elevation, and the Cohort Theory Model (CTM) which tracks organic and inorganic mass pools in age-depth cohorts below the marsh surface. Here we present an open source numerical versions of a combined model: the R Cohort Marsh Equilibrium Model \pkg{rCMEM}.The package contains tools for hindcasting and forecasting tidal marsh elevation, soil structure, and soil carbon flux changes in response to sea-level rise as well as tools for visualizing model outputs as animations and translating model them to compare predictions to real life data.
 
-# To Download This Developer's Branch
+## Example to Run rCMEM
+
+```
+# Run rCMEM example
+cohortMemExample <- runCohortMem(startYear=2000, 
+                                 relSeaLevelRiseInit=0.33, # cm per year
+                                 relSeaLevelRiseTotal=71, # cm total
+                                 initElv=50.2, # cm NAVD88
+                                 meanSeaLevel=-6.9, # cm NAVD88
+                                 meanSeaLevelDatum =-10.3, # cm NAVD88
+                                 meanHighWaterDatum=58.4, # cm NAVD88
+                                 meanHighHighWaterDatum=79.0, # cm NAVD88
+                                 meanHighHighWaterSpringDatum=99.2, # cm NAVD88
+                                 suspendedSediment=3e-05, # grams per cubic centimeter
+                                 lunarNodalAmp=2.24, # cm
+                                 lunarNodalPhase=1.46, # year
+                                 bMax=0.0867, # grams per square centimeter
+                                 zVegMin=-0.47, # dimensionless
+                                 zVegMax=2.08, # dimensionless
+                                 zVegPeak=0.83, # dimensionless
+                                 plantElevationType="dimensionless", # specifies dimensionless
+                                 rootToShoot=2, # grams per gram
+                                 rootTurnover=0.5, # per year
+                                 rootDepthMax=30, # cm
+                                 omDecayRate=0.5, # per year
+                                 recalcitrantFrac=0.2, # fraction
+                                 captureRate=2.8 # per tidal cycle
+                                 )
+
+# look at the structure of the function output
+str(cohortMemExample)
+
+```
 
 ## To Uninstall and Reinstall the Latest Version
 ```
-# Uninstall and reinstall developer branch from GitHub
+# Uninstall and reinstall latest branch from GitHub
 
 # 1. If rCTM is loaded and in the memory, forget rCTM
-if ("rCTM" %in% (.packages())){
-  detach("package:rCTM", unload=TRUE) 
+if ("rCMEM" %in% (.packages())){
+  detach("package:rCMEM", unload=TRUE) 
 }
 
 # 2. If remotes is not already installed, install it
@@ -19,79 +51,13 @@ if (! ("remotes" %in% installed.packages())) {
 }
 
 # 3. Install package from developer branch of GitHub
-devtools::install_github("https://github.com/tilbud/rCTM/tree/JimH-dev")
+devtools::install_github("https://github.com/tilbud/rCMEM")
 
-# 4. Load most current version into memory
-library(rCTM)
-```
-
-## To Make Sure You Have The Needed Dependencies
-```
-# Check and install dependencies
-
-# A column vector listing the packages needed
-dependencies <- c("tidyverse", 
-                  "gganimate", 
-                  "gifski",
-                  "png")
-
-# Figure out which dependencies are not installed and install them
-needed <- setdiff(dependencies, rownames(installed.packages()))
-install.packages(needed)
-```
-
-## Quick Example to Run MEM with Cohorts and Animate
+# 4. Load version into memory
+library(rCMEM)
 
 ```
-# Run rMEM with Cohorts example
-memCohortExample <- runMemWithCohorts(startYear=2015, relSeaLevelRiseInit=0.3, relSeaLevelRiseTotal=100,
-                                      initElv=21.9, meanSeaLevel=7.4, meanHighWater=16.9, meanHighHighWater=25.4, meanHighHighWaterSpring=31.2, 
-                                      suspendedSediment=3e-05, lunarNodalAmp=2.5, bMax=0.25, 
-                                      zVegMin=-24.7, zVegMax=44.4, zVegPeak=22.1,
-                                      plantElevationType="orthometric", rootToShoot=2,
-                                      rootTurnover=0.5, rootDepthMax=30, omDecayRate=0.8,
-                                      recalcitrantFrac=0.2, settlingVelocity=2.8,
-                                      coreYear = 2050)
+## Documentation
 
-# look at the structure of the function output
-str(memCohortExample)
-
-# Look at the three tables making up the output
-head(memCohortExample$annualTimeSteps)
-head(memCohortExample$cohorts)
-head(memCohortExample$core)
-
-# run the animate cohorts function
-# This will take a few minutes to run and then save an animation of accumulating cohorts
-animateCohorts(cohorts=memCohortExample$cohorts,
-               scenario=memCohortExample$annualTimeSteps,
-               filename="MEM-Try_191212.gif")
-```
-
-#File descriptions
-
-  
-**Citation:**
-
-_Suggested acknowledgments:_
-
-## Relevant resources and literature  
-
-* See Jim Morris' [MEM web interface for](http://129.252.139.114/model/marsh/mem.asp) inspiration
-
-## Equations and Fundamentals of MEM
-
-Guiding princples:  
-*  "Equilibrium" in MEM is a target not a description of the current state.  
-*  MEM tries to see how simple you can get the model and still be realistic.  
-*  MEM ties elevation of marsh surface to ecosystem productivity.  
-*  High elevation, stimulates biomass (to a point), and that causes marsh elevation to raise.  
-    
-### Ideal Mixing Model
-
-A lot of what underpins current versions of the Marsh Equilibrium Model and the Cohort Theory Model is the ideal mixing model, see [Morris et al. 2016](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2015EF000334) and (Holmquist et al 2018](https://www.nature.com/articles/s41598-018-26948-7). This describes the density of a soil as the summation of the soils' relative organic and inorganic fractions, as well as the _self-packing density_ of the organic (k1) and inorganic (k2) matter.
-
-$$BD = {1 \over {{OM\over k1}+ {(1−OM) \over k2}}}$$
-
-If you hold area constant, and you assume you know the input rates of organic and inorganic matter, you can use the ideal mixing model to calculate accretion rate ([Morris et al. 2016](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2015EF000334), [Morris 2006](https://www.sciencedirect.com/science/article/pii/S0272771406001776),  [Morris 2007](https://link.springer.com/chapter/10.1007/978-1-4020-6008-3_14)).
+For documentation please refer to an extensive [supplemental vignette](/vignettes/CMEM_Vignette_Supplement.Rmd).
 

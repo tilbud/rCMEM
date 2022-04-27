@@ -1,6 +1,6 @@
 #' Build high tides into scenario table
 #'
-#' This function takes a sea-level scenario table and elevations for 1 to 3 tidal cycles and outputs a scenario table with annualized high tidel levels.  
+#' This function takes a sea-level scenario table and elevations for 1 to 3 tidal cycles and outputs a scenario table with annualized high tide levels.  
 #' @param scenarioCurve a data frame, including year, mean sea level, and suspended sediment concentration, with each row being a year in the scenario
 #' @param meanSeaLevelDatum a numeric, Mean Sea Level over a tidal datum period
 #' @param meanHighWaterDatum a numeric, Mean High Water level over the last datum period
@@ -9,7 +9,7 @@
 #' @param lunarNodalAmp the amplitude of the 18-year lunar nodal cycle
 #' @param lunarNodalPhase a numeric, in decimal years (YYYY) the start year of the sine wave representing the lunar nodal cycle 
 #' 
-#' @return a data frame, including the sea-level and suspended sediment concentraiton scenario inputted, with annual high tide datum(s) added
+#' @return a data frame, including the sea-level and suspended sediment concentration scenario inputted, with annual high tide datum(s) added
 #' @export
 buildHighTideScenario <- function(scenarioCurve, meanSeaLevelDatum=scenarioCurve$meanSeaLevel[1], 
                                   meanHighWaterDatum, meanHighHighWaterDatum, meanHighHighWaterSpringDatum, 

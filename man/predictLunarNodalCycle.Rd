@@ -4,8 +4,14 @@
 \alias{predictLunarNodalCycle}
 \title{Predict lunar nodal cycle}
 \usage{
-predictLunarNodalCycle(year, floodElv, meanSeaLevelDatum, meanSeaLevel,
-  lunarNodalAmp, lunarNodalPhase = 2011.181)
+predictLunarNodalCycle(
+  year,
+  floodElv,
+  meanSeaLevelDatum,
+  meanSeaLevel,
+  lunarNodalAmp,
+  lunarNodalPhase = 2011.181
+)
 }
 \arguments{
 \item{year}{a numeric, the current year}

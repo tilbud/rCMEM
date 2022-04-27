@@ -4,16 +4,38 @@
 \alias{determineInitialCohorts}
 \title{Determine the initial conditions for a set of cohorts}
 \usage{
-determineInitialCohorts(initElv, meanSeaLevel, meanHighWater,
-  meanHighHighWater = NA, meanHighHighWaterSpring = NA,
-  suspendedSediment, nFloods = 705.79, floodTime.fn = floodTimeLinear,
-  bMax, zVegMin, zVegMax, zVegPeak, plantElevationType, rootToShoot,
-  rootTurnover, rootDepthMax, shape = "linear",
-  abovegroundTurnover = NA, speciesCode = NA, omDecayRate,
-  recalcitrantFrac, captureRate, omPackingDensity = 0.085,
-  mineralPackingDensity = 1.99, rootPackingDensity = omPackingDensity,
-  initialCohorts = NA, uplandCohorts = NA, supertidalCohorts = NA,
-  supertidalSedimentInput = NA, ...)
+determineInitialCohorts(
+  initElv,
+  meanSeaLevel,
+  meanHighWater,
+  meanHighHighWater = NA,
+  meanHighHighWaterSpring = NA,
+  suspendedSediment,
+  nFloods = 705.79,
+  floodTime.fn = floodTimeLinear,
+  bMax,
+  zVegMin,
+  zVegMax,
+  zVegPeak,
+  plantElevationType,
+  rootToShoot,
+  rootTurnover,
+  rootDepthMax,
+  shape = "linear",
+  abovegroundTurnover = NA,
+  speciesCode = NA,
+  omDecayRate,
+  recalcitrantFrac,
+  captureRate,
+  omPackingDensity = 0.085,
+  mineralPackingDensity = 1.99,
+  rootPackingDensity = omPackingDensity,
+  initialCohorts = NA,
+  uplandCohorts = NA,
+  supertidalCohorts = NA,
+  supertidalSedimentInput = NA,
+  ...
+)
 }
 \arguments{
 \item{initElv}{a numeric, the initial elevation of the marsh at the start of the scenario}
@@ -70,9 +92,9 @@ determineInitialCohorts(initElv, meanSeaLevel, meanHighWater,
 
 \item{uplandCohorts}{a data frame,  (optional) custom set of mass cohorts to be used if intiial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance}
 
-\item{supertidalSedimentInput, }{a numeric, (optional) grams per cm^2 per year, an optional parameter which will define annual suspended sediment delivery to a sediment column that is is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
+\item{supertidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 
-\item{superTidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
+\item{supertidalSedimentInput, }{a numeric, (optional) grams per cm^2 per year, an optional parameter which will define annual suspended sediment delivery to a sediment column that is is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 }
 \value{
 a data frame of mass pools representing the initial conditions for a simulation

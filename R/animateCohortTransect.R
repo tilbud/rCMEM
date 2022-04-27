@@ -1,4 +1,4 @@
-#' Animate sediment cohorts accross an elevation transect
+#' Animate sediment cohorts across an elevation transect
 #' 
 #' This function takes two runCohortMemTransect outputs, cohortsTransect and scenarioTransect tables, as inputs and visualizes soil formation as an animated .gif 
 #' @param cohortsTransect data frame, annually tracked soil mass cohorts output from runCohortMemTransect

@@ -4,10 +4,15 @@
 \alias{buildHighTideScenario}
 \title{Build high tides into scenario table}
 \usage{
-buildHighTideScenario(scenarioCurve,
-  meanSeaLevelDatum = scenarioCurve$meanSeaLevel[1], meanHighWaterDatum,
-  meanHighHighWaterDatum, meanHighHighWaterSpringDatum, lunarNodalAmp,
-  lunarNodalPhase = 2011.181)
+buildHighTideScenario(
+  scenarioCurve,
+  meanSeaLevelDatum = scenarioCurve$meanSeaLevel[1],
+  meanHighWaterDatum,
+  meanHighHighWaterDatum,
+  meanHighHighWaterSpringDatum,
+  lunarNodalAmp,
+  lunarNodalPhase = 2011.181
+)
 }
 \arguments{
 \item{scenarioCurve}{a data frame, including year, mean sea level, and suspended sediment concentration, with each row being a year in the scenario}
