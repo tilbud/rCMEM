@@ -4,10 +4,17 @@
 \alias{animateCohorts}
 \title{Animate sediment cohorts}
 \usage{
-animateCohorts(cohorts, scenario, filename = "MEM-CTM-animated.gif",
-  savePath = getwd(), chPalette = c("#56B4E9", "#999999", "#E69F00",
-  "#009E73"), trackThresholds = c("meanSeaLevel", "meanHighWater"),
-  duration = 30, width = 4.5, height = 4.5)
+animateCohorts(
+  cohorts,
+  scenario,
+  filename = "MEM-CTM-animated.gif",
+  savePath = getwd(),
+  chPalette = c("#56B4E9", "#999999", "#E69F00", "#009E73"),
+  trackThresholds = c("meanSeaLevel", "meanHighWater"),
+  duration = 30,
+  width = 4.5,
+  height = 4.5
+)
 }
 \arguments{
 \item{cohorts}{data frame, annually tracked soil mass cohorts output from runCohortMem}
@@ -20,7 +27,7 @@ animateCohorts(cohorts, scenario, filename = "MEM-CTM-animated.gif",
 
 \item{chPalette}{vector, a vector of colors to use to symbolize the different mass cohorts}
 
-\item{trackThresholds}{vector, a vector of characters indicating which water leves in the scenario table to map as horizontal lines}
+\item{trackThresholds}{vector, a vector of characters indicating which water levels in the scenario table to map as horizontal lines}
 
 \item{duration}{numeric, length in seconds of the animation}
 

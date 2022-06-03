@@ -4,10 +4,15 @@
 \alias{buildHighTideScenario}
 \title{Build high tides into scenario table}
 \usage{
-buildHighTideScenario(scenarioCurve,
-  meanSeaLevelDatum = scenarioCurve$meanSeaLevel[1], meanHighWaterDatum,
-  meanHighHighWaterDatum, meanHighHighWaterSpringDatum, lunarNodalAmp,
-  lunarNodalPhase = 2011.181)
+buildHighTideScenario(
+  scenarioCurve,
+  meanSeaLevelDatum = scenarioCurve$meanSeaLevel[1],
+  meanHighWaterDatum,
+  meanHighHighWaterDatum,
+  meanHighHighWaterSpringDatum,
+  lunarNodalAmp,
+  lunarNodalPhase = 2011.181
+)
 }
 \arguments{
 \item{scenarioCurve}{a data frame, including year, mean sea level, and suspended sediment concentration, with each row being a year in the scenario}
@@ -25,8 +30,8 @@ buildHighTideScenario(scenarioCurve,
 \item{lunarNodalPhase}{a numeric, in decimal years (YYYY) the start year of the sine wave representing the lunar nodal cycle}
 }
 \value{
-a data frame, including the sea-level and suspended sediment concentraiton scenario inputted, with annual high tide datum(s) added
+a data frame, including the sea-level and suspended sediment concentration scenario inputted, with annual high tide datum(s) added
 }
 \description{
-This function takes a sea-level scenario table and elevations for 1 to 3 tidal cycles and outputs a scenario table with annualized high tidel levels.
+This function takes a sea-level scenario table and elevations for 1 to 3 tidal cycles and outputs a scenario table with annualized high tide levels.
 }

@@ -4,20 +4,25 @@
 \alias{buildScenarioCurve}
 \title{Build scenario sea-level curve}
 \usage{
-buildScenarioCurve(startYear, endYear = startYear + 99, meanSeaLevel,
-  relSeaLevelRiseInit = 0.3, relSeaLevelRiseTotal = 100,
-  suspendedSediment)
+buildScenarioCurve(
+  startYear,
+  endYear = startYear + 99,
+  meanSeaLevel,
+  relSeaLevelRiseInit = 0.3,
+  relSeaLevelRiseTotal = 100,
+  suspendedSediment
+)
 }
 \arguments{
 \item{startYear}{an integer, year in form YYYY, the start year of the scenario}
 
 \item{endYear}{an integer, year in form YYYY, the end year of the scenario}
 
-\item{meanSeaLevel}{a numeric or a vector of numbers, either indicating mean sea-level at the start of scenario, or mean sea-level at each year of the sceanrio}
+\item{meanSeaLevel}{a numeric or a vector of numbers, either indicating mean sea-level at the start of scenario, or mean sea-level at each year of the scenario}
 
 \item{relSeaLevelRiseInit}{a numeric, initial rate of relative sea-level rise}
 
-\item{relSeaLevelRiseTotal}{a numeric, total relative sea-level rise over the course of the scanario}
+\item{relSeaLevelRiseTotal}{a numeric, total relative sea-level rise over the course of the scenario}
 
 \item{suspendedSediment}{a numeric or a vector of numbers, either average annual suspended sediment concentration, or a vector of annual suspended sediment concentration for each year of the scenario}
 }
@@ -25,7 +30,7 @@ buildScenarioCurve(startYear, endYear = startYear + 99, meanSeaLevel,
 a data frame including columns for year, sea-level, and suspended sediment concentration, and rows for each year in the scenario
 }
 \description{
-This function builds an annualied set of MEM inputs including sea-level rise and suspended sediment concentrations.
+This function builds an annualized set of MEM inputs including sea-level rise and suspended sediment concentrations.
 }
 \references{
 Sweet, W. V., Kopp, R. E., Weaver, C. P., Obeysekera, J., Horton, R. M., Thieler, E. R., & Zervas, C. (2017). Global and regional sea level rise scenarios for the United States.

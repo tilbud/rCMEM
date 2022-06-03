@@ -25,8 +25,8 @@
 #' @param mineralPackingDensity a numeric, the bulk density of pure mineral matter
 #' @param rootPackingDensity a numeric, the bulk density of pure root matter
 #' @param initialCohorts a data frame, (optional) custom set of mass cohorts that will override any decision making this function does
-#' @param uplandCohorts a data frame,  (optional) custom set of mass cohorts to be used if intiial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance
-#' @param superTidalCohorts a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance
+#' @param uplandCohorts a data frame,  (optional) custom set of mass cohorts to be used if initial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance
+#' @param supertidalCohorts a data frame, (optional) custom set of mass cohorts to be used if initial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance
 #' @param supertidalSedimentInput, a numeric, (optional) grams per cm^2 per year, an optional parameter which will define annual suspended sediment delivery to a sediment column that is is higher than maximum tidal height, but not maximum wetland vegetation tolerance
 #' 
 #' @return a data frame of mass pools representing the initial conditions for a simulation

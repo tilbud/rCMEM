@@ -4,14 +4,22 @@
 \alias{addCohort}
 \title{Add another cohort to the soil profile}
 \usage{
-addCohort(massPools, rootTurnover, rootOmFrac, omDecayRate, packing,
-  mineralInput = NA, mineralInput.fn = sedimentInputs,
+addCohort(
+  massPools,
+  rootTurnover,
+  rootOmFrac,
+  omDecayRate,
+  packing,
+  mineralInput = NA,
+  mineralInput.fn = sedimentInputs,
   massLiveRoots.fn = massLiveRoots,
   calculateDepthOfNonRootVolume.fn = calculateDepthOfNonRootVolume,
-  timeStep = 1, ...)
+  timeStep = 1,
+  ...
+)
 }
 \arguments{
-\item{massPools}{A data frame containing the following colums: age, fast_OM, slow_OM, mineral, layer_top, layer_bottom, root_mass. Each row of this data frame represents a single cohort. To increase runtime in simulations, the profile is buffered with NA's at the top of the data frame, see code comments for details.}
+\item{massPools}{A data frame containing the following columns: age, fast_OM, slow_OM, mineral, layer_top, layer_bottom, root_mass. Each row of this data frame represents a single cohort. To increase runtime in simulations, the profile is buffered with NA's at the top of the data frame, see code comments for details.}
 
 \item{rootTurnover}{A numeric as the root turnover time in faction per year.}
 
@@ -27,7 +35,7 @@ addCohort(massPools, rootTurnover, rootOmFrac, omDecayRate, packing,
 
 \item{massLiveRoots.fn}{A function that returns the mass of live roots for specified depth layers, must accept \code{layerBottom} and \code{layerTop} as arguments.}
 
-\item{calculateDepthOfNonRootVolume.fn}{A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.}
+\item{calculateDepthOfNonRootVolume.fn}{A function that returns the depth of a specified volume of soil, must accept \code{nonRootVolume} as an argument.}
 
 \item{timeStep}{A numeric of the time step in years. Typically set to 1 year.}
 
@@ -39,7 +47,7 @@ A new data frame similar to massPool with the added cohort and simulated change 
 \description{
 This function adds a new cohort to a soil profile. Cohorts are constructed as follows:
 \enumerate{
-       \item Cohorts are aged by timeStep incrament.
+       \item Cohorts are aged by timeStep increment.
        \item Organic matter pools decay
        \item If there are non-zero mineral inputs, they are added to the top of the soil profile as a new cohort.
        \item The top and bottom of the cohort layer is recalculated.

@@ -4,8 +4,7 @@
 \alias{predictBiomass}
 \title{Predict aboveground biomass}
 \usage{
-predictBiomass(z = 0, bMax = 2500, zVegMax = 3, zVegMin = -1,
-  zVegPeak = NA)
+predictBiomass(z = 0, bMax = 2500, zVegMax = 3, zVegMin = -1, zVegPeak = NA)
 }
 \arguments{
 \item{z}{marsh elevation}

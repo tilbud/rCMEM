@@ -4,19 +4,46 @@
 \alias{runCohortMem}
 \title{Run Marsh Equilibrium Model with Cohorts}
 \usage{
-runCohortMem(startYear, endYear = startYear + 99, relSeaLevelRiseInit,
-  relSeaLevelRiseTotal, initElv, meanSeaLevel,
-  meanSeaLevelDatum = meanSeaLevel[1], meanHighWaterDatum,
-  meanHighHighWaterDatum = NA, meanHighHighWaterSpringDatum = NA,
-  suspendedSediment, lunarNodalAmp, lunarNodalPhase = 2011.181,
-  nFloods = 705.79, floodTime.fn = floodTimeLinear, bMax, zVegMin,
-  zVegMax, zVegPeak, plantElevationType, rootToShoot, rootTurnover,
-  abovegroundTurnover = NA, speciesCode = NA, rootDepthMax,
-  shape = "linear", omDecayRate, recalcitrantFrac, captureRate,
-  omToOcParams = list(B0 = 0, B1 = 0.48), omPackingDensity = 0.085,
-  mineralPackingDensity = 1.99, rootPackingDensity = omPackingDensity,
-  initialCohorts = NA, uplandCohorts = NA, supertidalCohorts = NA,
-  supertidalSedimentInput = NA, ...)
+runCohortMem(
+  startYear,
+  endYear = startYear + 99,
+  relSeaLevelRiseInit,
+  relSeaLevelRiseTotal,
+  initElv,
+  meanSeaLevel,
+  meanSeaLevelDatum = meanSeaLevel[1],
+  meanHighWaterDatum,
+  meanHighHighWaterDatum = NA,
+  meanHighHighWaterSpringDatum = NA,
+  suspendedSediment,
+  lunarNodalAmp,
+  lunarNodalPhase = 2011.181,
+  nFloods = 705.79,
+  floodTime.fn = floodTimeLinear,
+  bMax,
+  zVegMin,
+  zVegMax,
+  zVegPeak,
+  plantElevationType,
+  rootToShoot,
+  rootTurnover,
+  abovegroundTurnover = NA,
+  speciesCode = NA,
+  rootDepthMax,
+  shape = "linear",
+  omDecayRate,
+  recalcitrantFrac,
+  captureRate,
+  omToOcParams = list(B0 = 0, B1 = 0.48),
+  omPackingDensity = 0.085,
+  mineralPackingDensity = 1.99,
+  rootPackingDensity = omPackingDensity,
+  initialCohorts = NA,
+  uplandCohorts = NA,
+  supertidalCohorts = NA,
+  supertidalSedimentInput = NA,
+  ...
+)
 }
 \arguments{
 \item{startYear}{an integer, year in form YYYY, the start year of the scenario}
@@ -25,7 +52,7 @@ runCohortMem(startYear, endYear = startYear + 99, relSeaLevelRiseInit,
 
 \item{relSeaLevelRiseInit}{a numeric, initial rate of relative sea-level rise}
 
-\item{relSeaLevelRiseTotal}{a numeric, total relative sea-level rise over the course of the scanario}
+\item{relSeaLevelRiseTotal}{a numeric, total relative sea-level rise over the course of the scenario}
 
 \item{initElv}{a numeric, the initial elevation of the marsh at the start of the scenario}
 
@@ -63,7 +90,7 @@ runCohortMem(startYear, endYear = startYear + 99, relSeaLevelRiseInit,
 
 \item{rootTurnover}{a numeric, or vector of numerics, belowground biomass annual turnover rate}
 
-\item{abovegroundTurnover}{(optional) a numeric, or vector of numerics, aboveground biomass annual turnover rate}
+\item{abovegroundTurnover}{(optional) a numeric or vector of numerics, aboveground biomass annual turnover rate}
 
 \item{speciesCode}{(optional) a character, or vector of characters, species names or codes associated with biological inputs}
 
@@ -87,19 +114,17 @@ runCohortMem(startYear, endYear = startYear + 99, relSeaLevelRiseInit,
 
 \item{initialCohorts}{a data frame, (optional) custom set of mass cohorts that will override any decision making this function does}
 
-\item{uplandCohorts}{a data frame,  (optional) custom set of mass cohorts to be used if intiial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance}
+\item{uplandCohorts}{a data frame,  (optional) custom set of mass cohorts to be used if initial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance}
+
+\item{supertidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if initial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 
 \item{supertidalSedimentInput, }{a numeric, (optional) grams per cm^2 per year, an optional parameter which will define annual suspended sediment delivery to a sediment column that is is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 
 \item{...}{}
-
-\item{abovegroundTurnover}{(optional) a numeric or vector of numerics, aboveground biomass annual turnover rate}
-
-\item{superTidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 }
 \value{
 a list of data frames, including the annualized summaries, and mapped cohorts tracked for every year of the simulation.
 }
 \description{
-This function takes an initial elevation, average annual suspended sediment concentrtion and tidal properties, plant traits, and decay rates, then builds a scenario, and runs the marsh equilibrium model over that scenario tracking individual sediment mass cohorts including minderal, live root, slow decay organic mater pool and a fast organic matter pool.
+This function takes an initial elevation, average annual suspended sediment concentration and tidal properties, plant traits, and decay rates, then builds a scenario, and runs the marsh equilibrium model over that scenario tracking individual sediment mass cohorts including mineral, live root, slow decay organic mater pool and a fast organic matter pool.
 }

@@ -4,9 +4,19 @@
 \alias{runMultiSpeciesBiomass}
 \title{Run Multiple Species Biomass Functions}
 \usage{
-runMultiSpeciesBiomass(z, bMax, zVegMax, zVegMin, zVegPeak = NA,
-  rootToShoot, rootTurnover, abovegroundTurnover = NA, rootDepthMax,
-  speciesCode = NA, competition.fn = NA)
+runMultiSpeciesBiomass(
+  z,
+  bMax,
+  zVegMax,
+  zVegMin,
+  zVegPeak = NA,
+  rootToShoot,
+  rootTurnover,
+  abovegroundTurnover = NA,
+  rootDepthMax,
+  speciesCode = NA,
+  competition.fn = NA
+)
 }
 \arguments{
 \item{z}{a numeric, elevation}
@@ -35,5 +45,5 @@ runMultiSpeciesBiomass(z, bMax, zVegMax, zVegMin, zVegPeak = NA,
 a one dataframe with above ground biomass, and biological parameters representing the dominant specie(s) at the elevation
 }
 \description{
-This function takes elevation and biological inputs, runs parabolic predictBiomass function for multiple species, and returns a single above ground biomass value and set of bilogical parameters based on a competition function.
+This function takes elevation and biological inputs, runs parabolic predictBiomass function for multiple species, and returns a single above ground biomass value and set of biological parameters based on a competition function.
 }

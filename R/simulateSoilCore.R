@@ -1,9 +1,9 @@
 #' Simulate a sediment core from a set of cohorts
-#' @param cohorts a data frame, ouptut from runCohortMem, tracking mineral and organic mass cohorts over each year of the simulation
+#' @param cohorts a data frame, output from runCohortMem, tracking mineral and organic mass cohorts over each year of the simulation
 #' @param coreYear an integer, year in form YYYY, specify a year to simulate taking a sediment core
 #' @param coreDepth an integer, depth, specify a depth to simulate coring to and assume 1 cm sampling intervals
-#' @param coreMins a vector of sampling depth minimums to simulate coring subsables, this is an alternative to depth, and 1cm increments
-#' @param coreMaxs a vector of sampling depth maximums to simulate coring subsables, this is an alternative to depth, and 1cm increments
+#' @param coreMins a vector of sampling depth minimums to simulate coring subsamples, this is an alternative to depth, and 1cm increments
+#' @param coreMaxs a vector of sampling depth maximums to simulate coring subsamples, this is an alternative to depth, and 1cm increments
 #' @param omToOcParams a list of parameters defining a linear or quadratic relationship between fraction organic matter and fraction carbon
 #' @param omPackingDensity a numeric, the bulk density of pure organic matter
 #' @param mineralPackingDensity a numeric, the bulk density of pure mineral matter

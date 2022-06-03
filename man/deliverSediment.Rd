@@ -4,12 +4,20 @@
 \alias{deliverSediment}
 \title{Calculate delivered sediment over one or more types of tides}
 \usage{
-deliverSediment(z, suspendedSediment, nFloods = 705.79, meanSeaLevel,
-  meanHighWater, meanHighHighWater = NA, meanHighHighWaterSpring = NA,
+deliverSediment(
+  z,
+  suspendedSediment,
+  nFloods = 705.79,
+  meanSeaLevel,
+  meanHighWater,
+  meanHighHighWater = NA,
+  meanHighHighWaterSpring = NA,
   meanLowWater = meanSeaLevel - meanHighWater,
   meanLowLowWater = meanSeaLevel - meanHighHighWater,
   meanLowLowWaterSpring = meanSeaLevel - meanHighHighWaterSpring,
-  captureRate, floodTime.fn = floodTimeLinear)
+  captureRate,
+  floodTime.fn = floodTimeLinear
+)
 }
 \arguments{
 \item{z}{a numeric, elevation of the marsh}

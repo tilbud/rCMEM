@@ -13,7 +13,7 @@ floodTimeLinear(z, datumHigh, datumLow, tidalCycleLength = 1)
 
 \item{datumLow}{a numeric, lowest water level of the tidal period}
 
-\item{tidalCycleLength}{a numeric, the length of time of the tidal cycle. This is set to 1 to esimate flood time as a fraction of the tidal cycle.}
+\item{tidalCycleLength}{a numeric, the length of time of the tidal cycle. This is set to 1 to estimate flood time as a fraction of the tidal cycle.}
 }
 \value{
 a numeric, flood time per tidal period

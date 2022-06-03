@@ -2,11 +2,17 @@
 % Please edit documentation in R/animateCohortTransect.R
 \name{animateCohortTransect}
 \alias{animateCohortTransect}
-\title{Animate sediment cohorts accross an elevation transect}
+\title{Animate sediment cohorts across an elevation transect}
 \usage{
-animateCohortTransect(scenarioTransect, cohortsTransect, duration = 30,
-  width = 5, height = 3, savePath = getwd(),
-  filename = "MEM-transect-animation.gif")
+animateCohortTransect(
+  scenarioTransect,
+  cohortsTransect,
+  duration = 30,
+  width = 5,
+  height = 3,
+  savePath = getwd(),
+  filename = "MEM-transect-animation.gif"
+)
 }
 \arguments{
 \item{scenarioTransect}{data frame, annual summaries of inputs and outputs from runCohortMemTransect}

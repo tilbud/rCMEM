@@ -13,7 +13,7 @@ floodTimeTrig(z, datumHigh, datumLow, tidalCycleLength = 1)
 
 \item{datumLow}{a numeric, lowest water level of the tidal period}
 
-\item{tidalCycleLength}{a numeric, the length of time of the tidal cycle. This is set to 1 so that it esimates fractional flood time}
+\item{tidalCycleLength}{a numeric, the length of time of the tidal cycle. This is set to 1 so that it estimates fractional flood time}
 }
 \value{
 a numeric, flood time per tidal period
