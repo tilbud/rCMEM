@@ -1,7 +1,7 @@
 Package: rCMEM
 Type: Package
 Title: R-Cohort Marsh Equilibrium Model
-Version: 0.1.0
+Version: 0.0.0
 Author: James R Holmquist, Kathe Todd-Brown, Jessica Hicks, Megan L Vahsen, Sergei Pilyugin, and J.T. Morris
 Maintainer: James R Holmquist <HolmquistJ@si.edu>, Kathe Todd-Brown <kathe.toddbrown@essie.ufl.edu>
 Description: Tidal marshes maintain some capacity to gain elevation and to sequester carbon in the face of accelerating sea-level rise. These concepts have been formalized over time into the Marsh Equilibrium Model (MEM), which describes the biophysical relationships between plant production, inundation, and marsh elevation, and the Cohort Theory Model (CTM) which tracks organic and inorganic mass pools in age-depth cohorts below the marsh surface. Here we present an open source numerical versions of a combined model: the R Cohort Marsh Equilibrium Model \pkg{rCMEM}.  The package contains tools for hindcasting and forecasting tidal marsh elevation, soil structure, and soil carbon flux changes in response to sea-level rise as well as tools for visualizing model outputs as animations and translating model outputs to compare predictions to real life data.
