@@ -15,22 +15,22 @@ fillDepthCellsWithRoots(
 )
 }
 \arguments{
-\item{depthMins}{}
+\item{depthMins}{a vector of numerics, minimum of depth intervals that the function will fill with roots}
 
-\item{depthMaxs}{}
+\item{depthMaxs}{a vector of numerics, maximum of depth intervals that the function will fill with roots}
 
-\item{totalRootBmass}{}
+\item{totalRootBmass}{a numeric, total root biomass}
 
-\item{rootShape}{}
+\item{rootShape}{a character, either linear, exponential, or custom, defining the shape of the root profile}
 
-\item{rootDepthMax}{}
+\item{rootDepthMax}{a numeric, maximum depth of root zone}
 
-\item{customFunction}{}
+\item{customFunction}{a function (optional), if root shape is custom, then use a customized function}
 
-\item{customParams}{}
+\item{customParams}{a list (optional), any other parameters required by a custom root shape function}
 }
 \value{
-
+a data frame with minimum and maximum depths and and root biomass within those depths intervals
 }
 \description{
 It will take any root biomass and maximum rooting depth, 

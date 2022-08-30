@@ -1,11 +1,11 @@
-#' Run to equilbrium with proscribed surface mineral input
+#' Run to equilibrium with proscribed surface mineral input
 #' 
-#' Repeatedly add new cohorts to a soil profile until the oldest layers are not siginficatly different AND the oldest layer are above some minimum age, within some upper bound of soil age.
+#' Repeatedly add new cohorts to a soil profile until the oldest layers are not significantly different AND the oldest layer are above some minimum age, within some upper bound of soil age.
 #'
 #' @param minAge run the model for at least these many years
 #' @param maxAge do not run the model for longer then these many years
 #' @param minDepth run the model to create a profile at least this deep
-#' @param recordEvolution a boolean flag to record how the equalibrium profile evolves
+#' @param recordEvolution a boolean flag to record how the equilibrium profile evolves
 #' @param relTol stop the evolution if the relative difference between the two oldest cohorts is less then this
 #' @param absTol stop the evolution if the absolute difference between the two oldest cohorts is less then this
 #' @param ... arguments to be passed to \code{addCohort}

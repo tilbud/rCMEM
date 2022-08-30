@@ -1,12 +1,12 @@
 #' Animate sediment cohorts
 #' 
 #' This function takes two MEM outputs, cohorts and scenario tables, as inputs and visualizes soil formation as an animated .gif 
-#' @param cohorts data frame, annually tracked soil mass cohorts output from runMemWithCohorts
-#' @param scenario data frame, annual summaries of inputs and outputs from runMemWithCohorts
+#' @param cohorts data frame, annually tracked soil mass cohorts output from runCohortMem
+#' @param scenario data frame, annual summaries of inputs and outputs from runCohortMem
 #' @param filename, character, name of the output file
 #' @param savePath character, filepath to save animation to
 #' @param chPalette vector, a vector of colors to use to symbolize the different mass cohorts
-#' @param trackThresholds vector, a vector of characters indicating which water leves in the scenario table to map as horizontal lines
+#' @param trackThresholds vector, a vector of characters indicating which water levels in the scenario table to map as horizontal lines
 #' @param duration numeric, length in seconds of the animation
 #' @param width numeric, width in inches of the .gif
 #' @param height numeric, height in inches of the .gif
@@ -25,8 +25,7 @@ animateCohorts <- function(cohorts, scenario,
   require(png, quietly = TRUE)
   
   surface_elv <- scenario %>%
-    dplyr::select(years, surfaceElevation) %>%
-    dplyr::rename(year=years)
+    dplyr::select(year, surfaceElevation)
   
   # First reshape the mass cohorts so that they're in long form
   mass_cohorts <- cohorts %>%
@@ -57,9 +56,9 @@ animateCohorts <- function(cohorts, scenario,
   tides <- scenario %>%
     # Track any elevation threholds in the animation speciefied.
     # meanSeaLevel and meanHighWater are the defaults
-    dplyr::select(years, trackThresholds) %>%
-    tidyr::gather(value="WaterLevel", key="datum", -years) %>%
-    dplyr::rename(year=years) %>%
+    dplyr::select(year, trackThresholds) %>%
+    tidyr::gather(value="WaterLevel", key="datum", -year) %>%
+    # dplyr::rename(year=years) %>%
     dplyr::arrange(year) %>%
     dplyr::filter(complete.cases(.))
   
@@ -84,7 +83,8 @@ animateCohorts <- function(cohorts, scenario,
     gganimate::transition_time(year) +
     gganimate::ease_aes('linear')
   
-  tempAnimation <- gganimate::animate(animate_mass_cohorts, 
+  tempAnimation <- gganimate::animate(animate_mass_cohorts,
+                                      nframes=length(unique(scenario$year)),
                                       duration = duration,
                                       renderer = gifski_renderer(),
                                       width = width, 

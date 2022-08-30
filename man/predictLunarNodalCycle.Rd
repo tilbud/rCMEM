@@ -9,7 +9,8 @@ predictLunarNodalCycle(
   floodElv,
   meanSeaLevelDatum,
   meanSeaLevel,
-  lunarNodalAmp
+  lunarNodalAmp,
+  lunarNodalPhase = 2011.181
 )
 }
 \arguments{
@@ -19,15 +20,17 @@ predictLunarNodalCycle(
 
 \item{meanSeaLevelDatum}{a numeric, mean sea-level over the last complete 18 year datum period}
 
-\item{meanSeaLevel}{a vector, mean sea-level for each scenario we are predicting}
+\item{meanSeaLevel}{a vector, mean sea-level for each year of the scenario we are predicting}
 
-\item{lunarNodalAmp}{the amplitude of the 18 year lunar nodal cycle}
+\item{lunarNodalAmp}{a numeric, the amplitude of the 18 year lunar nodal cycle}
+
+\item{lunarNodalPhase}{a numeric, in decimal years (YYYY) the start year of the sine wave representing the lunar nodal cycle}
 }
 \description{
-This function builds a high tide level based on the 18.1 year lunar nodal cycle.
+This function builds a high tide level based on the 18.61 year lunar nodal cycle.
 }
 \references{
-Morris, J. T., Sundberg, K., & Hopkinson, C. S. (2013). Salt marsh primary production and its responses to relative sea level and nutrients in estuaries at Plum Island, Massachusetts, and North Inlet, South Carolina, USA. Oceanography, 26(3), 78-84.
+Morris, J. T., Sundberg, K., & Hopkinson, C. S.- (2013). Salt marsh primary production and its responses to relative sea level and nutrients in estuaries at Plum Island, Massachusetts, and North Inlet, South Carolina, USA. Oceanography, 26(3), 78-84.
 
 Rochlin, I., & Morris, J. T. (2017). Regulation of salt marsh mosquito populations by the 18.6‐yr lunar‐nodal cycle. Ecology, 98(8), 2059-2068.
 }

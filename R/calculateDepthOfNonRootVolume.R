@@ -1,20 +1,20 @@
 #' Depth of the given soil volume
 #' 
-#' Given a shape and mass for the roots, calculate the depth of a specific non-root volume. A specific solution is implimented for linear root volumes, and a general solution otherwise requires the \code{massLiveRoots.fn} to be specified. The general solution is a bineary search algorithm. 
+#' Given a shape and mass for the roots, calculate the depth of a specific non-root volume. A specific solution is implemented for linear root volumes, and a general solution otherwise requires the \code{massLiveRoots.fn} to be specified. The general solution is a binary search algorithm. 
 #'
 #' @param totalRootMassPerArea an integer that is the total mass per area of the roots, generally in g cm-3
 #' @param rootDepthMax an integer that is the maximum root depth, generally in cm
 #' @param rootDensity a numeric that is the root density in g per cm3
 #' @param soilLength a numeric of the unit length of soil volume, generally 1 cm
-#' @param soilWidth a numeric of the unitl witdth of the soil colume, generally 1cm
-#' @param shape a character of the shape of the root distribution, currently only 'linear' is implimented
+#' @param soilWidth a numeric of the unit width of the soil column, generally 1cm
+#' @param shape a character of the shape of the root distribution, currently only 'linear' is implemented
 #' @param ... 
 #' @param nonRootVolume.arr a numerical array of the cumulative non-rooting volume, assumed to be monotonically increasing
 #' @param massLiveRoots.fn a function defining the mass of the live roots, if shape is not linear then this must be defined.
-#' @param relTol a numeric the relative tolerence accepted for the general depth solution
+#' @param relTol a numeric the relative tolerance accepted for the general depth solution
 #' @param verbose a boolean flag, true prints out a lot of strings to help debug the general solution
 #'
-#' @return A numeric corresponding to the depth of the specificed non root volume
+#' @return A numeric corresponding to the depth of the specified non root volume
 #' 
 #' @export
 

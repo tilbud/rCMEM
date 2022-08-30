@@ -39,7 +39,7 @@ massLiveRoots(
 an array of the associated live root mass for each layer specified.
 }
 \description{
-This function returns the mass of the living roots between two layers. Given a mass per area of roots and a maximum rooting depth, this calculates the total mass between two layers with a specified distribution. Currently only a linear distribution is implimented. \cr
+This function returns the mass of the living roots between two layers. Given a mass per area of roots and a maximum rooting depth, this calculates the total mass between two layers with a specified distribution. Currently only a linear distribution is implemented. \cr
 The linear algorithm is as follows:  \itemize{
    \item #mass_per_depth = slope * depth + intercept
    \item slope <- -2 * totalRootMass / (rootDepthMax^2)

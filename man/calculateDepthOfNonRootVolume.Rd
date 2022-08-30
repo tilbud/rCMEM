@@ -29,21 +29,21 @@ calculateDepthOfNonRootVolume(
 
 \item{rootDensity}{a numeric that is the root density in g per cm3}
 
-\item{shape}{a character of the shape of the root distribution, currently only 'linear' is implimented}
+\item{shape}{a character of the shape of the root distribution, currently only 'linear' is implemented}
 
 \item{soilLength}{a numeric of the unit length of soil volume, generally 1 cm}
 
-\item{soilWidth}{a numeric of the unitl witdth of the soil colume, generally 1cm}
+\item{soilWidth}{a numeric of the unit width of the soil column, generally 1cm}
 
-\item{relTol}{a numeric the relative tolerence accepted for the general depth solution}
+\item{relTol}{a numeric the relative tolerance accepted for the general depth solution}
 
 \item{verbose}{a boolean flag, true prints out a lot of strings to help debug the general solution}
 
 \item{...}{}
 }
 \value{
-A numeric corresponding to the depth of the specificed non root volume
+A numeric corresponding to the depth of the specified non root volume
 }
 \description{
-Given a shape and mass for the roots, calculate the depth of a specific non-root volume. A specific solution is implimented for linear root volumes, and a general solution otherwise requires the \code{massLiveRoots.fn} to be specified. The general solution is a bineary search algorithm.
+Given a shape and mass for the roots, calculate the depth of a specific non-root volume. A specific solution is implemented for linear root volumes, and a general solution otherwise requires the \code{massLiveRoots.fn} to be specified. The general solution is a binary search algorithm.
 }

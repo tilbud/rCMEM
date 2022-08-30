@@ -10,7 +10,8 @@ buildHighTideScenario(
   meanHighWaterDatum,
   meanHighHighWaterDatum,
   meanHighHighWaterSpringDatum,
-  lunarNodalAmp
+  lunarNodalAmp,
+  lunarNodalPhase = 2011.181
 )
 }
 \arguments{
@@ -25,10 +26,12 @@ buildHighTideScenario(
 \item{meanHighHighWaterSpringDatum}{a numeric, Mean Higher High Spring Tide Water level over the last datum period}
 
 \item{lunarNodalAmp}{the amplitude of the 18-year lunar nodal cycle}
+
+\item{lunarNodalPhase}{a numeric, in decimal years (YYYY) the start year of the sine wave representing the lunar nodal cycle}
 }
 \value{
-a data frame, including the sea-level and suspended sediment concentraiton scenario inputted, with annual high tide datum(s) added
+a data frame, including the sea-level and suspended sediment concentration scenario inputted, with annual high tide datum(s) added
 }
 \description{
-This function takes a sea-level scenario table and elevations for 1 to 3 tidal cycles and outputs a scenario table with annualized high tidel levels.
+This function takes a sea-level scenario table and elevations for 1 to 3 tidal cycles and outputs a scenario table with annualized high tide levels.
 }

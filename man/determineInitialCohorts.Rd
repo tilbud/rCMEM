@@ -6,11 +6,13 @@
 \usage{
 determineInitialCohorts(
   initElv,
-  MSL,
-  MHW,
-  MHHW = NA,
-  MHHWS = NA,
-  ssc,
+  meanSeaLevel,
+  meanHighWater,
+  meanHighHighWater = NA,
+  meanHighHighWaterSpring = NA,
+  suspendedSediment,
+  nFloods = 705.79,
+  floodTime.fn = floodTimeLinear,
   bMax,
   zVegMin,
   zVegMax,
@@ -20,54 +22,65 @@ determineInitialCohorts(
   rootTurnover,
   rootDepthMax,
   shape = "linear",
+  abovegroundTurnover = NA,
+  speciesCode = NA,
   omDecayRate,
   recalcitrantFrac,
-  settlingVelocity,
+  captureRate,
   omPackingDensity = 0.085,
   mineralPackingDensity = 1.99,
   rootPackingDensity = omPackingDensity,
   initialCohorts = NA,
   uplandCohorts = NA,
   supertidalCohorts = NA,
-  supertidalSedimentInput = NA
+  supertidalSedimentInput = NA,
+  ...
 )
 }
 \arguments{
 \item{initElv}{a numeric, the initial elevation of the marsh at the start of the scenario}
 
-\item{MSL}{a numeric, Mean Sea Level over the last datum period}
+\item{meanSeaLevel}{a numeric, Mean Sea Level}
 
-\item{MHW}{a numeric, Mean High Water level over the last datum period}
+\item{meanHighWater}{a numeric, Mean High Water level}
 
-\item{MHHW}{a numeric (optional), Mean Higher High Water level over the last datum period}
+\item{meanHighHighWater}{a numeric (optional), Mean Higher High Water level}
 
-\item{MHHWS}{a numeric (optional), Mean Higher High Spring Tide Water level over the last datum period}
+\item{meanHighHighWaterSpring}{a numeric (optional), Mean Higher High Spring Tide Water level}
 
-\item{ssc}{a numeric, suspended sediment concentration of the water column}
+\item{suspendedSediment}{a numeric, suspended sediment concentration of the water column}
 
-\item{bMax}{a numeric, maximum biomass}
+\item{nFloods}{a numeric, the number of tidal flooding events per year}
 
-\item{zVegMin}{a numeric, lower elevation of biomass limit}
+\item{floodTime.fn}{a function, specify the method used to calculate flooding time per tidal cycle}
 
-\item{zVegMax}{a numeric, upper elevation of biomass limit}
+\item{bMax}{a numeric or vector of numerics, maximum biomass}
 
-\item{zVegPeak}{a numeric, (optional) elevation of peak biomass}
+\item{zVegMin}{a numeric or vector of numerics, lower elevation of biomass limit}
+
+\item{zVegMax}{a numeric or vector of numerics, upper elevation of biomass limit}
+
+\item{zVegPeak}{a numeric or vector of numerics, (optional) elevation of peak biomass}
 
 \item{plantElevationType}{character, either "orthometric" or "dimensionless", specifying elevation reference of the vegetation growing elevations}
 
-\item{rootToShoot}{a numeric, root to shoot ratio}
+\item{rootToShoot}{a numeric or vector of numerics, root to shoot ratio}
 
-\item{rootTurnover}{a numeric, below ground biomass annual turnover rate}
+\item{rootTurnover}{a numeric or vector of numerics, below ground biomass annual turnover rate}
 
-\item{rootDepthMax}{a numeric, maximum (95\%) rooting depth}
+\item{rootDepthMax}{a numeric or vector of numerics, maximum (95\%) rooting depth}
 
 \item{shape}{a character, "linear" or "exponential" describing the shape of the relationship between depth and root mass}
+
+\item{abovegroundTurnover}{(optional) a numeric or vector of numerics, aboveground biomass annual turnover rate}
+
+\item{speciesCode}{(optional) a character or vector of characters, species names or codes associated with biological inputs}
 
 \item{omDecayRate}{a numeric, annual fractional mass lost}
 
 \item{recalcitrantFrac}{a numeric, fraction of organic matter resistant to decay}
 
-\item{settlingVelocity}{a numeric, the number of times a water column will clear per tidal cycle}
+\item{captureRate}{a numeric, the number of times a water column will clear per tidal cycle}
 
 \item{omPackingDensity}{a numeric, the bulk density of pure organic matter}
 
@@ -77,11 +90,11 @@ determineInitialCohorts(
 
 \item{initialCohorts}{a data frame, (optional) custom set of mass cohorts that will override any decision making this function does}
 
-\item{uplandCohorts}{a data frame,  (optional) custom set of mass cohorts to be used if intiial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance}
+\item{uplandCohorts}{a data frame,  (optional) custom set of mass cohorts to be used if initial elevation is higher than both maximum tidal height and maximum wetland vegetation tolerance}
+
+\item{supertidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if initial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 
 \item{supertidalSedimentInput, }{a numeric, (optional) grams per cm^2 per year, an optional parameter which will define annual suspended sediment delivery to a sediment column that is is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
-
-\item{superTidalCohorts}{a data frame, (optional) custom set of mass cohorts to be used if intiial elevation is higher than maximum tidal height, but not maximum wetland vegetation tolerance}
 }
 \value{
 a data frame of mass pools representing the initial conditions for a simulation

@@ -2,21 +2,21 @@
 #'
 #' This function adds a new cohort to a soil profile. Cohorts are constructed as follows:
 #' \enumerate{
-#'        \item Cohorts are aged by timeStep incrament.
+#'        \item Cohorts are aged by timeStep increment.
 #'        \item Organic matter pools decay
 #'        \item If there are non-zero mineral inputs, they are added to the top of the soil profile as a new cohort.
 #'        \item The top and bottom of the cohort layer is recalculated.
 #'        \item A new root profile is constructed based on the cohort layers.
 #' }
 #'
-#' @param massPools A data frame containing the following colums: age, fast_OM, slow_OM, mineral, layer_top, layer_bottom, root_mass. Each row of this data frame represents a single cohort. To increase runtime in simulations, the profile is buffered with NA's at the top of the data frame, see code comments for details.
+#' @param massPools A data frame containing the following columns: age, fast_OM, slow_OM, mineral, layer_top, layer_bottom, root_mass. Each row of this data frame represents a single cohort. To increase runtime in simulations, the profile is buffered with NA's at the top of the data frame, see code comments for details.
 #' @param packing A list of numerics with mineral and organic arguments representing their respective packing densities. 
 #' @param timeStep A numeric of the time step in years. Typically set to 1 year.
 #' @param rootTurnover A numeric as the root turnover time in faction per year.
 #' @param rootOmFrac A list of numerics called fast and slow which is the allocation fraction between fast and slow organic matter pool respectively for dead roots.
 #' @param omDecayRate A list of numerics called fast and slow which is the decay rate for the fast and slow organic matter pool in fraction per year.
 #' @param massLiveRoots.fn A function that returns the mass of live roots for specified depth layers, must accept \code{layerBottom} and \code{layerTop} as arguments.
-#' @param calculateDepthOfNonRootVolume.fn A function that returns the depth of a specified volumen of soil, must accept \code{nonRootVolume} as an argument.
+#' @param calculateDepthOfNonRootVolume.fn A function that returns the depth of a specified volume of soil, must accept \code{nonRootVolume} as an argument.
 #' @param mineralInput An optional value for mineral input in grams per year (numeric) if mineralInput.fn is not used
 #' @param mineralInput.fn A function that returns the mineral input in grams per year (numeric)
 #' @param ... arguments to be passed to the specified functions
@@ -57,21 +57,36 @@ addCohort <- function(massPools,
   
   ans$age <- ans$age + timeStep #age the cohorts
   
+  # Convert decay rates to decay coefficients (k) in case in the future we want
+  ## to model decay at sub-annual time steps
+  ## C_t = C0 * exp(kt)
+  k_fast<-log(1-omDecayRate$fast)
+  k_slow<-log(1-omDecayRate$slow)
 
   # track respiration
-  ans$respired_OM <- ans$fast_OM +
-    (ans$root_mass * rootOmFrac$fast * rootTurnover * timeStep) -
-    ans$fast_OM * omDecayRate$fast * timeStep
-
-  #add and decay the organic matter
-  ans$fast_OM <- ans$fast_OM + 
-             ans$root_mass * rootOmFrac$fast * rootTurnover * timeStep -
-             ans$fast_OM * omDecayRate$fast * timeStep
+  ## total respired belowground OM = ((cumulative fast OM from previous time steps + fast OM from this time step) * fraction lost to decay) +
+  ## ((sumulative slow pool OM from previous time steps + slow pool from this time step) * fraction lost to decay)
+  ## Fraction slow pool lost to decay will be 0 the way the inputs to this function are set
+  ## but this formulation sets us up to integrate slow pool organic matter decay in a future iteration.
+  ans$respired_OM <- ((ans$fast_OM +
+    (ans$root_mass * rootOmFrac$fast * rootTurnover * timeStep)) * 
+    (1-exp(k_fast*timeStep))) +
+    ((ans$slow_OM + 
+       ans$root_mass * rootOmFrac$slow * rootTurnover * timeStep) *
+    (1-exp(k_slow*timeStep)))
   
-  ans$slow_OM <- ans$slow_OM + 
-             ans$root_mass * rootOmFrac$slow * rootTurnover * timeStep -
-             ans$slow_OM * omDecayRate$slow * timeStep
-    
+  # add and decay the organic matter
+  ## New fast pool OM = (cumulative fast OM from previous time steps + new fast OM) * fraction remaining after decay
+  ans$fast_OM <- (ans$fast_OM +
+                    (ans$root_mass * rootOmFrac$fast * rootTurnover * timeStep)) * 
+    exp(k_fast*timeStep)
+  
+  # New slow pool OM = (cumulative slow OM from previous time steps + new slow OM) * fraction remaining after decay
+  ## Fraction remaining after decay will be 1 unless we add flexibiltiy in inputs upstream of this function in a future version
+  ans$slow_OM <- (ans$slow_OM + 
+             ans$root_mass * rootOmFrac$slow * rootTurnover * timeStep) *
+    exp(k_slow*timeStep)
+             
   # Check to see if mineral input is a static value or a function
   if (is.na(mineralInput)) {
     mineralInput <- mineralInput.fn(...)
