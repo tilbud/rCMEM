@@ -1,15 +1,14 @@
 ---
-title: "CMEM Vignette Supplement"
-author: "Megan Vahsen"
-date: "8/26/2021"
-output:
-  bookdown::pdf_document2: default
+title: "SI Vignette for Cohort Marsh Equilibrium Model (CMEM): History, mathematics, and implementation"
+author: "M.L. Vahsen, K.E.O. Todd-Brown, J. Hicks, S.S. Pilyugin, J.T. Morris, and J.R. Holmquist"
+date: "8/29/2022"
+output: pdf_document
 urlcolor: blue
 bibliography: CMEM_Vignette.bib
 link-citations: yes
 header-includes:
     - \usepackage {hyperref}
-    - \hypersetup {colorlinks = true, linkcolor = magenta, urlcolor = blue}
+    - \hypersetup {colorlinks = true, linkcolor = green, urlcolor = blue}
 ---
 
 ```{r setup, include=FALSE}
@@ -24,17 +23,16 @@ theme_set(theme_bw())
 #
 ```
 
-
 # Overview
 
-The following vignette walks through the implementation and optionality of the Cohort Marsh Equilibrium Model R package (version 6.1.4). This vignette complements the numerical modeling section of the main text of the manuscript. In each section, we highlight the arguments necessary for the wrapper function [`runCohortMem()`] that produces a simulations of the Cohort Marsh Equilibrium Model and provide background to help the user inform those arguments. At the end of the vignette, we also introduce code that can be used to produce graphics that show partitioning of mass pools across soil cohorts through time.
+The following vignette walks through the implementation and optionality of the Cohort Marsh Equilibrium Model R package (**rCMEM** version 6.1.4). This vignette complements the numerical modeling section of the main text of the manuscript. In each section, we highlight the arguments necessary for the wrapper function [`runCohortMem()`] that produces a simulations of the Cohort Marsh Equilibrium Model and provide background to help the user inform those arguments.
 
 # Predicting marsh accretion and carbon accumulation with [`runCohortMem()`]
 
 ## About [`runCohortMem()`]
-Overall the function [`runCohortMem()`] is a wrapper function that organizes inputs and parameters of CMEM and runs a series of functions to execute a single simulation (\emph{i.e.} a prediction of marsh surface elevation and carbon accumulation across a specified time period). First, [`runCohortMem()`] will build a scenario that is characterized by an annualized time series of sea-level, tidal height, and suspended sediment concentration. Second, the function will initialize the scenario, building a sediment profile to serve as the sediment column at time step t = 1. Third, the function will at each year of the simulation and will lay down a mineral cohort based on elevation and flooding depth, the suspended sediment concentration, and flooding time. Simultaneously the function calculates biomass based on relative tidal elevation, adds roots to each cohort in the sediment profile, and ages the organic matter cohorts. 
+Overall the function [`runCohortMem()`] is a wrapper function that organizes inputs and parameters of CMEM and runs a series of functions to execute a single simulation (\emph{i.e.} a prediction of marsh surface elevation and carbon accumulation across a specified time period). First, [`runCohortMem()`] will build a scenario that is characterized by an annualized time series of sea-level, tidal height, and suspended sediment concentration. Second, the function will initialize the scenario, building a sediment profile to serve as the sediment column at time step t = 1. Third, the function will at each year of the simulation lay down a mineral cohort based on elevation, flooding depth, the suspended sediment concentration, and flooding time. Simultaneously the function calculates biomass based on relative tidal elevation, adds roots to each cohort in the sediment profile, and ages the organic matter cohorts. 
 
-For each year the function calculates and tracks net elevation change of the profile making it a dynamic model. The function has two main output structures: (1) a table that has reports of inputs and outputs for each annual time step and (2) a table which tracks the mass of the four mass pools (\emph{i.e.} mineral, fast organic, slow organic, roots) for each cohort and each year of the simulation. Finally, output table of each cohort also reports the depth of the top and bottom of each cohort relative to the surface and the cumulative volume of the cohorts by depth.
+For each year the function calculates and tracks net elevation change of the profile making it a dynamic model. The function has two main output structures: (1) a table that has reports of inputs and outputs for each annual time step and (2) a table which tracks the mass of the four mass pools (\emph{i.e.} mineral, fast organic, slow organic, roots) for each cohort and each year of the simulation. Finally, an output table of each cohort also reports the depth of the top and bottom of each cohort relative to the surface and the cumulative volume of the cohorts by depth.
 
 The [`runCohortMem()`] function can be used to create both forecasts and hindcasts depending on the amount and type of data that are use to inform the simulation as we highlight below. For example, a user can input a historical tide gauge record or use information from a core sampled from marsh soil to create a hindcast of marsh accretion and carbon accumulation. 
 
@@ -56,23 +54,16 @@ The first step in the workflow is to build the tidal scenario that the simulatio
 The user then should set the initial rate of sea-level rise `relSeaLevelRiseInit` and the total relative sea-level rise over the course of the scenario `relSeaLevelRiseTotal`. These two inputs control how the rate of sea-level rise accelerates over the course of the simulation, or if it stays constant, depending on the number of years of the simulation (`endYear` - `startYear`). These inputs are only required if the simulation is informed by a single value of mean sea-level at the beginning of the simulation to then predict sea-level at further time points in the simulation (see below). The function [`buildScenarioCurve()`] will build a sea-level rise scenario assuming acceleration of sea-level rise [@sweet2017global]: 
 
 \begin{align}
-S_{\mu}(t) &= S_{\mu}(0) + At + Bt^2\\
-A &= [S_{\mu}(1) - S_{\mu}(0)] - B\\
-B &= \frac{\frac{S_{\mu}(T) - S_{\mu}(0)}{T} - [S_{\mu}(1) - S_{\mu}(0)]}{T - 1}
+Z_{\mu}(t) &= Z_{\mu}(0) + \alpha t + \beta t^2\\
+\alpha &= r_0 - \beta \\
+\beta &= \frac{\frac{R}{T} - r_0}{T-1}
 \end{align}
 
-where $S_{\mu}(t)$ is mean sea-level at time $t$ and $A$ and $B$ are coefficients of a quadratic regression with a specified initial mean sea-level $S_{\mu}(0)$.
+where $Z_{\mu}(t)$ is mean sea-level at time $t$ and $\alpha$ and $\beta$ are coefficients of a quadratic regression with a specified initial mean sea-level $Z_{\mu}(0)$.
 
-Given the previous equations and specified inputs, we can substitute `relSeaLevelRiseInit` = $S_{\mu}(1) - S_{\mu}(0)$, `relSeaLevelRiseTotal` = $S_{\mu}(T) - S_{\mu}(0)$, and `endYear` - `startYear` = $T$.  
+Given the previous equations and specified inputs, we can substitute `relSeaLevelRiseInit` = $Z_{\mu}(1) - Z_{\mu}(0)$, `relSeaLevelRiseTotal` = $Z_{\mu}(T) - Z_{\mu}(0)$, and `endYear` - `startYear` = $T$. Conversely, if a vector of mean sea-levels is to be used to inform the tidal record (see below), `relSeaLevelRiseInit` and `relSeaLevelRiseTotal` should not be specified.
 
-\begin{align}
-B &= \frac{\frac{\textbf{relSeaLevelRiseTotal}}{\textbf{endYear} - \textbf{startYear}} - [\textbf{relSeaLevelRiseInit}]}{\textbf{endYear} - \textbf{startYear} - 1}\\
-A &= \textbf{relSeaLevelRiseInit} - B
-\end{align}
-
-Conversely, if a vector of mean sea-levels is to be used to inform the tidal record (see below), `relSeaLevelRiseInit` and `relSeaLevelRiseTotal` should not be specified.
-
-The user will then input `meanSeaLevel` as either a numeric or a vector. The function [`buildScenarioCurve()`] will make a decision about what type of analysis you are trying to run based on the structure of the input `meanSeaLevel`. `meanSeaLevel` can either be an initial mean sea-level  ($S_{\mu}(0)$) or a vector of mean sea-levels, as long as the vector is the same length as the number of years in the simulation. The vector can be useful for hindcasting using a tide gauge record.
+The user will then input `meanSeaLevel` as either a numeric or a vector. The function [`buildScenarioCurve()`] will make a decision about what type of analysis you are trying to run based on the structure of the input `meanSeaLevel`. `meanSeaLevel` can either be an initial mean sea-level  ($Z_{\mu}(0)$) or a vector of mean sea-levels, as long as the vector is the same length as the number of years in the simulation. The vector can be useful for hindcasting using a tide gauge record.
 
 Finally, the user will input the mean sea level over the last datum period `meanSeaLevelDatum` and the mean high water over the last datum period `meanHighWaterDatum`. Tidal datums should represent long term averages over a datum period. The last complete epoch was 1981-2001, released by NOAA [for example](https://tidesandcurrents.noaa.gov/datums.html?datum=NAVD88&units=1&epoch=0&id=8575512&name=Annapolis&state=MD). In our examples we present tidal datums from NOAA tide gauges as cm relative to the North American Vertical Datum of 1988 (NAVD88). If high tide datums represent tidal amplitudes, then the user should set `meanSeaLevelDatum` to 0. 
 
@@ -83,9 +74,9 @@ argument | class | units | description
 |`meanHighHighWaterDatum`| numeric | cm | (optional) mean higher high tide water level over the last datum period
 |`meanHighHighWaterSpringDatum` | numeric | cm | (optional) mean higher high spring tide water level over the last datum period
 
-The occurrence of exceptionally high tides within a day or across a month provide more detail about a region's tidal cycle and thus will produce a more accurate representation of the flooding experienced by the marsh surface. If a user specifies only the average high tide level `meanHighWaterDatum`, then all the tidal floods in the simulation are apportioned to that datum. If a user specifies separate daily high tides (`meanHighWaterDatum` and `meanHighHighWaterDatum`), then half the tidal flood events are apportioned to each. The user can also specify spring tides (\emph{i.e.} monthly tidal events where there is the greatest differences between high and low tide) via `meanHighHighWaterSpringDatum`. If all three types of tides are defined (`meanHighWaterDatum`, `meanHighHighWaterDatum`, and `meanHighHighWaterSpringDatum`) then 50\% of the flood events are apportioned to the lower daily high tides, 46.5\% apportioned to daily higher high tides, and 3.5\% apportioned to bimonthly spring tides. As before, all high tide datums should be relative to long-term gauge averages or if they represent tidal amplitudes relative to mean sea level, the user should make sure that `meanSeaLevelDatum` is set to 0.
+The occurrence of exceptionally high tides within a day or across a month provide more detail about a region's tidal cycle and thus will produce a more accurate representation of the flooding experienced by the marsh surface. If a user specifies only the average high tide level `meanHighWaterDatum`, then all the tidal floods in the simulation are apportioned to that datum. If a user specifies separate daily high tides (`meanHighWaterDatum` and `meanHighHighWaterDatum`), then half the tidal flood events are apportioned to each. The user can also specify spring tides (\emph{i.e.} monthly tidal events where there is the greatest differences between high and low tide) via `meanHighHighWaterSpringDatum`. If all three types of tides are defined (`meanHighWaterDatum`, `meanHighHighWaterDatum`, and `meanHighHighWaterSpringDatum`) then 50\% of the flood events are apportioned to the lower daily high tides, 46.5\% apportioned to daily higher high tides, and 3.5\% apportioned to bimonthly spring tides. As before, all high tide data should be relative to long-term gauge averages or if they represent tidal amplitudes relative to mean sea level, the user should make sure that `meanSeaLevelDatum` is set to 0.
 
-The choice of how many tidal data to useseem to have a marginal effect on annual sedimentation at the higher end of the elevation gradient. Given the parameter set used on this paper, more sedimentation is modeled higher in the tidal frame when all three tidal datums are defined as inputs compared to simply using only the weighted average mean high tide. 
+The choice of how many tidal data to use has a marginal effect on annual sedimentation at the higher end of the elevation gradient. Given the parameter set used on this paper, more sedimentation is modeled higher in the tidal frame when all three tidal data are defined as inputs compared to simply using only the weighted average mean high tide. 
 
 ## Suspended sediment, the lunar nodal cycle, and annualized flooding events
 
@@ -240,37 +231,32 @@ scenarioCurve %>%
 
 In CMEM the user inputs the number of floods in a year `nFloods` rather than having the number of tides be a fixed constant (as in previous versions of MEM) because the number of tides each year can vary regionally. The `nFloods` input can be specified as any numeric value we recommend the following values: for diurnal tides we recommend 352.89 tidal cycles per year. There are 365.25 days per year (accounting for leap years), 24 hours per day, and a diurnal tidal cycle which is 24.84 hours long ($\frac{365.25 \times 24}{24.84} \approx 352.89$). For semi-diurnal or mixed semi-diurnal tide regimes, we recommend 705.80 tidal cycles per year, since a mixed or semi-diurnal tidal cycle is 12.42 hours long ($\frac{365.25 \times 24}{12.42} \approx 705.80$). 
 
-There are two methods for calculating fractional flooding time in this R-package. Users can specify a flood time function by setting the input `floodTime.fn` to the function name; users use the generic linear method [`floodTimeLinear()`], or specify the trigonometric function [`floodTimeTrig()`].  This formulation is used in XX versions of MEM (need particulars). Both functions apply a tidal flooding function $f(Z)$, where $Z$ is the elevation of the marsh surface, if the elevation is between the flood and ebb levels. For both methods, fractional flooding time is capped at 1 if $Z$ is lower than lowest flood elevation (100% flooded), and 0 (0% flooded) if the elevation is greater than the highest water level. For the simpler linear method, fractional inundation time is assumed to have a linear relationship to the relative tidal range, 0 above the average flood depth, 1 below the average ebb depth, and a linear interpolation in between. 
+There are two methods for calculating fractional flooding time in this R-package. Users can specify a flood time function by setting the input `floodTime.fn` to the function name; users use the generic linear method [`floodTimeLinear()`], or specify the trigonometric function [`floodTimeTrig()`]. Both functions apply a tidal flooding function $f(Z)$, where $Z$ is the elevation of the marsh surface, if the elevation is between the flood and ebb levels. For both methods, fractional flooding time is capped at 1 if $Z$ is lower than lowest flood elevation (100% flooded), and 0 (0% flooded) if the elevation is greater than the highest water level. For the simpler linear method, fractional inundation time is assumed to have a linear relationship to the relative tidal range, 0 above the average flood depth, 1 below the average ebb depth, and a linear interpolation in between. 
 
-\begin{equation}
-\label{eqn:tidalflood}
-f(Z) = \frac{H_{i} - Z}{H_i-L_i}
-\end{equation}
-
-Fraction flooding time for tidal class $i$ ($t_{f,i}$) is calculated as:
+Fraction flooding time ($\omega$) is calculated as:
 
 \begin{equation} 
 \label{eqn:fracflood}
-t_{f,i} = \left\{
+\omega(t, Z_h, Z_l) = \left\{
         \begin{array}{ll}
-            0 & \quad  Z_{H,i} < Z \\
-             f(Z) & \quad Z_{L,i} \leq  Z \leq Z_{H,i} \\
-             1 & \quad  Z < Z_{L,i} 
+            0 & \quad  Z_h + Z_\mu(t) < Z(t) \\
+             \frac{Z_h + Z_\mu(t) - Z(t)}{Z_h + Z_\mu(t) - Z_l + Z_\mu(t)} & \quad Z_l + Z_\mu(t) \leq  Z(t) \leq Z_h + Z_\mu \\
+             1 & \quad  Z(t) < Z_l + Z_\mu(t) 
         \end{array}
     \right.  
 \end{equation}
 
-Alternatively, we present the trigonometric function option [\emph{sensu} @hickey2019tidal] which allows sedimentation processes to be more sensitive for high marshes (that are not frequently flooded) without substantially affecting run time. Flooding time is calculated as the product of the absolute value of the rising time $t_r$ minus $\phi$, which is the time of one half of a tidal cycle, and the falling time $t_l$ for tidal cycle class $i$. 
+Alternatively, we present the trigonometric function option [\emph{sensu} @hickey2019tidal] which allows sedimentation processes to be more sensitive for high marshes (that are not frequently flooded) without substantially affecting run time. Flooding time is calculated as the product of the absolute value of the rising time $\omega_r$ minus $\phi$, which is the time of one half of a tidal cycle, and the falling time $\omega_l$ 
 
 \begin{align} 
-t_{f,i} &= f(Z) = |t_{r,i} - \phi| + t_{l,i} \\
-t_{r,i} &=  \sin\left(\phi \left[\frac{A_{1,i}}{\pi}\right] - 1 \right) \\
-A_{1,i} &= 2 \pi - \arccos\left(2 \left[\frac{Z-L_i}{H_i-L_i}\right] - 1\right)\\
-t_{l,i} &=  \sin\left(\phi \left[\frac{A_{2,i}}{\pi}\right] - 1\right) \\
-A_{2,i} &= 2 \pi - \arccos\left(2 \left[\frac{Z-H_i}{L_i-H_i}\right] - 1\right)
+\omega(t, Z_h, Z_l) &= f(Z) = |\omega_r(t) - \phi| + \omega_l(t) \\
+\omega_r(t) &=  \sin\left(\phi \left[\frac{A_{1}}{\pi}\right] - 1 \right) \\
+H_{1,t} &= 2 \pi - \arccos\left(2 \left[\frac{Z_\mu(t)-Z_l}{Z_h-Z_l}\right] - 1\right)\\
+\omega_l(t) &=  \sin\left(\phi \left[\frac{A_{2}}{\pi}\right] - 1\right) \\
+H_{2,t} &= 2 \pi - \arccos\left(2 \left[\frac{Z_\mu(t)-Z_h}{Z_l-Z_h}\right] - 1\right),
 \end{align}
 
-Here, we $\phi$ to 0.5 (\emph{i.e.} half of a tidal cycle), which allows the output to be equal to the fraction for which an elevation is flooded (\emph{i.e.} fractional flooding time). The [`floodTimeTrig()`] function calculates flooding time as the product of the absolute value of the rising time $t_r$ minus $\Phi$ (the time of one half of a tidal cycle), and the falling time $t_l$ for tidal cycle class $i$. 
+where $H_1$ and $H_2$ are intermediate functions used to translate $Z_\mu$, $Z_h$, and $Z_l$ data to rising and falling times ($\omega_r$ and $\omega_l$, respectively). Here, we set $\phi$ to 0.5 (\emph{i.e.} half of a tidal cycle), which allows the output to be equal to the fraction for which an elevation is flooded (\emph{i.e.} fractional flooding time). The [`floodTimeTrig()`] function calculates flooding time as the product of the absolute value of the rising time $\omega_r$ minus $\Phi$ (the time of one half of a tidal cycle), and the falling time $\omega_l$. 
 
 The function [`deliverSediment()`] organizes inputs and in the cases where daily higher high tides and monthly high spring tides are specified, proportions the number of tidal floods among the types of tides specified. It also uses a user-specified capture rate `captureRate` (the number of times a water column will clear per tidal cycle) multiplied by the the amount of time the surface is flooded to calculate the amount of available sediment that is delivered. 
 
@@ -450,7 +436,7 @@ For the numerical model produce realistic predictions, the model requires an ini
 
 If the initial elevation is above the highest tidal flooding elevation, but below the maximum growing elevation `zVegMax`, then there will be no mineral sedimentation to lay down annualized layers, and [`runToEquilibrium()`] will fail with an error message. In this case [`determineInitialCohorts()`] will form a supertidal peat. The user has some options; a user can provide their own supertidal sediment input (`superTidalSedimentInput`; g $\text{cm}^{-2}$ $\text{year}^{-1}$). If this is not supplied, then [`determineInitialCohorts()`] will calculate sediment input at 1 cm below the highest tide and use that. The [`runToEquilibrium()`] function then runs the same as if initial elevation were an elevation in which there was flooding elevation. The user also has an option to use their own set of cohorts for super tidal peat, each with mineral, root, fast and slow pool organic matter pool masses via the `superTidalCohorts` input.
 
-If the initial elevation is above the both the highest tidal flooding elevation and the maximum growing elevation `zVegMax` of plants, then the initial condition is an upland soil. This is possible when modeling a marsh traversing into an adjacent upland as sea-level rises (\emph{i.e.} horizontal transgression). A user can supply their own upland soil cohorts as an input, as long as it takes the form of a table with minimum and maximum depths, and ages of a stack of soil cohorts, each with mineral, root, fast and slow pool organic matter pool masses. If this argument is not provided, then [`determineInitialCohorts()`] will initialize an adjacent upland as a stack of 1 cm wide cohorts, each with 0 as their age, and each with 50% slow pool organic matter and 50% mineral matter.
+If the initial elevation is above both the highest tidal flooding elevation and the maximum growing elevation `zVegMax` of plants, then the initial condition is an upland soil. This is possible when modeling a marsh traversing into an adjacent upland as sea-level rises (\emph{i.e.} horizontal transgression). A user can supply their own upland soil cohorts as an input, as long as it takes the form of a table with minimum and maximum depths, and ages of a stack of soil cohorts, each with mineral, root, fast and slow pool organic matter pool masses. If this argument is not provided, then [`determineInitialCohorts()`] will initialize an adjacent upland as a stack of 1 cm wide cohorts, each with 0 as their age, and each with 50% slow pool organic matter and 50% mineral matter.
 
 Finally, an alternative to letting [`determineInitialCohorts()`] make the decisions about how to initialize a sediment column, a user can specify their own `initialCohorts`. This will cause the function to jump over all of the previously described decisions and return the `initialCohorts` file. This is useful when you are pairing a hindcast with a forecast.
 
@@ -468,7 +454,27 @@ The user inputs multiple parameters that are related to the relationship between
 
 The user also has the option to provide an additional parameter `zVegPeak` which allows for the elevation of peak biomass to be different than the midpoint elevation of the lower and upper elevation limits (\emph{i.e.} an asymmetrical parabola). Finally, the user specifies `plantElevationType` as either "orthometric", which means that the values of `zVegMin`, `zVegMax`, and `zVegPeak` (if provided) are in cm NAVD88, or "dimensionless" which means that the values of `zVegMin`, `zVegMax`, and `zVegPeak` (if provided) are relative to mean sea-level. 
 
-The function [`predictBiomass()`] takes the inputs `bMax`, `zVegMin`, `zVegMax`, and `zVegPeak` (if provided) as well as the elevation at the current timestep to calculate aboveground biomass. Because regional tidal regimes influence the relationship between elevation and biomass production, elevation values for `zVegMin`, `zVegMax`, and `zVegPeak` (if provided) are converted to dimensionless elevations ($Z^*$) if the elevations are specified orthometrically (`plantElevationType` = "orthometric"). The function [`convertZToZstar()`] completes this conversion before the aboveground biomass is calculated. Similarly, the current surface elevation at the timestep in which the biomass prediction is being made is converted to $Z^*$ using the same function [`convertZToZstar()`]. 
+The function [`predictBiomass()`] takes the inputs `bMax`, `zVegMin`, `zVegMax`, and `zVegPeak` (if provided) as well as the elevation at the current timestep to calculate aboveground biomass. Here we represent this relationship using $Z_{range}$, $Z_{prod}$, and $Z_{sum}$ as intermediate values in the conversion of $Z_{min}$, $Z_{max}$, and $Z_{range}$ to a form in which we can predict aboveground biomass at a given elevation.
+
+\begin{align}
+    Z_{range} &= \left\{ \begin{array}{@{}ll@{}}
+        Z_{peak} - Z_{min} & \text{ for } Z^* < Z_{peak}\\
+        Z_{max} - Z_{peak} & \text{otherwise} \label{eqn:parabola_eqs1}
+    \end{array}
+    \right.\\
+     Z_{prod} &= \left\{ \begin{array}{@{}ll@{}}
+        Z_{min} * (Z_{peak} + (Z_{peak} - Z_{min})) & \text{ for } Z^* < Z_{peak}\\
+        (Z_{peak} - (Z_{max} - Z_{peak})) * Z_{max} & \text{otherwise}   \label{eqn:parabola_eqs2}
+    \end{array} 
+    \right.\\
+     Z_{sum} &= \left\{ \begin{array}{@{}ll@{}}
+        Z_{min} + (Z_{peak} + (Z_{peak} - Z_{min})) & \text{ for } Z^* < Z_{peak}\\
+        (Z_{peak} - (Z_{max} - Z_{peak})) + Z_{max} & \text{otherwise}  \label{eqn:parabola_eqs3}
+    \end{array}
+    \right.
+\end{align}
+
+Because regional tidal regimes influence the relationship between elevation and biomass production, elevation values for `zVegMin`, `zVegMax`, and `zVegPeak` (if provided) are converted to dimensionless elevations ($Z^*$) if the elevations are specified orthometrically (`plantElevationType` = "orthometric"). The function [`convertZToZstar()`] completes this conversion before the aboveground biomass is calculated. Similarly, the current surface elevation at the timestep in which the biomass prediction is being made is converted to $Z^*$ using the same function [`convertZToZstar()`]. 
 
 ```{r predictBiomass, echo = F}
 convertZToZstar <- function(z, meanHighWater, meanSeaLevel) { 
@@ -614,7 +620,11 @@ argument | class | units | description
 |`omDecayRate` | numeric | $\text{yr}^{-1}$ | annual fractional mass lost due to decay
 |`recalcitrantFrac` | numeric | g/g | fraction of organic matter resistant to decay
 
-Within [`runCohortMem()`] the predicted aboveground biomass is converted to belowground biomass via a user-provided root-to-shoot ratio `rootToShoot`. Note that this ratio actually represents the root \emph{and} rhizome to shoot ratio and therefore can more accurately be described as a ratio of belowground to aboveground biomass allocation. We use the term root-to-shoot ratio and the argument `rootToShoot` to reflect what is in previous publications and versions of CMEM and similar models. 
+Within [`runCohortMem()`] the predicted aboveground biomass is converted to belowground biomass via a user-provided root-to-shoot ratio `rootToShoot` and the aboveground biomass parameters and intermediate values specified above. Note that root-to-shoot ratio technically represents the root \emph{and} rhizome to shoot ratio and therefore can more accurately be described as a ratio of belowground to aboveground biomass allocation. We use the term root-to-shoot ratio and the argument `rootToShoot` to reflect what is in previous publications and versions of CMEM and similar models. 
+
+\begin{align}
+    r_{tot}(Z^*) &= \frac{\varphi B_{max}}{Z_{range}^2}  \left( -Z^{*2} + Z_{sum} Z^* - Z_{prod} \right), \label{eq:root_total}
+\end{align}
 
 Within the [`massLiveRoots()`] function, the belowground biomass is distributed across the depth of the core (across the cohorts) which is mediated both by the user-specified depth at which 95% of the belowground biomass has accumulated `rootDepthMax` and the `shape` of the belowground biomass distribution ("linear" or "exponential"). Within each cohort, the belowground biomass is turned over via the `rootTurnover` parameter. Finally, a fraction of the turned over biomass in each cohort (1 - `recalcitrantFrac`) is decayed at a user-specified organic matter decay rate `omDecayRate` ($\text{yr}^{-1}$). As a default, the recalcitrant fraction of biomass does not decay.
 
@@ -824,7 +834,7 @@ argument | class | units | description
 -------- | :---: | :---: | -----------
 |`omPackingDensity`| numeric | g $\text{cm}^{-3}$ | bulk density of pure organic matter
 |`mineralPackingDensity` | numeric | g $\text{cm}^{-3}$ | bulk density of pure mineral matter
-|`rootPackingDensity` | numeric | g $\text{cm}^{-3}$ | bulk density of pure root matter
+|`rootPackingDensity` | numeric | g $\text{cm}^{-3}$ | (optional) bulk density of pure root matter
 
 At each time step, soil cohorts are aged by one timestep (default = 1 year) and then are modified in the following steps within the [`addCohort()`] function:
 
@@ -841,8 +851,122 @@ $$C_r(a,t+1) = (1 - \text{exp}(k_f))\times (C_f(a,t) + B_{bg}(a,t)f_f k_r) \\
     + (1 - \text{exp}(k_s))\times (C_s(a,t) + B_{bg}(a,t)(1-f_f) k_r)$$
 
 2. If there are non-zero mineral inputs, a new cohort of mineral sediment is added to the top of the soil profile.
-3. The top and bottom depths of the cohort layers are recalculated using the function [`calculateDepthOfNonRootVolume()`] after changes in mass of the cohorts are transformed into volumes via user-specified self-packing densities (`omPackingDensity`, `mineralPackingDensity`, `rootPackingDensity`).
-4. A new root profile is constructed based on the modified cohort layers using the functions [`massLiveRoots()`].
+3. The top and bottom depths of the cohort layers are recalculated using after changes in mass of the cohorts are transformed into volumes via user-specified self-packing densities (`omPackingDensity`, `mineralPackingDensity`, `rootPackingDensity`) via [`calculateDepthOfNonRootVolume()`].
+4. A new root profile is constructed based on the modified cohort layers using the function [`massLiveRoots()`].
+
+## Example simulation of `runCohortMem`
+
+Here we show an example simulation of CMEM using the `runCohortMem` function. We use the parameter and driver data from the geographic analysis in the main text for Annapolis, MD. 
+
+```{r}
+mem_output_temp <- rCMEM::runCohortMem(startYear = 2000,
+                                  relSeaLevelRiseInit = 0.230,
+                                  relSeaLevelRiseTotal = 77,
+                                  initElv = -0.388,
+                                  meanSeaLevel = -6.60,
+                                  meanSeaLevelDatum = -1.96,
+                                  meanHighWaterDatum = 5.52,
+                                  meanHighHighWaterDatum = 19.8,
+                                  meanHighHighWaterSpringDatum = 26.3,
+                                  suspendedSediment = 3e-05,
+                                  lunarNodalAmp = 0,
+                                  lunarNodalPhase = 1.88,
+                                  nFloods = 706,
+                                  bMax = 0.0866,
+                                  zVegMin = -0.470,
+                                  zVegMax = 2.08,
+                                  zVegPeak = 0.831,
+                                  plantElevationType = "dimensionless",
+                                  overrideAnalyticSolution = T,
+                                  rootToShoot=2,
+                                  rootTurnover=0.5, rootDepthMax=30, 
+                                  omDecayRate=0.5,
+                                  recalcitrantFrac=0.2,
+                                  shape = "linear",
+                                  captureRate = 2.8)
+```
+
+The outputs of the model are split into two data frames: annual time steps and cohorts. The former contains annual tidal, biomass, marsh surface elevation, and carbon flux information and is thus useful for creating time-series plots.
+
+```{r, fig.align='center', fig.width=6, fig.height=6}
+mem_output_temp$annualTimeSteps %>% 
+  dplyr::select(year,meanSeaLevel, surfaceElevation,
+                aboveground_biomass, mineral, cFlux, cSequestration) %>% 
+  rename(`mean sea level (cm)` = meanSeaLevel,
+         `surface elevation (cm)` = surfaceElevation,
+         `aboveground biomass (g/cm2)` = aboveground_biomass,
+         `mineral mass (g/cm2)` = mineral,
+         `C sequestration rate (g/cm2/yr)` = cSequestration,
+         `C flux (g/cm2/yr)` = cFlux) %>% 
+  gather(key = state, value = value,
+         `mean sea level (cm)`:`C sequestration rate (g/cm2/yr)`) %>% 
+  ggplot(aes(x = year, y = value, color = state)) +
+  geom_line(size = 2) +
+  theme(legend.position = "none") +
+  facet_wrap(~state, scales = "free_y", dir = "v")
+```
+The latter contains information about the mass pools within each cohort and can be used to make plots of the soil core profile as in Figure 3b-d.
+
+```{r, fig.height=5, fig.width=5, fig.align='center'}
+mem_output_temp$cohorts %>% 
+  filter(year == 2000) %>% 
+  select(layer_top, fast_OM, slow_OM, mineral, root_mass) %>%
+  rename(`depth below surface (cm)` = layer_top,
+         `fast pool organic matter (g)` = fast_OM,
+         `slow pool organic matter (g)` = slow_OM,
+         `mineral matter (g)` = mineral,
+         `root mass (g)` = root_mass) %>% 
+  gather(key = state, value = value, `fast pool organic matter (g)`:`root mass (g)`) %>% 
+  ggplot(aes(x = `depth below surface (cm)`, y = value, color = state)) +
+  geom_point(alpha = 0.3, size = 2, stroke = 0.9) +
+  coord_flip() +
+  scale_x_reverse() +
+  facet_wrap(~state, scales = "free", dir = "v") +
+  theme(legend.position = "none")
+```
+
+## Example simulation of `runCohortMemTransect`
+
+The function `runCohortMemTransect` can be used to simulate elevation across an elevation transect, that is running multiple simulations across a set of different starting elevations. Here, we replicate the elevation transect analysis that was conducted for the Charleston, SC analysis (Fig 3). 
+
+```{r}
+transectoutput <- rCMEM::runCohortMemTransect(startYear = 2000, 
+                                       relSeaLevelRiseInit=0.330, 
+                                       relSeaLevelRiseTotal=71,
+                                       initElv=50.2, 
+                                       meanSeaLevel=-6.92,
+                                       meanSeaLevelDatum = -10.3,
+                                       meanHighWaterDatum=58.4, 
+                                       meanHighHighWaterDatum=79.0,
+                                       meanHighHighWaterSpringDatum=99.2, 
+                                       suspendedSediment=3e-05, 
+                                       lunarNodalAmp=2.24, 
+                                       lunarNodalPhase = 1.46,
+                                       bMax = 0.0866, 
+                                       zVegMin = -0.470,
+                                       zVegMax = 2.08,
+                                       zVegPeak = 0.831,
+                                       plantElevationType = "dimensionless",
+                                       rootToShoot=2,
+                                       rootTurnover=0.5, rootDepthMax=30, 
+                                       omDecayRate=0.5,
+                                       recalcitrantFrac=0.2,
+                                       shape = "linear",
+                                       captureRate = 2.8,
+                                       # Set the distance in cm between initial elevations
+                                       elvIntervals=8,
+                                       # Set minimum initial elevation
+                                       initElvMin = -39.23,
+                                       overrideAnalyticSolution = T)
+```
+The output of `runCohortMemTransect` is the same as that of `runCohortMem`, except the column `initElv` varies across different starting initial elevations across the transect in `runCohortMemTransect`. The output can be used to make graphics similar to Fig 3a. 
+```{r}
+transectoutput$scenarioTransect %>% 
+  ggplot(aes(x = year, y = surfaceElevation, group = initElv)) +
+  geom_line() +
+  ylab("surface elevation (cm NAVD88)")
+```
+ 
 
 \pagebreak
 
@@ -851,7 +975,7 @@ $$C_r(a,t+1) = (1 - \text{exp}(k_f))\times (C_f(a,t) + B_{bg}(a,t)f_f k_r) \\
 ```{r addCohort_code}
 options(width = 60)
 addCohort<-function(massPools,
-                    rootTurnover, rootOmFrac, omDecayRate, #decay paraemters
+                    rootTurnover, rootOmFrac, omDecayRate, #decay parameters
                     packing, #packing densities
                     mineralInput = NA,
                     mineralInput.fn = sedimentInputs, 
