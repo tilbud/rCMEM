@@ -253,7 +253,7 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
     
     # Join flux table to annual time step table
     scenario <- scenario %>% 
-      dplyr::left_join(carbonFluxTab)
+      dplyr::left_join(carbonFluxTab, by="year")
   }
   
   # Return annual time steps and full set of cohorts
