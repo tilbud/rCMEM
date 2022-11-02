@@ -5,17 +5,12 @@
 #' @param coreMins a vector of sampling depth minimums to simulate coring subsamples, this is an alternative to depth, and 1cm increments
 #' @param coreMaxs a vector of sampling depth maximums to simulate coring subsamples, this is an alternative to depth, and 1cm increments
 #' @param omToOcParams a list of parameters defining a linear or quadratic relationship between fraction organic matter and fraction carbon
-#' @param omPackingDensity a numeric, the bulk density of pure organic matter
-#' @param mineralPackingDensity a numeric, the bulk density of pure mineral matter
-#' @param rootPackingDensity a numeric, the bulk density of pure root matter
 #' 
 #' @return a dataframe with variables simulated from a soil core
 #' @export
 simulateSoilCore <- function(cohorts, coreYear, coreDepth=100, 
                              coreMaxs=1:coreDepth, coreMins=coreMaxs-1,
-                             omToOcParams = list(B0=0, B1=0.48),
-                             omPackingDensity=0.085, mineralPackingDensity=1.99,
-                             rootPackingDensity=omPackingDensity) {
+                             omToOcParams = list(B0=0, B1=0.48)) {
   
   # Filter only to cohorts in the core year
   cohortsInCoreYear <- cohorts %>% 
@@ -51,10 +46,7 @@ simulateSoilCore <- function(cohorts, coreYear, coreDepth=100,
   coreYearAgeDepth <- coreYearAgeDepth %>%  
     dplyr::filter(complete.cases(.)) %>%
     dplyr::mutate(om_fraction = (fast_OM+slow_OM+root_mass)/(fast_OM+slow_OM+root_mass+mineral),
-                  dry_bulk_density = (1/(
-                    (om_fraction/omPackingDensity) +
-                      ((1-om_fraction)/mineralPackingDensity))
-                    ),
+                  dry_bulk_density = (fast_OM+slow_OM+root_mass+mineral)/(layer_bottom-layer_top),
                   oc_fraction = omToOc(om_fraction)
                   )
   
