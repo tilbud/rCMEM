@@ -26,6 +26,7 @@
 #' 
 #'
 addCohort <- function(massPools,
+                      agInput,
                       rootTurnover, rootOmFrac, omDecayRate, #decay paraemters
                       packing, #packing densities
                       mineralInput = NA,
@@ -42,6 +43,10 @@ addCohort <- function(massPools,
   
   if(!all(c('organic', 'mineral') %in% names(packing))){
     stop('Can not find expected packing densities.')
+  }
+  
+  if(!all(c('fast', 'slow') %in% names(agInput))){
+    stop('Can not find expected aboveground biomass inputs.')
   }
   
   if(!all(c('fast', 'slow') %in% names(rootOmFrac))){
@@ -106,10 +111,11 @@ addCohort <- function(massPools,
     ##...embedided in interative runs.
     newCohortIndex <- max(which(is.na(ans$age)))
     
-    #initalize the age and organic carbon pools to 0
+    # Old: initalize the age and organic carbon pools to 0
+    # !!! New initialize inputs as above ground litter
     ans$age[newCohortIndex] <- 0
-    ans$fast_OM[newCohortIndex] <- 0
-    ans$slow_OM[newCohortIndex] <- 0
+    ans$fast_OM[newCohortIndex] <- agInput$fast * timeStep
+    ans$slow_OM[newCohortIndex] <- agInput$slow * timeStep
 
     ans$respired_OM[newCohortIndex] <- 0
     

@@ -26,6 +26,7 @@
 #' @param rootToShoot a numeric, or vector of numerics, root to shoot ratio
 #' @param rootTurnover a numeric, or vector of numerics, belowground biomass annual turnover rate
 #' @param abovegroundTurnover (optional) a numeric, or vector of numerics, aboveground biomass annual turnover rate
+#' @param abovegroundSlowpoolFrac
 #' @param rootDepthMax a numeric, or vector of numerics, maximum (95\%) rooting depth
 #' @param shape a character, "linear" or "exponential" describing the shape of the relationship between depth and root mass
 #' @param omDecayRate a numeric, annual fractional mass lost
@@ -48,7 +49,9 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
                          suspendedSediment, lunarNodalAmp, lunarNodalPhase=2011.181,
                          nFloods = 705.79, floodTime.fn = floodTimeLinear,
                          bMax, zVegMin, zVegMax, zVegPeak, plantElevationType,
-                         rootToShoot, rootTurnover, abovegroundTurnover=NA, speciesCode=NA, rootDepthMax, shape="linear",
+                         rootToShoot, rootTurnover, 
+                         abovegroundTurnover=1, abovegroundSlowpoolFrac = recalcitrantFrac,
+                         speciesCode=NA, rootDepthMax, shape="linear",
                          omDecayRate, recalcitrantFrac, captureRate,
                          omToOcParams = list(B0=0, B1=0.48),
                          omPackingDensity=0.085, mineralPackingDensity=1.99,
@@ -105,6 +108,7 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
                                                abovegroundTurnover=abovegroundTurnover,
                                                omDecayRate=omDecayRate, 
                                                recalcitrantFrac=recalcitrantFrac, 
+                                               abovegroundSlowpoolFrac=abovegroundSlowpoolFrac,
                                                captureRate=captureRate,
                                                omPackingDensity=omPackingDensity, 
                                                mineralPackingDensity=mineralPackingDensity,
@@ -196,6 +200,8 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
     cohorts <- addCohort(cohorts, totalRootMassPerArea=bio_table$belowground_biomass[1], rootDepthMax=bio_table$rootDepthMax[1], 
                          rootTurnover = bio_table$rootTurnover[1], omDecayRate = list(fast=omDecayRate, slow=0),
                          rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
+                         agInput = list(slow = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*abovegroundSlowpoolFrac,
+                                        fast = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*(1-abovegroundSlowpoolFrac)),
                          packing=list(organic=omPackingDensity, mineral=mineralPackingDensity), 
                          rootDensity=rootPackingDensity, shape=shape,
                          mineralInput = dynamicMineralPool)
