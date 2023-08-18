@@ -87,7 +87,9 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
   scenario$speciesCode <- as.character(rep(NA, nrow(scenario)))
   scenario$rootToShoot <- as.numeric(rep(NA, nrow(scenario)))
   scenario$rootTurnover <- as.numeric(rep(NA, nrow(scenario)))
+  scenario$recalcitrantFrac <- as.numeric(rep(NA, nrow(scenario)))
   scenario$abovegroundTurnover <- as.numeric(rep(NA, nrow(scenario)))
+  scenario$abovegroundSlowpoolFrac <- as.numeric(rep(NA, nrow(scenario)))
   scenario$rootDepthMax <- as.numeric(rep(NA, nrow(scenario)))
   scenario$aboveground_biomass <- as.numeric(rep(NA, nrow(scenario)))
   scenario$belowground_biomass <- as.numeric(rep(NA, nrow(scenario)))
@@ -179,7 +181,9 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
                                         zVegMin=zStarVegMin, zVegPeak=zStarVegPeak,
                                         rootToShoot=rootToShoot,
                                         rootTurnover=rootTurnover, 
+                                        recalcitrantFrac = recalcitrantFrac,
                                         abovegroundTurnover=abovegroundTurnover, 
+                                        abovegroundSlowpoolFrac = abovegroundSlowpoolFrac,
                                         rootDepthMax=rootDepthMax, 
                                         speciesCode=speciesCode)    
     
@@ -199,9 +203,9 @@ runCohortMem <- function(startYear, endYear=startYear+99, relSeaLevelRiseInit, r
     # add live roots, and age the organic matter
     cohorts <- addCohort(cohorts, totalRootMassPerArea=bio_table$belowground_biomass[1], rootDepthMax=bio_table$rootDepthMax[1], 
                          rootTurnover = bio_table$rootTurnover[1], omDecayRate = list(fast=omDecayRate, slow=0),
-                         rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
-                         agInput = list(slow = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*abovegroundSlowpoolFrac,
-                                        fast = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*(1-abovegroundSlowpoolFrac)),
+                         rootOmFrac=list(fast=1-bio_table$recalcitrantFrac[1], slow=bio_table$recalcitrantFrac[1]),
+                         agInput = list(slow = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*bio_table$abovegroundSlowpoolFrac[1],
+                                        fast = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*(1-bio_table$abovegroundSlowpoolFrac[1])),
                          packing=list(organic=omPackingDensity, mineral=mineralPackingDensity), 
                          rootDensity=rootPackingDensity, shape=shape,
                          mineralInput = dynamicMineralPool)

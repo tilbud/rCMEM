@@ -16,7 +16,7 @@
 #' @param rootToShoot a numeric or vector of numerics, root to shoot ratio
 #' @param rootTurnover a numeric or vector of numerics, below ground biomass annual turnover rate
 #' @param abovegroundTurnover (optional) a numeric or vector of numerics, aboveground biomass annual turnover rate
-#' @param abovegroundSlowpoolFrac a 
+#' @param abovegroundSlowpoolFrac
 #' @param speciesCode (optional) a character or vector of characters, species names or codes associated with biological inputs
 #' @param rootDepthMax a numeric or vector of numerics, maximum (95\%) rooting depth
 #' @param shape a character, "linear" or "exponential" describing the shape of the relationship between depth and root mass
@@ -58,7 +58,9 @@ determineInitialCohorts <- function(initElv,
     bio_table <- data.frame(speciesCode=NA,
                             rootToShoot=NA,
                             rootTurnover=NA,
+                            recalcitrantFrac=NA,
                             abovegroundTurnover=NA,
+                            abovegroundSlowpoolFrac=NA,
                             rootDepthMax=NA,
                             aboveground_biomass=NA,
                             belowground_biomass=NA)
@@ -92,7 +94,9 @@ determineInitialCohorts <- function(initElv,
                                         zVegMin = zStarVegMin, zVegPeak = zStarVegPeak,
                                         rootToShoot=rootToShoot,
                                         rootTurnover=rootTurnover, 
+                                        recalcitrantFrac=recalcitrantFrac,
                                         abovegroundTurnover=abovegroundTurnover, 
+                                        abovegroundSlowpoolFrac=abovegroundSlowpoolFrac,
                                         rootDepthMax=rootDepthMax, speciesCode=speciesCode)
     
     # If elevation is lower than highest tide provided, and lower than maximum growing elevation
@@ -108,10 +112,10 @@ determineInitialCohorts <- function(initElv,
       
       # Run initial conditions to equilibrium
       cohorts <- runToEquilibrium(totalRootMassPerArea=bio_table$belowground_biomass[1], rootDepthMax=bio_table$rootDepthMax[1],
-                                  agInput = list(slow = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*abovegroundSlowpoolFrac,
-                                                 fast = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*(1-abovegroundSlowpoolFrac)),
-                                  rootTurnover=bio_table$rootTurnover, omDecayRate = list(fast=omDecayRate, slow=0),
-                                  rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
+                                  agInput = list(slow = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*bio_table$abovegroundSlowpoolFrac[1],
+                                                 fast = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*(1-bio_table$abovegroundSlowpoolFrac[1])),
+                                  rootTurnover=bio_table$rootTurnover[1], omDecayRate = list(fast=omDecayRate, slow=0),
+                                  rootOmFrac=list(fast=1-bio_table$recalcitrantFrac[1], slow=bio_table$recalcitrantFrac[1]),
                                   packing=list(organic=omPackingDensity, mineral=mineralPackingDensity),
                                   rootDensity=rootPackingDensity, shape=shape, 
                                   mineralInput = initSediment,
@@ -139,10 +143,11 @@ determineInitialCohorts <- function(initElv,
           # Run initial conditions to equilibrium
           initSediment <- supertidalSedimentInput
           cohorts <- runToEquilibrium(totalRootMassPerArea=bio_table$belowground_biomass[1], rootDepthMax=bio_table$rootDepthMax[1],
-                                      rootTurnover=bio_table$rootTurnover, omDecayRate = list(fast=omDecayRate, slow=0),
+                                      rootTurnover=bio_table$rootTurnover[1], omDecayRate = list(fast=omDecayRate, slow=0),
                                       agInput = list(slow = 0,
                                                      fast = 0),
-                                      rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
+                                      agInput = list(slow = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*bio_table$abovegroundSlowpoolFrac[1],
+                                                     fast = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*(1-bio_table$abovegroundSlowpoolFrac[1])),
                                       packing=list(organic=omPackingDensity, mineral=mineralPackingDensity),
                                       rootDensity=rootPackingDensity, shape=shape, 
                                       mineralInput = initSediment,
@@ -164,10 +169,10 @@ determineInitialCohorts <- function(initElv,
                                           floodTime.fn = floodTime.fn)
           
           cohorts <- runToEquilibrium(totalRootMassPerArea=bio_table$belowground_biomass[1], rootDepthMax=bio_table$rootDepthMax[1],
-                                      rootTurnover=bio_table$rootTurnover, omDecayRate = list(fast=omDecayRate, slow=0),
-                                      rootOmFrac=list(fast=1-recalcitrantFrac, slow=recalcitrantFrac),
-                                      agInput = list(slow = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*abovegroundSlowpoolFrac,
-                                                     fast = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*(1-abovegroundSlowpoolFrac)),
+                                      rootOmFrac=list(fast=1-bio_table$recalcitrantFrac[1], slow=bio_table$recalcitrantFrac[1]),
+                                      agInput = list(slow = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*bio_table$abovegroundSlowpoolFrac[1],
+                                                     fast = bio_table$aboveground_biomass[1]*bio_table$abovegroundTurnover[1]*(1-bio_table$abovegroundSlowpoolFrac[1])),
+                                      rootTurnover=bio_table$rootTurnover[1], omDecayRate = list(fast=omDecayRate, slow=0),,
                                       packing=list(organic=omPackingDensity, mineral=mineralPackingDensity),
                                       rootDensity=rootPackingDensity, shape=shape, 
                                       mineralInput = initSediment,

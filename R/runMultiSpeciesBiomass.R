@@ -8,7 +8,9 @@
 #' @param zVegPeak (optional) a numeric, or vector of numerics, elevation of peak biomass
 #' @param rootToShoot a numeric, or vector of numerics, root to shoot ratio
 #' @param rootTurnover a numeric, or vector of numerics, belowground biomass annual turnover rate
+#' @param recalcitrantFrac
 #' @param abovegroundTurnover (optional) a numeric, or vector of numerics, aboveground biomass annual turnover rate
+#' @param abovegroundSlowpoolFrac
 #' @param rootDepthMax a numeric, or vector of numerics, maximum (95\%) rooting depth
 #' @param speciesCode (optional) a character, or vector of characters, species names or codes associated with biological inputs
 #' @param competition.fn (optional) a function that takes at least a dataframe bio_table as an input, models competition between multiple species, and outputs an one row data frame aggregating biomass and biological inputs
@@ -16,7 +18,8 @@
 #' @return a one dataframe with above ground biomass, and biological parameters representing the dominant specie(s) at the elevation
 #' @export
 runMultiSpeciesBiomass <- function(z, bMax, zVegMax, zVegMin, zVegPeak=NA,
-                                   rootToShoot, rootTurnover, abovegroundTurnover=NA, rootDepthMax, 
+                                   rootToShoot, rootTurnover, recalcitrantFrac, rootDepthMax, 
+                                   abovegroundTurnover=1, abovegroundSlowpoolFrac,
                                    speciesCode=NA, competition.fn=NA) {
    # If a custom competition function is not specified ...
    if (is.na(competition.fn)) {
@@ -28,7 +31,8 @@ runMultiSpeciesBiomass <- function(z, bMax, zVegMax, zVegMin, zVegPeak=NA,
   
    # make a list of all the biological inputs
    bio_inputs <- list(bMax, zVegMax, zVegMin, zVegPeak, rootToShoot, 
-                     rootTurnover, abovegroundTurnover, rootDepthMax, speciesCode)
+                     rootTurnover, recalcitrantFrac, rootDepthMax, 
+                     abovegroundTurnover, abovegroundSlowpoolFrac, speciesCode)
    
    # Get the length of each input
    input_lengths <- sapply(bio_inputs, length)
@@ -52,7 +56,9 @@ runMultiSpeciesBiomass <- function(z, bMax, zVegMax, zVegMin, zVegPeak=NA,
                        zVegMin=zVegMin,
                        rootToShoot=rootToShoot, 
                        rootTurnover=rootTurnover,
+                       recalcitrantFrac=recalcitrantFrac,
                        abovegroundTurnover=abovegroundTurnover,
+                       abovegroundSlowpoolFrac=abovegroundSlowpoolFrac,
                        rootDepthMax=rootDepthMax)
      } else {
        stop("Species codes either need to be blank, or have the same number as biomass inputs.")
@@ -73,10 +79,9 @@ runMultiSpeciesBiomass <- function(z, bMax, zVegMax, zVegMin, zVegPeak=NA,
    # If all aboveground biomass values are 0 ...
    if (all(bio_table$aboveground_biomass == 0)) {
      # ... then make all bio params 0 and changes species name to unvegetated.
-     bio_table[,6:9] <- 0
+     bio_table[,6:11] <- 0
      bio_table[,1] <- "unvegetated"
      bio_table <- bio_table[1,]
-     bio_table
    }
    
    # If the returned dataframe is more than one row long ...
@@ -97,8 +102,12 @@ runMultiSpeciesBiomass <- function(z, bMax, zVegMax, zVegMin, zVegPeak=NA,
                         # ... and average all the parameters.
                         rootToShoot=mean(rootToShoot), 
                         rootTurnover=mean(rootTurnover),
+                        recalcitrantFrac=mean(recalcitrantFrac),
+                        abovegroundTurnover=mean(abovegroundTurnover),
+                        abovegroundSlowpoolFrac=mean(abovegroundSlowpoolFrac),
                         rootDepthMax=mean(rootDepthMax),
-                        aboveground_biomass=first(aboveground_biomass)) %>% 
+                        aboveground_biomass=first(aboveground_biomass),
+                        belowground_biomass=mean(belowground_biomass)) %>% 
        dplyr::ungroup()
    }
    
