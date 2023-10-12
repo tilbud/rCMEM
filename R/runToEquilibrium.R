@@ -35,6 +35,9 @@ runToEquilibrium <- function(minAge = 50, maxAge = 12000,
     #oldCohort <- cohortProfile
     cohortProfile <- addCohort(massPools = cohortProfile, ...)
     
+    cohortProfile$layer_bottom[is.na(cohortProfile$layer_bottom)] <- 0
+    cohortProfile <- trimCohorts(cohortProfile)
+    
     ##have the last layer OM pools stabilized?
     if((ii > minAge) & (max(cohortProfile$layer_bottom)>minDepth)){
       if((abs(diff(cohortProfile$fast_OM[ii-c(1:2)] + cohortProfile$slow_OM[ii-c(1:2)])) < absTol |

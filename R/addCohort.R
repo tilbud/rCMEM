@@ -136,10 +136,13 @@ addCohort <- function(massPools,
                                               relTol = 1e-6,
                                               ...)
   ans$layer_top <- c(0, ans$layer_bottom[-length(ans$layer_bottom)])
+  ans$layer_top[is.na(ans$layer_top)] <- 0
   
   #recalculate the root mass
   ans$root_mass <- massLiveRoots.fn(layerBottom = ans$layer_bottom,
                                     layerTop = ans$layer_top, ...)
+  
+  ans <- trimCohorts(ans)
   
   return(ans)
 }
