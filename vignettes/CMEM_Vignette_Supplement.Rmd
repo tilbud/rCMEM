@@ -809,22 +809,25 @@ tibble(species = rep(c("mix", "species1", "species2"), each = 91),
 a <- multispecies_toplot %>% 
   ggplot(aes(x = elevation, y = agb, group = species, color = species)) +
   geom_line(size = 2, aes(alpha = species)) +
-  annotate("text", x = c(-15, 45), y=c(0.125,0.2), label = c("species 1", "species 2"),
-           color = c("#78c679","#006837"),size = 3, fontface = 2) +
+  annotate("text", x = c(-20, 50), y=c(0.125,0.2), label = c("Species 1", "Species 2"),
+           color = c("#78c679","#006837"),size = 4, fontface = 2) +
   scale_color_manual(values = c("black","#006837", "#78c679")) +
   scale_alpha_manual(values = c(0.0, 0.6, 0.6)) +
+  theme_bw(base_size = 13) +
   theme(legend.position = "none") +
-  xlab("elevation (Z, cm NAVD88)") +
-  ylab(expression(paste("aboveground biomass (g ", cm^-2, ")")))
+  xlab("Elevation (Z, cm NAVD88)") +
+  ylab(expression(paste("Aboveground Biomass (g ", cm^-2, ")")))
   
 b <- multispecies_toplot %>% 
   ggplot(aes(x = elevation, y = agb, group = species, color = species)) +
   geom_line(size = 2, aes(alpha = species)) +
   scale_color_manual(values = c("black","#006837", "#78c679")) +
   scale_alpha_manual(values = c(0.8, 0.1, 0.1)) +
-  theme(legend.position = "none") +
-  xlab("elevation (Z, cm NAVD88)") +
-  ylab(expression(paste("aboveground biomass (g ", cm^-2, ")")))
+  theme_bw(base_size = 13) +
+  theme(legend.position = "none",
+        axis.text.y = element_blank()) +
+  xlab("Elevation (Z, cm NAVD88)") +
+  ylab("")
 
 a+b
 
