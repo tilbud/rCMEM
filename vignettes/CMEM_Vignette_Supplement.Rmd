@@ -1,7 +1,7 @@
 ---
 title: "SI Vignette for Cohort Marsh Equilibrium Model (CMEM): History, mathematics, and implementation"
 author: "M.L. Vahsen, K.E.O. Todd-Brown, J. Hicks, S.S. Pilyugin, J.T. Morris, and J.R. Holmquist"
-date: "01/19/2024"
+date: "03/28/2024"
 output: pdf_document
 urlcolor: blue
 bibliography: CMEM_Vignette.bib
@@ -63,7 +63,7 @@ where $Z_{\mu}(t)$ is mean sea level at time $t$ and $\alpha$ and $\beta$ are co
 
 Given the previous equations and specified inputs, we can substitute `relSeaLevelRiseInit` = $Z_{\mu}(1) - Z_{\mu}(0)$, `relSeaLevelRiseTotal` = $Z_{\mu}(T) - Z_{\mu}(0)$, and `endYear` - `startYear` = $T$. Conversely, if a vector of mean sea levels is to be used to inform the tidal record (see below), `relSeaLevelRiseInit` and `relSeaLevelRiseTotal` should not be specified.
 
-The user will then input `meanSeaLevel` as either a numeric or a vector. The function [`buildScenarioCurve()`] will make a decision about what type of analysis you are trying to run based on the structure of the input `meanSeaLevel`. `meanSeaLevel` can either be an initial mean sea level  ($Z_{\mu}(0)$) or a vector of mean sea levels, as long as the vector is the same length as the number of years in the simulation. The vector can be useful for hindcasting using a tide gauge record.
+The user will then input `meanSeaLevel` as either a numeric or a vector. The function [`buildScenarioCurve()`] will make a decision about what type of analysis you are trying to run based on the structure of the input `meanSeaLevel`. `meanSeaLevel` can either be an initial mean sea level ($Z_{\mu}(0)$) or a vector of mean sea levels, as long as the vector is the same length as the number of years in the simulation. The vector can be useful for hindcasting using a tide gauge record.
 
 Finally, the user will input the mean sea level over the last datum period `meanSeaLevelDatum` and the mean high water over the last datum period `meanHighWaterDatum`. Tidal datums should represent long term averages over a datum period. The last complete epoch was 1981-2001, released by NOAA [for example](https://tidesandcurrents.noaa.gov/datums.html?datum=NAVD88&units=1&epoch=0&id=8575512&name=Annapolis&state=MD). In our examples, we present tidal data from NOAA tide gauges as cm relative to the North American Vertical Datum of 1988 (NAVD88). If high tide data represent tidal amplitudes, then the user should set `meanSeaLevelDatum` to 0. 
 
@@ -246,7 +246,7 @@ Fraction flooding time ($\omega$) is calculated as:
     \right.  
 \end{equation}
 
-where $Z_h(t)$ is the high water level at time $t$ and $Z_l(t)$ is the low water level. Note that $Z_l$ from a historical datum is not specified in the model, but rather is calculated as $Z_l(t) = Z_\mu(t) - Z_h(t)$. 
+where $Z_h(t)$ is the high water level at time $t$ and $Z_l(t)$ is the low water level. 
 
 Alternatively, we present the trigonometric function option [\emph{sensu} @hickey2019tidal] which allows sedimentation processes to be more sensitive for high marshes (that are not frequently flooded) without substantially affecting run time. Flooding time is calculated as the product of the absolute value of the rising time $\omega_r$ minus $\phi$, which is the time of one half of a tidal cycle, and the falling time $\omega_l$ 
 
@@ -434,7 +434,7 @@ sediment_example2_tibble %>%
 
 ## Determining initial cohorts
 
-For the numerical model to produce realistic predictions, the model requires an initialization of cohorts at equilibrium (\emph{i.e.}, until the oldest cohorts have mass pools that are not significantly different) given that the oldest cohort is above a minimum age (default = 50 years), below a maximum age (default = 12000 years), and spans up to a minimum depth. In practice, this initialization is completed by the [`runToEquilibrium()`] function, where in new cohorts are repeatedly added to a soil profile. The initialization of soil cohorts is informed by the initial belowground biomass (applying the function [`predictBiomass()`] at the initial elevation `initElv` and multiplying by the root-to-shoot ratio `rootToShoot`), fast and slow pool decay rates `omDecayRate`, recalcitrant fraction of organic material `recalcitrantFrac`, the organic and mineral self-packing densities (`omPackingDensity`, `mineralPackingDensity`), the shape of the belowground biomass distribution (`shape`; "linear" or "exponential"), the initial mineral input (`mineralInput_g_per_yr`; calculated using the [`deliverSediment()`] function), and the minimum depth for which the cohorts must be initialized, which sets to a default of the maximum rooting depth `rootDepthMax` plus 0.5cm, rounded to the nearest cm. 
+For the numerical model to produce realistic predictions, the model requires an initialization of cohorts at equilibrium (\emph{i.e.}, until the oldest cohorts have mass pools that are not significantly different) given that the oldest cohort is above a minimum age (default = 50 years), below a maximum age (default = 12000 years), and spans up to a minimum depth. In practice, this initialization is completed by the [`runToEquilibrium()`] function, wherein new cohorts are repeatedly added to a soil profile. The initialization of soil cohorts is informed by the initial belowground biomass (applying the function [`predictBiomass()`] at the initial elevation `initElv` and multiplying by the root-to-shoot ratio `rootToShoot`), fast and slow pool decay rates `omDecayRate`, recalcitrant fraction of organic material `recalcitrantFrac`, the organic and mineral self-packing densities (`omPackingDensity`, `mineralPackingDensity`), the shape of the belowground biomass distribution (`shape`; "linear" or "exponential"), the initial mineral input (`mineralInput_g_per_yr`; calculated using the [`deliverSediment()`] function), and the minimum depth for which the cohorts must be initialized, which sets to a default of the maximum rooting depth `rootDepthMax` plus 0.5cm, rounded to the nearest cm. 
 
 If the initial elevation is above the highest tidal flooding elevation, but below the maximum growing elevation `zVegMax`, then there will be no mineral sedimentation to lay down annualized layers, and [`runToEquilibrium()`] will fail with an error message. In this case [`determineInitialCohorts()`] will form a supertidal peat. The user has some options; a user can provide their own supertidal sediment input (`superTidalSedimentInput`; g $\text{cm}^{-2}$ $\text{year}^{-1}$). If this is not supplied, then [`determineInitialCohorts()`] will calculate sediment input at 1 cm below the highest tide and use that. The [`runToEquilibrium()`] function then runs the same as if initial elevation were an elevation in which there was flooding elevation. The user also has an option to use their own set of cohorts for super tidal peat, each with mineral, root, fast and slow pool organic matter pool masses via the `superTidalCohorts` input.
 
@@ -452,7 +452,7 @@ argument | class | units | description
 | `zVegPeak` | numeric | cm* | (optional) elevation of peak biomass
 | `plantElevationType` | character | - | "orthometric" or "dimensionless", specifying elevation reference of the vegetation growing elevations (*)
 
-The user inputs multiple parameters that are related to the relationship between elevation and biomass, such that a given time step, the amount of biomass can be predicted for a given square meter area (10000 $\text{cm}^2$). There is assumed to be a parabolic relationship between elevation and biomass [@morris2002responses] which is parameterized (at a minimum) by a peak biomass `bMax`, a lower elevation limit of biomass `zVegMin`, and a upper elevation limit of biomass `zVegMax`. This specification assumes a symmetrical inverted parabola. 
+The user inputs multiple parameters that are related to the relationship between elevation and biomass, such that a given time step, the amount of biomass can be predicted for a given square meter area (10000 $\text{cm}^2$). A parabolic relationship between elevation and biomass [@morris2002responses] is parameterized (at a minimum) by a peak biomass `bMax`, a lower elevation limit of biomass `zVegMin`, and a upper elevation limit of biomass `zVegMax`. This specification assumes a symmetrical inverted parabola. 
 
 The user also has the option to provide an additional parameter `zVegPeak` which allows for the elevation of peak biomass to be different than the midpoint elevation of the lower and upper elevation limits (\emph{i.e.}, an asymmetrical "parabola shape"). Finally, the user specifies `plantElevationType` as either "orthometric", which means that the values of `zVegMin`, `zVegMax`, and `zVegPeak` (if provided) are in cm NAVD88, or "dimensionless" which means that the values of `zVegMin`, `zVegMax`, and `zVegPeak` (if provided) are relative to mean sea level. 
 
@@ -630,7 +630,7 @@ Within [`runCohortMem()`] the predicted aboveground biomass is converted to belo
 
 Within the [`massLiveRoots()`] function, the belowground biomass is distributed across the depth of the core (across the cohorts) which is mediated both by the user-specified depth at which 95% of the belowground biomass has accumulated `rootDepthMax` and the `shape` of the belowground biomass distribution ("linear" or "exponential"). Within each cohort, the belowground biomass is turned over via the `rootTurnover` parameter. Finally, a fraction of the turned over biomass in each cohort (1 - `recalcitrantFrac`) is decayed at a user-specified organic matter decay rate `omDecayRate` ($\text{yr}^{-1}$). As a default, the recalcitrant fraction of biomass does not decay.
 
-The user also has an option to specify an aboveground turnover rate ($\text{yr}^{-1}$), however this is not required. 
+The user also has an option to specify an aboveground turnover rate ($\text{yr}^{-1}$), however this is not required.
 
 ## Multi-species functionality (optional)
 
@@ -932,7 +932,7 @@ mem_output_temp$cohorts %>%
 
 ## Example simulation of `runCohortMemTransect`
 
-The function `runCohortMemTransect` can be used to simulate elevation across an elevation transect, that is running multiple simulations across a set of different starting elevations. Here, we create an elevation transect analysis that for Charleston, SC. 
+The function `runCohortMemTransect` can be used to simulate elevation across an elevation transect, that is, running multiple simulations across a set of different starting elevations. Here, we create an elevation transect analysis for Charleston, SC. 
 
 ```{r}
 transectoutput <- rCMEM::runCohortMemTransect(startYear = 2000, 
@@ -964,7 +964,7 @@ transectoutput <- rCMEM::runCohortMemTransect(startYear = 2000,
                                        initElvMin = -39.23,
                                        overrideAnalyticSolution = T)
 ```
-The output of `runCohortMemTransect` is the same as that of `runCohortMem`, except the column `initElv` varies across different starting initial elevations across the transect in `runCohortMemTransect`. The output can be used to make graphics similar to Fig 3a. 
+The output of `runCohortMemTransect` is the same as that of `runCohortMem`, except the column `initElv` varies across different starting initial elevations across the transect in `runCohortMemTransect`. 
 ```{r}
 transectoutput$scenarioTransect %>% 
   ggplot(aes(x = year, y = surfaceElevation, group = initElv)) +
