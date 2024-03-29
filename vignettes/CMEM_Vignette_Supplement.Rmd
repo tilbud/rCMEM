@@ -253,12 +253,12 @@ Alternatively, we present the trigonometric function option [\emph{sensu} @hicke
 \begin{align} 
 \omega(t, Z_h(t), Z_l(t)) &= f(Z) = |\omega_r(t) - \phi| + \omega_l(t) \\
 \omega_r(t) &=  \sin\left(\phi \left[\frac{H_{1}}{\pi}\right] - 1 \right) \\
-H_{1,t} &= 2 \pi - \arccos\left(2 \left[\frac{Z_\mu(t)-Z_l(t)}{Z_h(t)-Z_l(t)}\right] - 1\right)\\
+H_{1,t} &= 2 \pi - \arccos\left(2 \left[\frac{Z(t)-Z_l(t)}{Z_h(t)-Z_l(t)}\right] - 1\right)\\
 \omega_l(t) &=  \sin\left(\phi \left[\frac{H_{2}}{\pi}\right] - 1\right) \\
-H_{2,t} &= 2 \pi - \arccos\left(2 \left[\frac{Z_\mu(t)-Z_h(t)}{Z_l(t)-Z_h(t)}\right] - 1\right)
+H_{2,t} &= 2 \pi - \arccos\left(2 \left[\frac{Z(t)-Z_h(t)}{Z_l(t)-Z_h(t)}\right] - 1\right)
 \end{align}
 
-where $H_1$ and $H_2$ are intermediate functions used to translate $Z_\mu$, $Z_h$, and $Z_l$ data to rising and falling times ($\omega_r$ and $\omega_l$, respectively). Here, we set $\phi$ to 0.5 (\emph{i.e.}, half of a tidal cycle), which allows the output to be equal to the fraction for which an elevation is flooded (\emph{i.e.}, fractional flooding time). The [`floodTimeTrig()`] function calculates flooding time as the product of the absolute value of the rising time $\omega_r$ minus $\phi$ (the time of one half of a tidal cycle), and the falling time $\omega_l$. 
+where $H_1$ and $H_2$ are intermediate functions used to translate $Z$, $Z_h$, and $Z_l$ data to rising and falling times ($\omega_r$ and $\omega_l$, respectively). Here, we set $\phi$ to 0.5 (\emph{i.e.}, half of a tidal cycle), which allows the output to be equal to the fraction for which an elevation is flooded (\emph{i.e.}, fractional flooding time). The [`floodTimeTrig()`] function calculates flooding time as the product of the absolute value of the rising time $\omega_r$ minus $\phi$ (the time of one half of a tidal cycle), and the falling time $\omega_l$. 
 
 The function [`deliverSediment()`] organizes inputs and, in the cases where daily higher high tides and monthly high spring tides are specified, proportions the number of tidal floods among the types of tides specified. It also uses a user-specified capture rate `captureRate` (the number of times a water column will clear per tidal cycle) multiplied by the the amount of time the surface is flooded to calculate the amount of available sediment that is delivered. 
 
